@@ -1,11 +1,13 @@
 -- {-# OPTIONS --show-implicit #-}
 
-open import 1Lab.1Lab.Path using (_≡_; subst; ap; refl; transport-refl; _∙_; ~_)
-open import 1Lab.1Lab.Type using (Type; lsuc; _⊔_; _$_)
-open import 1Lab.1Lab.HLevel using (is-set; is-set→squarep)
+open import 1Lab.Path 
+  using (_≡_; subst; ap; refl; transport-refl; _∙_; ~_; coe0→1; _∨_; _∧_; Path
+  ; transport)
+open import 1Lab.Path.Cartesian using (I-interp)
+open import 1Lab.Type using (Type; lsuc; _⊔_; _$_; ¬_; absurd; ⊤; ⊥; tt; _∘_)
+open import 1Lab.HLevel using (is-set; is-set→squarep)
 
-open import DepTyChk.CubicalUtils using (_≡[_]≡_)
-open import DepTyChk.Utils using (_∘_; substRefl)
+open import DepTyChk.CubicalUtils using (_≡[_]≡_; coe)
 
 -- Concrete syntax
 module DepTyChk.Concrete where
@@ -31,6 +33,25 @@ data SynU : Type where
   SynTy : Ctx → SynU
   SynSub : Ctx → Ctx → SynU
   SynTm : (Γ : Ctx) → Ty Γ → SynU
+
+Ty-diverge : SynU → Type
+Ty-diverge (SynTy _) = ⊥
+Ty-diverge (SynSub _ _) = ⊤
+Ty-diverge (SynTm _ _) = ⊤
+
+SubTy-disjoint : ∀ {Γ Δ Σ} → ¬ SynSub Δ Σ ≡ SynTy Γ
+SubTy-disjoint p = coe (ap Ty-diverge p) tt
+
+TmTy-disjoint : ∀ {Γ Δ A} → ¬ SynTm Δ A ≡ SynTy Γ
+TmTy-disjoint p = coe (ap Ty-diverge p) tt
+
+-- I find it quite ugly that we need to write cases for SynSub and SynTm here
+-- when they clearly will not be entered - perhaps I could use funky-ap...
+Ty-inj : ∀ {Γ Δ} → SynTy Γ ≡ SynTy Δ → Γ ≡ Δ
+Ty-inj p = ap (λ where
+  (SynTy Γ) → Γ
+  (SynSub Γ _) → Γ
+  (SynTm Γ _) → Γ) p 
 
 data Syntax : SynU → Type
 
@@ -120,7 +141,54 @@ Ctx-elim P Pset Pε PΓA (squash Γ Δ α β i j)
     go : ∀ Σ → P Σ
     go = Ctx-elim P Pset Pε PΓA
 
--- Unsupported Indexed Match... Need to use the eliminator
+-- Below are two half-finished approaches to defining substitution as a reducing
+-- function.
+-- The first uses indexed matching that relies on data constructor injectivity,
+-- which Cubical Agda does not yet support. This means that it does not compute
+-- on transports, which is painful.
+-- The second gets around the indexed matching restrictions by being polymorphic
+-- over the index and later requiring an equality proof (any index, as long as
+-- it is SynTy Δ). The downside is that Agda cannot automatically reject the
+-- absurd cases.
+--
+-- Probably the best thing to do here would be to define an explicit eliminator,
+-- but this is a quite painful amount of boilerplate. Perhaps I could create
+-- a view of Syntax T which only has constructors associated with Ty...
+
+ty-sub : ∀ {Γ Δ T} → T ≡ SynTy Δ → Syntax T → Sub Γ Δ → Ty Γ
+ty-sub p U δ = U
+ty-sub p (El M) δ = {!!}
+ty-sub p (Π A B) δ = {!   !}
+ty-sub p ε _ = absurd (SubTy-disjoint p)
+ty-sub p (_ , _) _ = absurd (SubTy-disjoint p)
+ty-sub p idₛ δ = absurd (SubTy-disjoint p)
+ty-sub p (_ ∘ₛ _) _ = absurd (SubTy-disjoint p)
+ty-sub p (tail _) _ = absurd (SubTy-disjoint p)
+ty-sub p (lam _) _ = absurd (TmTy-disjoint p)
+ty-sub p (app _) _ = absurd (TmTy-disjoint p)
+ty-sub p (head _) _ = absurd (TmTy-disjoint p)
+ty-sub p (x [ _ ]t) _ = absurd (TmTy-disjoint p)
+ty-sub p ([id]T i) δ = {!   !}
+ty-sub p ([][]T i) δ = {!   !}
+ty-sub p (U[] i) δ = {!   !}
+ty-sub p (El[] i) δ = {!   !}
+ty-sub p (Π[] i) δ = {!   !}
+ty-sub p (idl i) δ = {!   !}
+ty-sub p (idr i) δ = {!   !}
+ty-sub p (ass i) δ = {!   !}
+ty-sub p (,∘ i) δ = {!   !}
+ty-sub p (tβ i) δ = {!   !}
+ty-sub p (,η i) δ = {!   !}
+ty-sub p (εη i) δ = {!   !}
+ty-sub p ([id]t i) δ = {!   !}
+ty-sub p ([][]t i) δ = {!   !}
+ty-sub p (hβ i) δ = {!   !}
+ty-sub p (Πβ i) δ = {!   !}
+ty-sub p (Πη i) δ = {!   !}
+ty-sub p (lam[] i) δ = {!   !}
+ty-sub p (squash A A₁ x y i i₁) δ = {!   !}
+
+-- -- Unsupported Indexed Match... Need to use the eliminator
 U [ δ ]T = U
 El M [ δ ]T = El (M [ δ ]t)
 Π A B [ δ ]T = Π (A [ δ ]T) (B [ δ ↑ A ]T)

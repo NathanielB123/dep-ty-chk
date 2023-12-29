@@ -1,8 +1,6 @@
--- We use a slightly customised version of 1lab with every module scoped under
--- an outer "1Lab" in order to avoid ambiguity conflicts with identically named
--- modules in the Agda std-lib
-depend: standard-library, 1lab
+depend: 1lab
 include: .
+-- Same flags as 1Lab
 flags:
   --no-load-primitives
   --rewriting

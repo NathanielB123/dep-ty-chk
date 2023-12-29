@@ -1,4 +1,4 @@
-open import 1Lab.1Lab.Type using (Type)
+open import 1Lab.Type using (Type)
 
 -- I want to define a normal form syntax where idₛ, tail, ∘ₛ etc all reduce
 -- But this runs into the classic problem of the recursion/dependency hell
