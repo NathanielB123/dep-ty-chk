@@ -1,8 +1,10 @@
 -- {-# OPTIONS --show-implicit #-}
 
-open import 1Lab.Path 
-  using (_≡_; subst; ap; refl; transport-refl; _∙_; ~_; coe0→1; _∨_; _∧_; Path
-  ; transport; i0; i1; sym; PathP; ap₂; _∙P_; apd)
+open import 1Lab.Path using 
+  (_≡_; subst; ap; refl; transport-refl; _∙_; ~_; coe0→1; _∨_; _∧_; Path
+  ; transport; i0; i1; sym; PathP; ap₂; _∙P_; apd; PathP≡Path⁻; PathP≡Path
+  ; transport-filler
+  )
 open import 1Lab.Path.Cartesian using (I-interp)
 open import 1Lab.Type using (Type; lsuc; _⊔_; _$_; ¬_; absurd; ⊤; ⊥; tt; _∘_)
 open import 1Lab.HLevel using (is-set; is-set→squarep)
@@ -10,7 +12,10 @@ open import Data.Dec using (Discrete; Dec)
 open import 1Lab.Path.IdentitySystem using (set-identity-system)
 open import Data.Id.Base using (_≡ᵢ_; reflᵢ; Id-identity-system)
 
-open import DepTyChk.CubicalUtils using (_≡[_]≡_; coe; map-idx; ∙refl)
+open import DepTyChk.CubicalUtils using 
+  (_≡[_]≡_; coe; map-idx; ∙refl; funky-ap; inl; inr; swap; USum
+  ; subst-application
+  )
 
 -- Concrete syntax
 module DepTyChk.Concrete where
@@ -48,10 +53,16 @@ squash-Ctx : is-set Ctx
 squash-Ctx Γ Δ p₁ p₂ = {!!}
 
 ,-inj₁ : ∀ {Γ Δ A B} → Γ , A ≡ Δ , B → Γ ≡ Δ
-,-inj₁ p = {!!}
+,-inj₁ p = ap (λ where
+  ε       → ε
+  (Γ , _) → Γ) p
+
+ε,-diverge : Ctx → Type
+ε,-diverge ε = ⊥
+ε,-diverge (_ , _) = ⊤
 
 ,ε-disjoint : ∀ {Γ A} → ¬ Γ , A ≡ ε
-,ε-disjoint = {!!}
+,ε-disjoint p = coe (ap ε,-diverge p) tt
 
 weaken : ∀ {Γ A} → Ty Γ → Ty (Γ , A)
 
@@ -98,19 +109,14 @@ data Sub where
   -- Truncate
   squash : ∀ {Γ Δ} → is-set (Sub Γ Δ)
 
--- Note we might be able to be slightly stricter about the forms of 
--- substitutions, by making idₛ computational down to a εₛ constructor
--- This eliminates the need for ↑id!
-postulate εₛ : Sub ε ε
-
 data is-id : ∀ {Γ} → Sub Γ Γ → Type
 
-[id]T′ : ∀ {Γ} {A : Ty Γ} {δ : Sub Γ Γ} → is-id δ → A [ δ ]T ≡ A
+[id]T′ : ∀ {Γ} {δ : Sub Γ Γ} (A : Ty Γ) → is-id δ → A [ δ ]T ≡ A
 
 data is-id where
   ε   : is-id ε
   _↑_ : ∀ {Γ} {δ : Sub Γ Γ} (p : is-id δ) (A : Ty Γ) 
-      → is-id (subst (λ x → Sub (_ , x) _) ([id]T′ p) (δ ↑ A))
+      → is-id (subst (λ x → Sub (_ , x) _) ([id]T′ A p) (δ ↑ A))
 
 record IdSub (Γ : Ctx) : Type where
   constructor _,_
@@ -122,7 +128,7 @@ record IdSub (Γ : Ctx) : Type where
 id-sub : ∀ Γ → IdSub Γ
 id-sub ε = ε , ε
 id-sub (Γ , A) with id-sub Γ
-... | δ , p = subst (λ x → Sub (_ , x) _) ([id]T′ p) (δ ↑ A) , p ↑ A
+... | δ , p = subst (λ x → Sub (_ , x) _) ([id]T′ A p) (δ ↑ A) , p ↑ A
 
 idₛ {Γ} with id-sub Γ
 ... | δ , _ = δ
@@ -137,22 +143,21 @@ idₛ {Γ} with id-sub Γ
 -- support properly)
 -- Therefore, we instead pass an explicit proof of index equality:
 
-
-tail-compute : ∀ {Γ Δ Σ A} → Δ , A ≡ Σ → Sub Γ Σ → Sub Γ Δ
-tail-compute p ε = absurd (,ε-disjoint p)
-tail-compute p (δ ∘ₛ σ) = tail-compute p δ ∘ₛ σ
-tail-compute p wk = subst (λ x → Sub x _) p wk ∘ₛ wk
-tail-compute p (δ ↑ A) = subst (Sub _) (sym (,-inj₁ p)) δ ∘ₛ wk
-tail-compute p < M > = subst (Sub _) (sym (,-inj₁ p)) idₛ
+tail-total : ∀ {Γ Δ Σ A} → Δ , A ≡ Σ → Sub Γ Σ → Sub Γ Δ
+tail-total p ε = absurd (,ε-disjoint p)
+tail-total p (δ ∘ₛ σ) = tail-total p δ ∘ₛ σ
+tail-total p wk = subst (λ x → Sub x _) p wk ∘ₛ wk
+tail-total p (δ ↑ A) = subst (Sub _) (sym (,-inj₁ p)) δ ∘ₛ wk
+tail-total p < M > = subst (Sub _) (sym (,-inj₁ p)) idₛ
 -- TODO: Boundary (confluence) conditions
-tail-compute p (idl i) = {!   !}
-tail-compute p (idr i) = {!   !}
-tail-compute p (ass i) = {!!}
-tail-compute p (squash δ σ α β i j) = {!   !}
--- tail-compute p idₛ = subst (λ x → Sub x _) p wk
--- tail-compute p (↑id i) = {!!}
+tail-total p (idl i) = {!!}
+tail-total p (idr i) = {!!}
+tail-total p (ass i) = {!!}
+tail-total p (squash δ σ α β i j) = {!!}
+-- tail-total p idₛ = subst (λ x → Sub x _) p wk
+-- tail-total p (↑id i) = {!!}
 
-tail = tail-compute refl  
+tail = tail-total refl  
 
 -- Equations:
 
@@ -172,7 +177,7 @@ El A [ δ ]T = El (A [ δ ]t)
 [id]t : ∀ {Γ A} {M : Tm Γ A} → M [ idₛ ]t ≡[ ap (Tm _) [id]T ]≡ M
 -- I would have thought that this could follow from [id]t, but we get stuck 
 -- on showing [id]T i ≡ U (we cannot match on 𝕀)
-[id]t-U : ∀ {Γ} {M : Tm Γ U} → M [ idₛ ]t ≡ M
+-- [id]t-U : ∀ {Γ} {M : Tm Γ U} → M [ idₛ ]t ≡ M
 [][]t : ∀ {Γ Δ Σ A} {M : Tm Σ A} {δ : Sub Δ Σ} {σ : Sub Γ Δ}
       → M [ δ ]t [ σ ]t ≡[ ap (Tm _) ([][]T {δ = δ} {σ = σ}) ]≡ M [ δ ∘ₛ σ ]t 
 -- hβ    : ∀ {Γ Δ A} {δ : Sub Γ Δ} {M : Tm Γ (A [ δ ]T)} 
@@ -183,18 +188,26 @@ El A [ δ ]T = El (A [ δ ]t)
 --       → (lam M) [ δ ]t ≡[ ap (Tm _) Π[] 
 --       ]≡ lam (M [ (δ ∘ₛ tail idₛ) , subst (Tm _) [][]T (head idₛ) ]t)
 
-↑id   : ∀ {Γ} {A : Ty Γ} → PathP (λ i → ap (λ x → Sub (Γ , x) (Γ , A)) 
-              {x = A [ idₛ ]T} {y = A} [id]T i) (idₛ ↑ A) idₛ
+[id]t′-U :  ∀ {Γ} {δ : Sub Γ Γ} (M : Tm Γ U) → is-id δ → M [ δ ]t ≡ M
+[id]t′-U M p = {!!}
 
-[id]T′ ε = {!!}
-[id]T′ (p ↑ A) = {!!}
+[id]T′ U _ = refl
+[id]T′ (El A) p = ap El ([id]t′-U A p)
+[id]T′ {Γ} {δ} (Π A B) p 
+  = ap₂ Π ([id]T′ _ p) 
+  $ coe (sym (PathP≡Path _ _ _)) 
+  $ subst-application (λ x → Sub (_ , x) _) (λ _ → B [_]T) ([id]T′ A p) 
+  ∙ [id]T′ B (p ↑ A)
 
-[id]T {A = U} = refl
-[id]T {A = El A} = ap El [id]t-U
-[id]T {A = Π A B} 
-  = ap₂ Π [id]T 
-  $ map-idx (_∙P_ {B = Ty ∘ (_ ,_)} (apd (λ _ → B [_]T) ↑id) [id]T) 
-  $ ap (ap (Ty ∘ (_ ,_))) ∙refl
+-- [id]T {A = U} = refl
+-- [id]T {A = El A} = ap El [id]t-U
+-- [id]T {A = Π A B} 
+--   = ap₂ Π [id]T 
+--   $ map-idx (_∙P_ {B = Ty ∘ (_ ,_)} (apd (λ _ → B [_]T) ↑id) [id]T) 
+--   $ ap (ap (Ty ∘ (_ ,_))) ∙refl
+
+[id]T {Γ} with id-sub Γ 
+... | δ , p = [id]T′ _ p
 
 -- We also want the below equations to hold:
 -- A [ idₛ ]T = A
@@ -205,4 +218,4 @@ El A [ δ ]T = El (A [ δ ]t)
 -- app M [ δ ]t = {!   !}
 -- var here [ δ ]t = {!   !}
 -- var (there _) [ δ ]t = {!   !}
-  
+   
