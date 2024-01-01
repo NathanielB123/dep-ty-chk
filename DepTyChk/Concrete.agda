@@ -1,4 +1,6 @@
 -- {-# OPTIONS --show-implicit #-}
+-- Temporary
+{-# OPTIONS -WnoUnsupportedIndexedMatch #-}
 
 open import 1Lab.Path using 
   (_≡_; subst; ap; refl; transport-refl; _∙_; ~_; coe0→1; _∨_; _∧_; Path
@@ -27,30 +29,13 @@ infixr 6 _[_]T
 
 data Ctx : Type
 data Ty : Ctx → Type
-data Sub : Ctx → Ctx → Type
+data Subs : Ctx → Ctx → Type
 data Tm : (Γ : Ctx) → Ty Γ → Type
 
 {-# NO_POSITIVITY_CHECK #-}
 data Ctx where
   ε      : Ctx
   _,_    : (Γ : Ctx) → Ty Γ → Ctx
-  -- I'm pretty sure we could derive this but I don't know HoTT well enough
-  -- squash : is-set Ctx
-
--- _≡?-Ctx_ :
-
--- We want f(i, 0) = 0 | 1
---         f(i, 1) = 0 | 1
---         f(0, j) = j
---         f(1, j) = 0 | 1
-
--- We need to somehow reason using the fact that the only way to identify ε with
--- itself is refl
--- squash-Ctx′ : ∀ (Γ : Ctx) (p : Γ ≡ Γ) → p ≡ refl 
--- squash-Ctx′ ε p i j = {!p j!}
-
-squash-Ctx : is-set Ctx
-squash-Ctx Γ Δ p₁ p₂ = {!!}
 
 ,-inj₁ : ∀ {Γ Δ A B} → Γ , A ≡ Δ , B → Γ ≡ Δ
 ,-inj₁ p = ap (λ where
@@ -65,9 +50,7 @@ squash-Ctx Γ Δ p₁ p₂ = {!!}
 ,ε-disjoint p = coe (ap ε,-diverge p) tt
 
 weaken : ∀ {Γ A} → Ty Γ → Ty (Γ , A)
-
-_[_]T : ∀ {Γ Δ} → Ty Δ → Sub Γ Δ → Ty Γ
-_[_]t : ∀ {Γ Δ A} → Tm Δ A → (δ : Sub Γ Δ) → Tm Γ (A [ δ ]T)
+substitute : ∀ {Γ A} → Ty (Γ , A) → Tm Γ A → Ty Γ
 
 data Ty where
   U     : ∀ {Γ} → Ty Γ
@@ -80,142 +63,107 @@ data _∋_ : (Γ : Ctx) → Ty Γ → Type where
 
 data Tm where
   lam : ∀ {Γ A B} → Tm (Γ , A) B → Tm Γ (Π A B)
-  app : ∀ {Γ A B} → Tm Γ (Π A B) → Tm (Γ , A) B
+  -- app : ∀ {Γ A B C} → Tm Γ (Π A B) → (N : Tm Γ A) → C ≡ substitute B N → Tm Γ C
   var : ∀ {Γ A}   → Γ ∋ A → Tm Γ A
 
-tail : ∀ {Γ Δ A} → Sub Γ (Δ , A) → Sub Γ Δ
-head  : ∀ {Γ Δ A} → (δ : Sub Γ (Δ , A)) → Tm Γ (A [ tail δ ]T)
+-- A single substitution
+data Sub : Ctx → Ctx → Type
 
--- Ugly forward references
-idₛ : ∀ {Γ} → Sub Γ Γ
-[id]T : ∀ {Γ} {A : Ty Γ} → A [ idₛ ]T ≡ A
+-- A single weakening
+data Wk : Ctx → Ctx → Type
 
--- Constructors inspired by 
--- https://www.cse.chalmers.se/~nad/publications/danielsson-types2006.pdf
+_[_]T : ∀ {Γ Δ} → Ty Δ → Subs Γ Δ → Ty Γ
+_[_]t : ∀ {Γ Δ A} → Tm Δ A → (δ : Subs Γ Δ) → Tm Γ (A [ δ ]T)
+
+_[_]T-sub : ∀ {Γ Δ} → Ty Δ → Sub Γ Δ → Ty Γ
+_[_]t-sub : ∀ {Γ Δ A} → Tm Δ A → (δ : Sub Γ Δ) → Tm Γ (A [ δ ]T-sub)
+_[_]v-sub : ∀ {Γ Δ A} → Δ ∋ A → (δ : Sub Γ Δ) → Tm Γ (A [ δ ]T-sub)
+
+_[_]T-wk : ∀ {Γ Δ} → Ty Δ → Wk Γ Δ → Ty Γ
+_[_]t-wk : ∀ {Γ Δ A} → Tm Δ A → (δ : Wk Γ Δ) → Tm Γ  (A [ δ ]T-wk)
+{-# TERMINATING #-}
+_[_]v-wk : ∀ {Γ Δ A} → Δ ∋ A → (δ : Wk Γ Δ) → Γ ∋ A [ δ ]T-wk
+
+-- We split substitutions up quite finely in order to try and prove termination
+data Wk where
+  wk  : ∀ {Γ A} → Wk (Γ , A) Γ
+  _↑_ : ∀ {Γ Δ} → (δ : Wk Γ Δ) (A : Ty Δ) → Wk (Γ , A [ δ ]T-wk) (Δ , A)
+
 data Sub where
-  ε     : Sub ε ε
-  _∘ₛ_  : ∀ {Γ Δ Σ} → Sub Δ Σ → Sub Γ Δ → Sub Γ Σ
-  wk    : ∀ {Γ A} → Sub (Γ , A) Γ
-  _↑_   : ∀ {Γ Δ} → (δ : Sub Γ Δ) (A : Ty Δ) → Sub (Γ , A [ δ ]T) (Δ , A)
-  <_>   : ∀ {Γ A} → (M : Tm Γ A) → Sub Γ (Γ , A) 
-  -- Sub
-  idl   : ∀ {Γ Δ} {δ : Sub Γ Δ} → idₛ ∘ₛ δ ≡ δ
-  idr   : ∀ {Γ Δ} {δ : Sub Γ Δ} → δ ∘ₛ idₛ ≡ δ
-  ass   : ∀ {Γ Δ Σ Ξ} {δ : Sub Σ Ξ} {σ : Sub Δ Σ} {γ : Sub Γ Δ}
-        → (δ ∘ₛ σ) ∘ₛ γ ≡ δ ∘ₛ (σ ∘ₛ γ)
-  -- idₛ   : ∀ {Γ}     → Sub Γ Γ
-  -- ↑id   : ∀ {Γ} {A : Ty Γ} → PathP (λ i → ap (λ x → Sub (Γ , x) (Γ , A)) 
-  --           {x = A [ id-fwd ]T} {y = A} [id]T i) (idₛ ↑ A) idₛ
-  -- Truncate
-  squash : ∀ {Γ Δ} → is-set (Sub Γ Δ)
+  <_> : ∀ {Γ A} → (M : Tm Γ A) → Sub Γ (Γ , A) 
+  _↑_ : ∀ {Γ Δ} → (δ : Sub Γ Δ) (A : Ty Δ) → Sub (Γ , A [ δ ]T-sub) (Δ , A)
 
-data is-id : ∀ {Γ} → Sub Γ Γ → Type
+data Subs where
+  idₛ     : ∀ {Γ} → Subs Γ Γ
+  sub-and : ∀ {Γ Δ Σ} → Sub Δ Σ → Subs Γ Δ → Subs Γ Σ
+  wk-and  : ∀ {Γ Δ Σ} → Wk Δ Σ → Subs Γ Δ → Subs Γ Σ
+  wk<>    : ∀ {Γ Δ A} {M : Tm Δ A} (δ : Subs Γ Δ) 
+          → wk-and wk (sub-and < M > δ) ≡ δ
+  wk↑     : ∀ {Γ Δ Σ A} (δ : Wk Γ Δ) (σ : Subs Σ _) 
+          → wk-and wk (wk-and (δ ↑ A) σ) ≡ wk-and δ (wk-and wk σ)
+  wk↑′    : ∀ {Γ Δ Σ A} (δ : Sub Γ Δ) (σ : Subs Σ _) 
+          → wk-and wk (sub-and (δ ↑ A) σ) ≡ sub-and δ (wk-and wk σ)
 
-[id]T′ : ∀ {Γ} {δ : Sub Γ Γ} (A : Ty Γ) → is-id δ → A [ δ ]T ≡ A
+weaken A = A [ wk ]T-wk
+substitute A M = A [ < M > ]T-sub
 
-data is-id where
-  ε   : is-id ε
-  _↑_ : ∀ {Γ} {δ : Sub Γ Γ} (p : is-id δ) (A : Ty Γ) 
-      → is-id (subst (λ x → Sub (_ , x) _) ([id]T′ A p) (δ ↑ A))
+U [ δ ]T-wk = U
+El A [ δ ]T-wk = El (A [ δ ]t-wk)
+Π A B [ δ ]T-wk =  Π (A [ δ ]T-wk) (B [ δ ↑ A ]T-wk)
 
-record IdSub (Γ : Ctx) : Type where
-  constructor _,_
-  pattern
-  field
-    δ : Sub Γ Γ
-    p : is-id δ
+U [ δ ]T-sub = U
+El A [ δ ]T-sub = El (A [ δ ]t-sub)
+Π A B [ δ ]T-sub = Π (A [ δ ]T-sub) (B [ δ ↑ A ]T-sub)
 
-id-sub : ∀ Γ → IdSub Γ
-id-sub ε = ε , ε
-id-sub (Γ , A) with id-sub Γ
-... | δ , p = subst (λ x → Sub (_ , x) _) ([id]T′ A p) (δ ↑ A) , p ↑ A
+lam {A = A} M [ δ ]t-wk = lam {A = A [ δ ]T-wk} (M [ δ ↑ _ ]t-wk)
+-- app M N p [ δ ]t-wk = app (M [ δ ]t-wk) (N [ δ ]t-wk) {!ap (_[ δ ]T-wk) p!}
+var x [ δ ]t-wk = var (x [ δ ]v-wk)
 
-idₛ {Γ} with id-sub Γ
-... | δ , _ = δ
+lam M [ δ ]t-sub = lam (M [ δ ↑ _ ]t-sub)
+-- app {B = U} M N p [ δ ]t-sub 
+--   = app (M [ δ ]t-sub) (N [ δ ]t-sub) (ap (_[ δ ]T-sub) p)
+-- app {B = El x} M N p [ δ ]t-sub 
+--   = app (M [ δ ]t-sub) (N [ δ ]t-sub) {!ap (_[ δ ]T-sub) p!}
+-- app {B = Π B B₁} M N p [ δ ]t-sub 
+--   = app (M [ δ ]t-sub) (N [ δ ]t-sub) {!   !}
+var x [ δ ]t-sub = x [ δ ]v-sub
 
--- We would like to define tail as:
--- tail idₛ = wk
--- tail (δ ∘ₛ σ) = tail δ ∘ₛ σ
--- tail wk = wk ∘ₛ wk
--- tail (δ ↑ A) = δ ∘ₛ wk
--- tail < M > = idₛ
--- But this relies on injectivity of _,_ (which Cubical Agda does not yet
--- support properly)
--- Therefore, we instead pass an explicit proof of index equality:
+A [ idₛ ]T = A
+A [ sub-and δ σ ]T = A [ δ ]T-sub [ σ ]T
+A [ wk-and δ σ ]T = A [ δ ]T-wk [ σ ]T
+A [ wk<> δ i ]T = {!!}
+A [ wk↑ δ σ i ]T = {!!}
+A [ wk↑′ δ σ i ]T = {!!}
 
-tail-total : ∀ {Γ Δ Σ A} → Δ , A ≡ Σ → Sub Γ Σ → Sub Γ Δ
-tail-total p ε = absurd (,ε-disjoint p)
-tail-total p (δ ∘ₛ σ) = tail-total p δ ∘ₛ σ
-tail-total p wk = subst (λ x → Sub x _) p wk ∘ₛ wk
-tail-total p (δ ↑ A) = subst (Sub _) (sym (,-inj₁ p)) δ ∘ₛ wk
-tail-total p < M > = subst (Sub _) (sym (,-inj₁ p)) idₛ
--- TODO: Boundary (confluence) conditions
-tail-total p (idl i) = {!!}
-tail-total p (idr i) = {!!}
-tail-total p (ass i) = {!!}
-tail-total p (squash δ σ α β i j) = {!!}
--- tail-total p idₛ = subst (λ x → Sub x _) p wk
--- tail-total p (↑id i) = {!!}
+A [ idₛ ]t = A
+A [ sub-and δ σ ]t = A [ δ ]t-sub [ σ ]t
+A [ wk-and δ σ ]t = A [ δ ]t-wk [ σ ]t
+A [ wk<> δ i ]t = {!!}
+A [ wk↑ δ σ i ]t = {!!}
+A [ wk↑′ δ σ i ]t = {!!}
 
-tail = tail-total refl  
+x [ wk ]v-wk = there x
+here [ δ ↑ A ]v-wk 
+  = subst (_ ∋_) (ap (A [_]T) (sym (wk↑ δ idₛ))) here
+there {A = A} x [ δ ↑ _ ]v-wk 
+  = subst (_ ∋_) (ap (A [_]T) (sym (wk↑ δ idₛ))) (x [ δ ]v-wk [ wk ]v-wk)
 
--- Equations:
+here {A = A} [ < M > ]v-sub 
+  = subst (Tm _) (ap (A [_]T) (sym (wk<> idₛ))) M
+there {A = A} x [ < M > ]v-sub 
+  = subst (Tm _) (ap (A [_]T) (sym (wk<> idₛ))) (var x)
+here [ δ ↑ A ]v-sub
+  = subst (Tm _) (ap (A [_]T) (sym (wk↑′ δ idₛ))) (var here)
+there {A = A} x [ δ ↑ _ ]v-sub
+  -- The call to t-weak here is fine because none of the -weak substitution
+  -- helpers ever call a -sub one
+  = subst (Tm _) (ap (A [_]T) (sym (wk↑′ δ idₛ))) (x [ δ ]v-sub [ wk ]t-wk)
 
-
-U [ δ ]T = U
-El A [ δ ]T = El (A [ δ ]t)
-Π A B [ δ ]T = Π (A [ δ ]T) (B [ δ ↑ A ]T)
-
-
-[][]T : ∀ {Γ Δ Σ A} {δ : Sub Δ Σ} {σ : Sub Γ Δ} 
-      → A [ δ ]T [ σ ]T ≡ A [ δ ∘ₛ σ ]T
--- U[]   : ∀ {Γ Δ} {δ : Sub Γ Δ} → U [ δ ]T ≡ U
--- El[]  : ∀ {Γ Δ A} {δ : Sub Γ Δ} 
---       → El A [ δ ]T ≡ El (subst (Tm Γ) U[] (A [ δ ]t))
--- Π[]   : ∀ {Γ Δ A B} {δ : Sub Γ Δ} → Π A B [ δ ]T 
---       ≡ Π (A [ δ ]T) (B [ δ ↑ A ]T)
-[id]t : ∀ {Γ A} {M : Tm Γ A} → M [ idₛ ]t ≡[ ap (Tm _) [id]T ]≡ M
--- I would have thought that this could follow from [id]t, but we get stuck 
--- on showing [id]T i ≡ U (we cannot match on 𝕀)
--- [id]t-U : ∀ {Γ} {M : Tm Γ U} → M [ idₛ ]t ≡ M
-[][]t : ∀ {Γ Δ Σ A} {M : Tm Σ A} {δ : Sub Δ Σ} {σ : Sub Γ Δ}
-      → M [ δ ]t [ σ ]t ≡[ ap (Tm _) ([][]T {δ = δ} {σ = σ}) ]≡ M [ δ ∘ₛ σ ]t 
--- hβ    : ∀ {Γ Δ A} {δ : Sub Γ Δ} {M : Tm Γ (A [ δ ]T)} 
---       → head (δ , M) ≡[ ap (Tm _ ∘ _[_]T A) tβ ]≡ M
--- Πβ    : ∀ {Γ A B} {M : Tm (Γ , A) B} → app (lam M) ≡ M
--- Πη    : ∀ {Γ A B} {M : Tm Γ (Π A B)} → lam (app M) ≡ M
--- lam[] : ∀ {Γ Δ A B} {δ : Sub Δ Γ} {M : Tm (Γ , A) B} 
---       → (lam M) [ δ ]t ≡[ ap (Tm _) Π[] 
---       ]≡ lam (M [ (δ ∘ₛ tail idₛ) , subst (Tm _) [][]T (head idₛ) ]t)
-
-[id]t′-U :  ∀ {Γ} {δ : Sub Γ Γ} (M : Tm Γ U) → is-id δ → M [ δ ]t ≡ M
-[id]t′-U M p = {!!}
-
-[id]T′ U _ = refl
-[id]T′ (El A) p = ap El ([id]t′-U A p)
-[id]T′ {Γ} {δ} (Π A B) p 
-  = ap₂ Π ([id]T′ _ p) 
-  $ coe (sym (PathP≡Path _ _ _)) 
-  $ subst-application (λ x → Sub (_ , x) _) (λ _ → B [_]T) ([id]T′ A p) 
-  ∙ [id]T′ B (p ↑ A)
-
--- [id]T {A = U} = refl
--- [id]T {A = El A} = ap El [id]t-U
--- [id]T {A = Π A B} 
---   = ap₂ Π [id]T 
---   $ map-idx (_∙P_ {B = Ty ∘ (_ ,_)} (apd (λ _ → B [_]T) ↑id) [id]T) 
---   $ ap (ap (Ty ∘ (_ ,_))) ∙refl
-
-[id]T {Γ} with id-sub Γ 
-... | δ , p = [id]T′ _ p
-
--- We also want the below equations to hold:
--- A [ idₛ ]T = A
--- A [ δ ∘ₛ σ ]T′ = A [ δ ]T [ σ ]T
-
--- M [ idₛ ]t = subst (Tm _) (sym [id]T) M
--- lam M [ δ ]t = {!   !}
--- app M [ δ ]t = {!   !}
--- var here [ δ ]t = {!   !}
--- var (there _) [ δ ]t = {!   !}
-   
+_∘ₛ_ : ∀ {Γ Δ Σ} → Subs Δ Σ → Subs Γ Δ → Subs Γ Σ
+idₛ ∘ₛ σ = σ
+wk-and δ σ ∘ₛ γ = wk-and δ (σ ∘ₛ γ)
+sub-and δ σ ∘ₛ γ = sub-and δ (σ ∘ₛ γ)
+wk<> δ i ∘ₛ σ = {!!}
+wk↑ δ σ i ∘ₛ γ = {!!}
+wk↑′ δ σ i ∘ₛ γ = {!!}
+ 
