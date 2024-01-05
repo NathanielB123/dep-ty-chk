@@ -165,79 +165,130 @@ data UTy : Type where
   El : UTm → UTy
   Π  : UTy → UTy → UTy
 
--- A strengthening (removing a variable from the context)
-data Str : Ctx → Ctx → Type
--- Proof that a type is strengthen-able
--- (Semantically, that the variable being removed from the context does not
--- occur in the type/term)
-data v∉T {Γ Δ : Ctx} (δ : Str Δ Γ) : Ty Γ → Type
-data v∉t {Γ Δ : Ctx} (δ : Str Δ Γ) : ∀ {A} → v∉T δ A → Tm Γ A → Type
-data v∉v : ∀ {Γ Δ : Ctx} (δ : Str Δ Γ) {A} → v∉T δ A → Γ ∋ A → Type
+-- First attempt at implementing strengthening. We are mostly there but because
+-- it was defined entirely distinctly from weakening, we end up needing to
+-- write a ton of postulates about how strengthening and weakening interact
+--
+-- I think declaratively specifying strengthening as the inverse of weakening
+-- (so these postulates hold by definition) could be neater
+module Strengthening1 where
 
-strengthenTy : ∀ {Γ Δ} {A : Ty Γ} {δ : Str Δ Γ} → v∉T δ A → Ty Δ
+  -- A strengthening (removing a variable from the context)
+  data Str : Ctx → Ctx → Type
+  -- Proof that a type is strengthen-able
+  -- (Semantically, that the variable being removed from the context does not
+  -- occur in the type/term)
+  data v∉T {Γ Δ : Ctx} (δ : Str Δ Γ) : Ty Γ → Type
+  data v∉t {Γ Δ : Ctx} (δ : Str Δ Γ) : ∀ {A} → v∉T δ A → Tm Γ A → Type
+  data v∉v : ∀ {Γ Δ : Ctx} (δ : Str Δ Γ) {A} → v∉T δ A → Γ ∋ A → Type
 
-data Str where
-  str : ∀ {Γ A} → Str Γ (Γ , A)
-  _↑_ : ∀ {Γ Δ} (δ : Str Γ Δ) {A : Ty Δ} (A' : v∉T δ A) 
-      → Str (Γ , strengthenTy A') (Δ , A)
+  strengthenTy : ∀ {Γ Δ} {A : Ty Γ} {δ : Str Δ Γ} → v∉T δ A → Ty Δ
 
-data v∉T {Γ} {Δ} δ where
-  U  : v∉T δ U
-  El : ∀ {M} → v∉t δ U M → v∉T δ (El M)
-  Π  : ∀ {A B} (A' : v∉T δ A) → v∉T (δ ↑ A') B → v∉T δ (Π A B)
+  data Str where
+    str : ∀ {Γ A} → Str Γ (Γ , A)
+    _↑_ : ∀ {Γ Δ} (δ : Str Γ Δ) {A : Ty Δ} (A' : v∉T δ A) 
+        → Str (Γ , strengthenTy A') (Δ , A)
 
-data v∉t {Γ} {Δ} δ where
-  lam : ∀ {A B A' B'} {M : Tm (Γ , A) B}
-      → v∉t (δ ↑ A') B' M → v∉t δ (Π A' B') (lam M) 
-  var : ∀ {A A'} {x : Γ ∋ A} → v∉v δ A' x → v∉t δ A' (var x)
+  data v∉T {Γ} {Δ} δ where
+    U  : v∉T δ U
+    El : ∀ {M} → v∉t δ U M → v∉T δ (El M)
+    Π  : ∀ {A B} (A' : v∉T δ A) → v∉T (δ ↑ A') B → v∉T δ (Π A B)
 
--- Weaken a proof that a strengthening is valid
-weakenStrengthen : ∀ {Γ Δ} {δ : Str Δ Γ} {A} (A' : v∉T δ A) 
-                 → v∉T (δ ↑ A') (weaken A)
-weakenStrengthen = {!!}
+  data v∉t {Γ} {Δ} δ where
+    lam : ∀ {A B A' B'} {M : Tm (Γ , A) B}
+        → v∉t (δ ↑ A') B' M → v∉t δ (Π A' B') (lam M) 
+    var : ∀ {A A'} {x : Γ ∋ A} → v∉v δ A' x → v∉t δ A' (var x)
 
-{-# TERMINATING #-}
-str-wk : ∀ {Γ Δ} {δ : Str Δ Γ} {A} {A' : v∉T δ A} 
-       → strengthenTy (weakenStrengthen A') ≡ weaken (strengthenTy A')
-str-wk = {!!}
+  -- Weaken a proof that a strengthening is valid
+  weakenStrengthen : ∀ {Γ Δ} {δ : Str Δ Γ} {A} (A' : v∉T δ A) 
+                  → v∉T (δ ↑ A') (weaken A)
+  weakenStrengthen = {!!}
 
-data v∉v where
-  str : ∀ {Γ} {A} {A' : v∉T {Γ = Γ , A} str (weaken A)} {x} 
-      → v∉v str A' (vs x)
-  vz  : ∀ {Γ Δ} {δ : Str Γ Δ} {A} {A' : v∉T δ A}
-      → v∉v (δ ↑ A') (weakenStrengthen A') vz
-  vs : ∀ {Γ Δ} {δ : Str Γ Δ} {A} {A' : v∉T δ A} {x}
-     → v∉v δ A' x → v∉v (δ ↑ A') (weakenStrengthen A') (vs x)
+  {-# TERMINATING #-}
+  wk-str : ∀ {Γ Δ} {δ : Str Δ Γ} {A} {A' : v∉T δ A} 
+        → weaken (strengthenTy A') ≡ strengthenTy (weakenStrengthen A')
+  wk-str = {!!}
 
-strengthenTm : ∀ {Γ Δ} {δ : Str Δ Γ} {A} {A' : v∉T δ A} {M} → v∉t δ A' M 
-             → Tm Δ (strengthenTy A')
-strengthenVar : ∀ {Γ Δ} (δ : Str Δ Γ) {A} {A' : v∉T δ A} x → v∉v δ A' x
-             → Δ ∋ strengthenTy A'
+  str-wk : ∀ {Γ} {A B : Ty Γ} {wkA : v∉T (str {A = B}) (weaken A)} 
+        → A ≡ strengthenTy wkA
+  str-wk = {!!}
 
-strengthenTy U = U
-strengthenTy (El A) = El (strengthenTm A)
-strengthenTy (Π A B) = Π (strengthenTy A) (strengthenTy B)
+  wk-str-wk : ∀ {Γ Δ} {δ : Str Δ Γ} {A : Ty Γ} 
+                {A' : v∉T δ A} {B' : v∉T (δ ↑ A') (weaken A)}
+            → weakenStrengthen A' ≡ B'
+  wk-str-wk = {!!}
 
-strengthenTm (lam M) = lam (strengthenTm M)
-strengthenTm (var x) = var (strengthenVar _ _ x)
+  data v∉v where
+    str : ∀ {Γ A B} {A' : v∉T {Γ = Γ , B} str (weaken A)} {x} 
+        → v∉v str A' (vs x)
+    vz  : ∀ {Γ Δ} {δ : Str Γ Δ} {A} {A' : v∉T δ A}
+        → v∉v (δ ↑ A') (weakenStrengthen A') vz
+    vs↑ : ∀ {Γ Δ} {δ : Str Γ Δ} {A} {A' : v∉T δ A} {x}
+        → v∉v δ A' x → v∉v (δ ↑ A') (weakenStrengthen A') (vs x)
 
-strengthenVar str (vs x) str = {!!}
-strengthenVar (δ ↑ A) vz vz = {!!}
-strengthenVar (δ ↑ A) (vs x) (vs x') 
-  = subst (_ ∋_) (sym str-wk) (vs (strengthenVar _ _ x'))
+  strengthenTm : ∀ {Γ Δ} {δ : Str Δ Γ} {A} {A' : v∉T δ A} {M} → v∉t δ A' M 
+              → Tm Δ (strengthenTy A')
+  strengthenVar : ∀ {Γ Δ} (δ : Str Δ Γ) {A} {A' : v∉T δ A} x → v∉v δ A' x
+              → Δ ∋ strengthenTy A'
 
+  strengthenTy U = U
+  strengthenTy (El A) = El (strengthenTm A)
+  strengthenTy (Π A B) = Π (strengthenTy A) (strengthenTy B)
 
+  strengthenTm (lam M) = lam (strengthenTm M)
+  strengthenTm (var x) = var (strengthenVar _ _ x)
+
+  strengthenVar str (vs x) str = subst (_ ∋_) str-wk x
+  strengthenVar (δ ↑ A) vz vz = subst (_ ∋_) wk-str vz
+  strengthenVar (δ ↑ A) (vs x) (vs↑ x') 
+    = subst (_ ∋_) wk-str (vs (strengthenVar _ _ x'))
+
+  -- Check if a strengthening can be applied to a type
+  strengthenTy?  : ∀ {Γ Δ} (δ : Str Δ Γ) (A : Ty Γ) → Maybe (v∉T δ A)
+  strengthenTm?  : ∀ {Γ Δ A} (δ : Str Δ Γ) (M : Tm Γ A) {A'} → Maybe (v∉t δ A' M)
+  strengthenVar? : ∀ {Γ Δ A} (δ : Str Δ Γ) (x : Γ ∋ A) {A'} → Maybe (v∉v δ A' x)
+
+  strengthenTy? δ U = just U
+  strengthenTy? δ (El A) = map El (strengthenTm? δ A)
+  strengthenTy? δ (Π A B) = do 
+    A' ← strengthenTy? δ A
+    B' ← strengthenTy? (δ ↑ A') B
+    pure $ Π A' B'
+
+  strengthenTm? δ (lam M) {(Π A B)} = map lam (strengthenTm? (δ ↑ A) M)
+  strengthenTm? δ (var x) = map var (strengthenVar? δ x)
+
+  strengthenVar? str vz = nothing
+  strengthenVar? (δ ↑ A) vz = just (subst (λ x → v∉v _ x _) wk-str-wk vz)
+  strengthenVar? str (vs x) {A'} = just v∉v.str
+  strengthenVar? (δ ↑ B') (vs x) {A'}
+    = map {!!} (strengthenVar? δ x {A' = {!!}})
+    -- = subst (λ x → Maybe (v∉v _ x _)) {!!} 
+      -- (subst (λ x → Maybe (v∉v _ x _)) (sym wk-str-wk) 
+      --  {!map vs↑ (strengthenVar? δ x)!}) 
+      -- map {!vs↑!} {!   !}
+
+-- A weakened type
+record WkTy {Γ} {A} (B : Ty (Γ , A)) : Type where
+  constructor _,_
+  field
+    proj  : Ty Γ
+    proof : weaken proj ≡ B
+
+-- This is the function we need to implement with strengthening
+strengthenTy?? : ∀ {Γ A} (B : Ty (Γ , A)) → Maybe (WkTy B)
+strengthenTy?? = {!!}
 
 checkVar : ∀ Γ (A : Ty Γ) → ℕ → Maybe (Γ ∋ A)
 checkVar ε A x = nothing
 checkVar (Γ , A) B zero = map (λ p → subst (_ ∋_) p vz) (A [ wk ]T ≡T? B)
-checkVar (Γ , A) B (suc x) = do -- = map {!vs!} {! checkVar Γ (B [ _ ]T) x!}
-  v ← checkVar Γ {!B!} x
-  pure {!!}
-
+checkVar (Γ , A) B (suc x) = do
+  B' , p ← strengthenTy?? B
+  v ← checkVar Γ B' x
+  pure (subst (_ ∋_) p (vs v))
 
 checkTm : ∀ {Γ} (A : Ty Γ) → UTm → Maybe (Tm Γ A)
 checkTm U (lam M) = nothing
 checkTm (El A) (lam M) = nothing 
 checkTm (Π A B) (lam M) = map lam (checkTm B M)
-checkTm A (var x) = {!!}
+checkTm A (var x) = map var (checkVar _ A x)
