@@ -1,9 +1,11 @@
 open import 1Lab.Type using (Type; lsuc)
 open import 1Lab.Path 
   using (PathP; _≡_; transport; refl; _∨_; _∧_; ~_; ap; subst; _∙_; from-pathp
-  ; transport-filler)
+  ; transport-filler; transp; i0; i1; sym
+  )
 open import 1Lab.Path.Cartesian using (I-interp)
-open import 1Lab.Path.Reasoning using (∙-cancelsl; ∙-cancelsr; ∙-eliml; ∙-elimr)
+open import 1Lab.Path.Reasoning 
+  using (∙-cancelsl; ∙-cancelsr; ∙-eliml; ∙-elimr; ∙-swapl; ∙-swapr)
 
 module DepTyChk.CubicalUtils where
 
@@ -48,6 +50,15 @@ map-idx eq pq = subst (_ ≡[_]≡ _) pq eq
 
 refl∙ : ∀ {ℓ} {A : Type ℓ} {x y : A} {p : x ≡ y} → refl ∙ p ≡ p
 refl∙ = ∙-eliml refl
+
+subst₂ : ∀ {a b c} {A : Type a} {B : A → Type b} {x y u v} 
+           (C : (x : A) → B x → Type c) (p : x ≡ y) 
+       → u ≡[ ap B p ]≡ v → C x u → C y v
+subst₂ C p q x = transp (λ i → C (p i) (q i)) i0 x
+
+
+sym-inverts : ∀ {ℓ} {A : Type ℓ} {x y : A} (p : x ≡ y) → p ∙ sym p ≡ refl
+sym-inverts _ = sym (∙-swapr (∙-eliml refl))
 
 -- Thanks Naïm Favier!
 subst-application : ∀ {a b c} {A : Type a}
