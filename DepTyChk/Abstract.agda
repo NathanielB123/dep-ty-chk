@@ -1,11 +1,20 @@
-open import 1Lab.1Lab.Type using (Type)
-open import 1Lab.1Lab.Path using (_≡_; subst; ap)
-open import 1Lab.1Lab.HLevel using (is-set)
+open import 1Lab.Type using (Type; _∘_)
+open import 1Lab.Path using (_≡_; subst; ap)
+open import 1Lab.HLevel using (is-set)
 
 open import DepTyChk.CubicalUtils using (_≡[_]≡_)
-open import DepTyChk.Utils using (_∘_)
 
 -- Abstract syntax
+-- The Agda formalisation from for "Type Theory in Type Theory" uses this
+-- style (explicit eliminator instead of pattern matching) a lot, I imagine to
+-- get around Cubical Agda's pattern matching limitations (especially at the
+-- time the paper was written, I am not sure cubical even had basic support for
+-- HITs)
+-- Originally after hitting some pattern matching limitations, I assumed taking
+-- a similar approach would be a nice idea, but I think I underestimated the
+-- clunkyness of eliminators, and also have since found that, with a few
+-- tricks/workarounds, most of the pattern-matching limitations appear to be
+-- avoidable.
 
 module DepTyChk.Abstract where
 

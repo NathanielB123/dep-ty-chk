@@ -1,7 +1,7 @@
 open import 1Lab.Type using (Type; lsuc)
 open import 1Lab.Path 
   using (PathP; _≡_; transport; refl; _∨_; _∧_; ~_; ap; subst; _∙_; from-pathp
-  ; transport-filler; transp; i0; i1; sym
+  ; transport-filler; transp; i0; i1; sym; I
   )
 open import 1Lab.Path.Cartesian using (I-interp)
 open import 1Lab.Path.Reasoning 
@@ -42,8 +42,8 @@ funky-ap {x = x} {y = y} p f i = f (p i) (swap pixy interp i)
     interp j k = p (I-interp j (i ∧ ~ k) (i ∨ k))
 
 map-idx : ∀ {ℓ} {A B : Type ℓ} {x y} {p q : A ≡ B} 
-        → x ≡[ p ]≡ y → p ≡ q → x ≡[ q ]≡ y
-map-idx eq pq = subst (_ ≡[_]≡ _) pq eq
+        → p ≡ q → x ≡[ p ]≡ y → x ≡[ q ]≡ y
+map-idx = subst (_ ≡[_]≡ _)
 
 ∙refl : ∀ {ℓ} {A : Type ℓ} {x y : A} {p : x ≡ y} → p ∙ refl ≡ p
 ∙refl = ∙-elimr refl
@@ -59,6 +59,20 @@ subst₂ C p q x = transp (λ i → C (p i) (q i)) i0 x
 
 sym-inverts : ∀ {ℓ} {A : Type ℓ} {x y : A} (p : x ≡ y) → p ∙ sym p ≡ refl
 sym-inverts _ = sym (∙-swapr (∙-eliml refl))
+
+apd₂ : ∀ {a b c} {A : I → Type a} {B : (i : I) → A i → Type b}
+         {C : (i : I) → (x : A i) → B i x → Type c}
+         (f : (i : I) → (x : A i) → (y : B i x) → C i x y)
+         {x : A i0} {y : A i1} {α : B i0 x} {β : B i1 y}
+         (p : PathP A x y) (q : PathP (λ i → B i (p i)) α β)
+     → PathP (λ i → C i (p i) (q i)) (f i0 x α) (f i1 y β)
+apd₂ f p q i = f i (p i) (q i)
+
+eq-left : ∀ {ℓ} {A : Type ℓ} {x y : A} (p : x ≡ y) (i : I) → p i ≡ x
+eq-left p i j = p (i ∧ ~ j)
+
+eq-right : ∀ {ℓ} {A : Type ℓ} {x y : A} (p : x ≡ y) (i : I) → p i ≡ y
+eq-right p i j = p (i ∨ j)
 
 -- Thanks Naïm Favier!
 subst-application : ∀ {a b c} {A : Type a}

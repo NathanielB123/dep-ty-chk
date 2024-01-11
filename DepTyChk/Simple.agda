@@ -1,4 +1,11 @@
 -- {-# OPTIONS --show-implicit #-}
+-- Yet Another Idea: A lot of pain comes from specifying the return (e.g: type)
+-- from a function as *specifically* the weakened type of the input term.
+-- If we relaxed to this to an existential, then we no longer need to know
+-- properties about type substitutions to implement term substitutions.
+--
+-- Of course, knowing that substitution preserves types is nice, but I wonder
+-- if we could prove that extentionally...
 {-# OPTIONS -WnoUnsupportedIndexedMatch #-}
 
 open import 1Lab.Path using 
@@ -17,6 +24,7 @@ open import Data.Maybe
 open import Meta.Idiom using (Map; Idiom; _<$>_)
 open import Meta.Bind using (Bind)
 open import Data.Nat renaming (Nat to ℕ)
+
 open Map Map-Maybe
 open Idiom Idiom-Maybe
 open Bind Bind-Maybe
@@ -64,7 +72,8 @@ data _∋_ : (Γ : Ctx) → Ty Γ → Type where
 
 data Tm where
   lam : ∀ {Γ A B} → Tm (Γ , A) B → Tm Γ (Π A B)
-  -- app : ∀ {Γ A B} → Tm Γ (Π A B) → Tm (Γ , A) B
+  -- TODO: Reintroduce application (need to apply a substitution to B here)
+  -- app : ∀ {Γ A B} → Tm Γ (Π A B) → Tm Γ A → Tm (Γ , A) {!B!}
   var : ∀ {Γ A}   → Γ ∋ A → Tm Γ A
 
 data Sub where
@@ -279,6 +288,8 @@ record WkTy {Γ} {A} (B : Ty (Γ , A)) : Type where
 strengthenTy?? : ∀ {Γ A} (B : Ty (Γ , A)) → Maybe (WkTy B)
 strengthenTy?? = {!!}
 
+-- TODO: Implement (simple) type inference
+
 checkVar : ∀ Γ (A : Ty Γ) → ℕ → Maybe (Γ ∋ A)
 checkVar ε A x = nothing
 checkVar (Γ , A) B zero = map (λ p → subst (_ ∋_) p vz) (A [ wk ]T ≡T? B)
@@ -290,5 +301,14 @@ checkVar (Γ , A) B (suc x) = do
 checkTm : ∀ {Γ} (A : Ty Γ) → UTm → Maybe (Tm Γ A)
 checkTm U (lam M) = nothing
 checkTm (El A) (lam M) = nothing 
-checkTm (Π A B) (lam M) = map lam (checkTm B M)
-checkTm A (var x) = map var (checkVar _ A x)
+checkTm (Π A B) (lam M) = map lam $ checkTm B M
+checkTm A (var x) = map var $ checkVar _ A x
+
+checkTy : ∀ {Γ} → UTy → Maybe (Ty Γ)
+checkTy U = just U
+checkTy (El A) = map El $ checkTm U A
+checkTy (Π A B) = do
+  A' ← checkTy A
+  B' ← checkTy B
+  pure $ Π A' B'
+ 
