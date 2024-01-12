@@ -1,7 +1,9 @@
 open import 1Lab.Type using (Type; _∘_)
-open import 1Lab.Path using (_≡_; refl; subst; sym; PathP; ap; apd; ap₂; i0; i1)
+open import 1Lab.Path 
+  using (_≡_; refl; subst; sym; PathP; ap; apd; ap₂; i0; i1; _∙_; _∙P_)
 
-open import DepTyChk.CubicalUtils using (_≡[_]≡_; apd₂; eq-left; eq-right)
+open import DepTyChk.CubicalUtils 
+  using (_≡[_]≡_; apd₂; eq-left; eq-right; _∙[]_)
 
 module DepTyChk.ExplicitSub.Syntax where
 
@@ -52,27 +54,24 @@ _↑↑_ : ∀ {Γ Δ} (δ : Sub Γ Δ) (Σ : CtxInCtx Δ)
 δ ↑↑ (Σ , A) = (δ ↑↑ Σ) ↑ A
 
 wk<>C : ∀ {Γ B} {M : Tm Γ B} (Δ : CtxInCtx Γ) → Δ [ wk ]C [ < M > ]C ≡ Δ
+
 wk<>↑↑T : ∀ {Γ B} {M : Tm Γ B} {Σ} (A : Ty (collapse Γ Σ)) 
         → A [ wk ↑↑ Σ ]T [ < M > ↑↑ (Σ [ wk ]C) ]T 
        ≡[ ap (Ty ∘ collapse Γ) (wk<>C Σ) 
        ]≡ A
 
--- wk↑↑C : ∀ {Γ Δ B} {Σ} (δ : Sub Δ Γ) (Ξ : CtxInCtx (collapse Γ Σ))
---       → Ξ [ wk ↑↑ Σ ]C [ (δ ↑ B) ↑↑ (Σ [ wk ]C) ]C 
---       ≡[ ap CtxInCtx {!!} ]≡ Ξ [ δ ↑↑ Σ ]C [ wk ↑↑ (Σ [ δ ]C) ]C
-
 wk↑C : ∀ {Γ Δ A} (δ : Sub Δ Γ) (Σ : CtxInCtx Γ)
      → Σ [ wk ]C [ δ ↑ A ]C ≡ Σ [ δ ]C [ wk ]C
 
-wk↑↑T : ∀ {Γ Δ B} {Σ} (δ : Sub Δ Γ) (A : Ty (collapse Γ Σ)) → (A [ wk ↑↑ Σ ]T [ (δ ↑ B) ↑↑ (Σ [ wk ]C) ]T) 
-      ≡[ ap (Ty ∘ collapse _) (wk↑C δ _)
-       ]≡ (A [ δ ↑↑ Σ ]T [ wk ↑↑ (Σ [ δ ]C) ]T)
+wk↑↑T : ∀ {Γ Δ B} {Σ} (δ : Sub Δ Γ) (A : Ty (collapse Γ Σ)) 
+      → (A [ wk ↑↑ Σ ]T [ (δ ↑ B) ↑↑ (Σ [ wk ]C) ]T) 
+     ≡[ ap (Ty ∘ collapse _) (wk↑C δ _)
+     ]≡ (A [ δ ↑↑ Σ ]T [ wk ↑↑ (Σ [ δ ]C) ]T)
 
 -- We need the definitional reduction rules of _[_]T for some of the equations
 -- to typecheck, so we forward declare some term constructors
 _[_]t-fwd : ∀ {Γ Δ A} → Tm Γ A → (δ : Sub Δ Γ) → Tm Δ (A [ δ ]T)
 vz-fwd : ∀ {Γ A} → Tm (Γ , A) (A [ wk ]T)
-
 
 U [ δ ]T = U
 El M [ δ ]T = El (M [ δ ]t-fwd)
@@ -106,12 +105,21 @@ data Tm where
          ]≡ (M [ δ ↑↑ Σ ]t [ wk ↑↑ (Σ [ δ ]C) ]t)
   lam[]t  : ∀ {Γ Δ B A} (δ : Sub Δ Γ) (M : Tm (Γ , B) A) 
           → lam (M [ δ ↑ B ]t) ≡ lam M [ δ ]t
-  vz[<>]t : ∀ {Γ A} (M : Tm Γ A) → vz [ < M > ]t ≡[ ap (Tm Γ) (wk<>↑↑T {Σ = ε} A) ]≡ M
+  vz[<>]t : ∀ {Γ A} (M : Tm Γ A) 
+          → vz [ < M > ]t ≡[ ap (Tm Γ) (wk<>↑↑T {Σ = ε} A) ]≡ M
+  vz[↑]t  : ∀ {Γ Δ A} (δ : Sub Δ Γ)
+          → vz [ δ ↑ A ]t ≡[ apd (λ _ → Tm _) (wk↑↑T {Σ = ε} δ A) ]≡ vz
   β       : ∀ {Γ A B} (M : Tm (Γ , A) B) → app (lam M) ≡ M
-  wk<vz>↑↑t : ∀ {Γ B} {Δ : CtxInCtx _} {A} (M : Tm (collapse (Γ , B) Δ) A) 
+  η       : ∀ {Γ A B} (M : Tm Γ (Π A B)) → lam (app M) ≡ M
+  wk<vz>↑↑t : ∀ {Γ B Δ A} (M : Tm (collapse (Γ , B) Δ) A) 
             → M [ (wk ↑ B) ↑↑ Δ ]t [ < vz-fwd > ↑↑ (Δ [ wk ↑ B ]C) ]t 
-            ≡[ apd₂ (λ _ → Tm) (ap (collapse (Γ , B)) (wk<vz>C Δ)) (wk<vz>↑↑T A)
-            ]≡ M 
+           ≡[ apd₂ (λ _ → Tm) (ap (collapse (Γ , B)) (wk<vz>C Δ)) (wk<vz>↑↑T A)
+           ]≡ M 
+
+app[]t : ∀ {Γ Δ A B} (δ : Sub Δ Γ) (M : Tm Γ (Π A B)) 
+         → app M [ δ ↑ A ]t ≡ app (M [ δ ]t)
+app[]t δ M 
+  = sym (β (app M [ δ ↑ _ ]t)) ∙ ap app (lam[]t δ _) ∙ ap (app ∘ _[ δ ]t) (η M)
 
 _[_]t-fwd = _[_]t
 vz-fwd = vz
@@ -159,7 +167,28 @@ wk<vz>T : ∀ {Γ B} (A : Ty (Γ , B))
         → A [ wk ↑ B ]T [ < vz > ]T ≡ A
 wk<vz>T = wk<vz>↑↑T
 
+wk↑T : ∀ {Γ Δ B} (δ : Sub Δ Γ) (A : Ty Γ) 
+      → A [ wk ]T [ δ ↑ B ]T ≡ A [ δ ]T [ wk ]T
+wk↑T = wk↑↑T
+
+wk↑t : ∀ {Γ Δ B A} (δ : Sub Δ Γ) (M : Tm Γ A) 
+      → M [ wk ]t [ δ ↑ B ]t ≡[ ap (Tm _) (wk↑T δ A) ]≡ M [ δ ]t [ wk ]t
+wk↑t = wk↑↑t
+
+-- Tm (Γ , B) (wk<vz>T A i)
+-- ———— Boundary (wanted) —————————————————————————————————————
+-- i = i0 ⊢ (app (M [ wk ]t) [ < vz > ]t)
+-- i = i1 ⊢ (app M)
+-- Have
+-- ap (Tm (Γ , B)) (wk<vz>T A) i
+-- ———— Boundary (actual) —————————————————————————————————————
+-- i = i0 ⊢ ((app M [ wk ↑ B ]t) [ < vz > ]t)
+-- i = i1 ⊢ (app M)
+
 wk<vz>t : ∀ {Γ B A} (M : Tm (Γ , B) A) 
         → M [ wk ↑ B ]t [ < vz > ]t ≡[ ap (Tm _) (wk<vz>T A) ]≡ M 
 wk<vz>t = wk<vz>↑↑t
 
+wk<vz>t′ : ∀ {Γ A B} (M : Tm Γ (Π A B)) 
+         → app (M [ wk ]t) [ < vz > ]t ≡[ ap (Tm _) (wk<vz>T B) ]≡ app M
+wk<vz>t′ M = sym (ap (_[ < vz > ]t) (app[]t wk M)) ∙[] wk<vz>t (app M)
