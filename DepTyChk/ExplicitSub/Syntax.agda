@@ -89,6 +89,14 @@ wk<vz>↑↑T : ∀ {Γ B} {Δ : CtxInCtx _} (A : Ty (collapse (Γ , B) Δ))
        ≡[ ap (Ty ∘ collapse (Γ , B)) (wk<vz>C Δ) 
        ]≡ A
 
+<>↑C : ∀ {Γ Δ B M} (δ : Sub Δ Γ) (Σ : CtxInCtx (Γ , B)) 
+     → Σ [ δ ↑ B ]C [ < M [ δ ]t-fwd > ]C ≡ Σ [ < M > ]C [ δ ]C
+
+<>↑↑T : ∀ {Γ Δ B M Σ} (δ : Sub Δ Γ) (A : Ty (collapse (Γ , B) Σ)) 
+     → A [ (δ ↑ B) ↑↑ Σ ]T [ < M [ δ ]t-fwd > ↑↑ (Σ [ δ ↑ B ]C) ]T 
+    ≡[ ap (Ty ∘ collapse Δ) (<>↑C δ Σ)
+    ]≡ A [ < M > ↑↑ Σ ]T [ δ ↑↑ (Σ [ < M > ]C) ]T
+
 data Tm where
   lam   : ∀ {Γ A B} → Tm (Γ , A) B → Tm Γ (Π A B)
   app   : ∀ {Γ A B} → Tm Γ (Π A B) → Tm (Γ , A) B
@@ -115,6 +123,10 @@ data Tm where
             → M [ (wk ↑ B) ↑↑ Δ ]t [ < vz-fwd > ↑↑ (Δ [ wk ↑ B ]C) ]t 
            ≡[ apd₂ (λ _ → Tm) (ap (collapse (Γ , B)) (wk<vz>C Δ)) (wk<vz>↑↑T A)
            ]≡ M 
+  <>↑↑t : ∀ {Γ Δ B N Σ A} (δ : Sub Δ Γ) (M : Tm (collapse (Γ , B) Σ) A) 
+     → M [ (δ ↑ B) ↑↑ Σ ]t [ < N [ δ ]t-fwd > ↑↑ (Σ [ δ ↑ B ]C) ]t 
+    ≡[ apd₂ (λ _ → Tm) (ap (collapse Δ) (<>↑C δ Σ)) (<>↑↑T δ A)
+    ]≡ M [ < N > ↑↑ Σ ]t [ δ ↑↑ (Σ [ < N > ]C) ]t
 
 app[]t : ∀ {Γ Δ A B} (δ : Sub Δ Γ) (M : Tm Γ (Π A B)) 
          → app M [ δ ↑ A ]t ≡ app (M [ δ ]t)
@@ -132,6 +144,10 @@ wk<vz>C ε = refl
 wk<vz>C (Γ , A) 
   = apd₂ {B = λ _ → Ty ∘ collapse _} (λ _ → _,_) (wk<vz>C Γ) (wk<vz>↑↑T A)
 
+<>↑C δ ε = refl
+<>↑C δ (Σ , A) 
+  = apd₂ {B = λ _ → Ty ∘ collapse _} (λ _ → _,_) (<>↑C δ Σ) (<>↑↑T δ A)
+
 {-# TERMINATING #-}
 wk<>↑↑T U i = U
 wk<>↑↑T (El M) = apd (λ _ → El) (wk<>↑↑t M)
@@ -145,6 +161,10 @@ wk<vz>↑↑T U i = U
 wk<vz>↑↑T (El M) = apd (λ _ → El) (wk<vz>↑↑t M)
 wk<vz>↑↑T (Π A B) = apd₂ (λ _ → Π) (wk<vz>↑↑T A) (wk<vz>↑↑T B)
 
+<>↑↑T δ U i = U
+<>↑↑T δ (El M) = apd (λ _ → El) (<>↑↑t δ M)
+<>↑↑T {Σ = Σ} δ (Π A B) = apd₂ (λ _ → Π) (<>↑↑T δ A) (<>↑↑T δ B)
+
 -- Weaken a bunch of times
 mwk-T : ∀ {Γ} (Δ : CtxInCtx Γ) → Ty Γ → Ty (collapse Γ Δ)
 mwk-T ε A = A
@@ -154,7 +174,7 @@ mwk-t : ∀ {Γ A} (Δ : CtxInCtx Γ) → Tm Γ A → Tm (collapse Γ Δ) (mwk-T
 mwk-t ε M = M
 mwk-t (Δ , _) M = mwk-t Δ M [ wk ]t
 
--- Abbrevations (for better type inference)
+-- Base cases (for better type inference)
 
 wk<>T : ∀ {Γ B} {M : Tm Γ B} (A : Ty Γ) → A [ wk ]T [ < M > ]T ≡ A
 wk<>T = wk<>↑↑T
@@ -175,15 +195,15 @@ wk↑t : ∀ {Γ Δ B A} (δ : Sub Δ Γ) (M : Tm Γ A)
       → M [ wk ]t [ δ ↑ B ]t ≡[ ap (Tm _) (wk↑T δ A) ]≡ M [ δ ]t [ wk ]t
 wk↑t = wk↑↑t
 
--- Tm (Γ , B) (wk<vz>T A i)
--- ———— Boundary (wanted) —————————————————————————————————————
--- i = i0 ⊢ (app (M [ wk ]t) [ < vz > ]t)
--- i = i1 ⊢ (app M)
--- Have
--- ap (Tm (Γ , B)) (wk<vz>T A) i
--- ———— Boundary (actual) —————————————————————————————————————
--- i = i0 ⊢ ((app M [ wk ↑ B ]t) [ < vz > ]t)
--- i = i1 ⊢ (app M)
+<>↑T : ∀ {Γ Δ B M} (δ : Sub Δ Γ) (A : Ty (Γ , B)) 
+     → A [ δ ↑ B ]T [ < M [ δ ]t > ]T ≡ A [ < M > ]T [ δ ]T
+<>↑T = <>↑↑T
+
+<>↑t : ∀ {Γ Δ B N A} (δ : Sub Δ Γ) (M : Tm (Γ , B) A) 
+     → M [ δ ↑ B ]t [ < N [ δ ]t > ]t 
+    ≡[ ap (Tm _) (<>↑T δ A) 
+    ]≡ M [ < N > ]t [ δ ]t
+<>↑t = <>↑↑t
 
 wk<vz>t : ∀ {Γ B A} (M : Tm (Γ , B) A) 
         → M [ wk ↑ B ]t [ < vz > ]t ≡[ ap (Tm _) (wk<vz>T A) ]≡ M 

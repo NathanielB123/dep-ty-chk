@@ -2,10 +2,11 @@
 
 open import 1Lab.Type using (Type; _∘_; _$_)
 open import 1Lab.Path 
-  using (_≡_; refl; subst; sym; PathP; ap; apd; ap₂; i0; i1; transport; symP)
+  using (_≡_; refl; subst; sym; PathP; ap; apd; ap₂; i0; i1; transport; symP
+  ; _∙_)
 
 open import DepTyChk.CubicalUtils 
-  using (_≡[_]≡_; apd₂; eq-left; eq-right)
+  using (_≡[_]≡_; apd₂; eq-left; eq-right; _∙[]_; _[]∙_)
 
 open import DepTyChk.ExplicitSub.Syntax
 open import DepTyChk.ExplicitSub.Nf
@@ -16,7 +17,8 @@ module DepTyChk.ExplicitSub.Normalisation where
 nf : ∀ {Γ A} → (M : Tm Γ A) → Nf Γ A M
 -- Normalisation by hereditary substitution (unclear if this is possible)
 _[_]nf : ∀ {Γ Δ A M} → Nf Γ A M → (δ : Sub Δ Γ) → Nf Δ (A [ δ ]T) (M [ δ ]t)
-_[_]nfapp : ∀ {Γ Δ A M} → NfApp Γ A M → (δ : Sub Δ Γ) → Nf Δ (A [ δ ]T) (M [ δ ]t)
+_[_]nfapp : ∀ {Γ Δ A M} → NfApp Γ A M → (δ : Sub Δ Γ) 
+          → Nf Δ (A [ δ ]T) (M [ δ ]t)
 -- Temporary - I think we might need to split weakenings and substitutions
 -- again...
 weaken : ∀ {Γ A B M} → NfApp Γ A M → NfApp (Γ , B) (A [ wk ]T) (M [ wk ]t)
@@ -44,13 +46,25 @@ nf (β M i) = {!!}
 nf (η M i) = {!!}
 nf (wk<vz>↑↑t M i) = {!!}
 nf (vz[↑]t M i) = {!!}
+nf (<>↑↑t δ M i) = {!!}
 
 nfapp M [ δ ]nf = M [ δ ]nfapp
 lam M [ δ ]nf = subst (Nf _ _) (lam[]t δ _) (lam (M [ δ ↑ _ ]nf))
 
-var x [ δ ]nfapp = x [ δ ]nfv
-app M N [ δ ]nfapp = {!M [ δ ]nfapp!} -- We need to match on this...
+nfapp-helper : ∀ {Γ Δ A B C} {M : Tm Γ (Π A B)} {N : Tm Γ A} {Mδ} (δ : Sub Δ Γ) 
+             → (p : Π (A [ δ ]T) (B [ δ ↑ A ]T) ≡ C) 
+             → M [ δ ]t ≡[ ap (Tm _) p ]≡ Mδ
+             → Nf Δ C Mδ → Nf Γ A N
+             → Nf Δ (B [ < N > ]T [ δ ]T) (app M [ < N > ]t [ δ ]t)
+nfapp-helper {N = N′} δ p q (nfapp M) N 
+  = transport (apd₂ (λ _ → Nf _) (<>↑T δ _) 
+  $ (ap (_[ < N′ [ δ ]t > ]t) (sym (app[]t δ _))) ∙[] (<>↑t δ (app _)))
+  $ nfapp $ app (transport (apd₂ (λ _ → NfApp _) (sym p) (symP q)) M) 
+  $ N [ δ ]nf
+nfapp-helper δ p q (lam M) N = {!   !}
 
+var x [ δ ]nfapp = x [ δ ]nfv
+app M N [ δ ]nfapp = nfapp-helper δ refl refl (M [ δ ]nfapp) N
 
 x [ wk ]nfv = nfapp (var (vs x))
 vz [ < M > ]nfv 
