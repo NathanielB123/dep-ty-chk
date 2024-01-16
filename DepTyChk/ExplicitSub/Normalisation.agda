@@ -3,10 +3,10 @@
 open import 1Lab.Type using (Type; _∘_; _$_)
 open import 1Lab.Path 
   using (_≡_; refl; subst; sym; PathP; ap; apd; ap₂; i0; i1; transport; symP
-  ; _∙_)
+  ; _∙_; ~_; I; happly)
 
 open import DepTyChk.CubicalUtils 
-  using (_≡[_]≡_; apd₂; eq-left; eq-right; _∙[]_; _[]∙_)
+  using (_≡[_]≡_; apd₂; eq-left; eq-right; _∙[]_; _[]∙_; map-idx)
 
 open import DepTyChk.ExplicitSub.Syntax
 open import DepTyChk.ExplicitSub.Nf
@@ -35,9 +35,11 @@ nf (app M) with nf M
 ... | (nfapp M′) 
   = transport (apd₂ (λ _ → Nf _) (wk<vz>T _) (wk<vz>t′ M))
   $ nfapp (app (weaken M′) (nfapp (var vz)))
-nf (app .(lam M)) | lam {M = M} M′ = subst (Nf _ _) (sym (β M)) M′
+... | lam {M = M} M′ = subst (Nf _ _) (sym (β M)) M′
 nf vz = nfapp (var vz)
 nf (M [ δ ]t) = nf M [ δ ]nf
+-- We are stuck on a lot of these because of unsupported indexed matching...
+-- These are avoidable, but it will require a lot of painful transports
 nf (wk<>↑↑t M i) = {!   !}
 nf (wk↑↑t δ M i) = {!   !}
 nf (lam[]t δ M i) = {!!}
@@ -56,12 +58,18 @@ nfapp-helper : ∀ {Γ Δ A B C} {M : Tm Γ (Π A B)} {N : Tm Γ A} {Mδ} (δ : 
              → M [ δ ]t ≡[ ap (Tm _) p ]≡ Mδ
              → Nf Δ C Mδ → Nf Γ A N
              → Nf Δ (B [ < N > ]T [ δ ]T) (app M [ < N > ]t [ δ ]t)
-nfapp-helper {N = N′} δ p q (nfapp M) N 
+nfapp-helper {N = N} δ p q (nfapp M′) N′
   = transport (apd₂ (λ _ → Nf _) (<>↑T δ _) 
-  $ (ap (_[ < N′ [ δ ]t > ]t) (sym (app[]t δ _))) ∙[] (<>↑t δ (app _)))
-  $ nfapp $ app (transport (apd₂ (λ _ → NfApp _) (sym p) (symP q)) M) 
-  $ N [ δ ]nf
-nfapp-helper δ p q (lam M) N = {!   !}
+  $ (ap (_[ < N [ δ ]t > ]t) (sym (app[]t δ _))) ∙[] (<>↑t δ (app _)))
+  $ nfapp $ app (transport (apd₂ (λ _ → NfApp _) (sym p) (symP q)) M′) 
+  $ N′ [ δ ]nf
+nfapp-helper {M = M} {N = N} δ p q (lam {A = A[]} {B = B[]} {M = M[]} M′) N′ 
+  = transport (ap₂ (Nf _) (<>↑T δ _) 
+  $ ap (_[ < N [ δ ]t > ]t) (sym (app[]t δ M)) ∙[] <>↑t δ (app M))
+  $ transport (λ i → Nf (_ , Π-inj₁ p (~ i)) (Π-inj₂ p (~ i)) 
+  $ ((sym (β M[]) 
+  ∙[] apd (λ _ → Tm.app) (symP (map-idx (λ i → ap (Tm _) (Π-inj-η p i)) q))) i)) 
+  M′ [ < N [ δ ]t > ]nf
 
 var x [ δ ]nfapp = x [ δ ]nfv
 app M N [ δ ]nfapp = nfapp-helper δ refl refl (M [ δ ]nfapp) N
@@ -78,3 +86,4 @@ vs x [ < M > ]nfv
 vs x [ δ ↑ _ ]nfv 
   = transport (apd₂ (λ _ → Nf _) (sym (wk↑T δ _)) (symP (wk↑t δ _)))
   $ x [ δ ]nfv [ wk ]nf
+    

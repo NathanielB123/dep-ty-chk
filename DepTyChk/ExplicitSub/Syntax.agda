@@ -1,9 +1,11 @@
-open import 1Lab.Type using (Type; _∘_)
+open import 1Lab.Type using (Type; _∘_; ⊤; ⊥; tt; ¬_; absurd; id)
 open import 1Lab.Path 
-  using (_≡_; refl; subst; sym; PathP; ap; apd; ap₂; i0; i1; _∙_; _∙P_)
+  using (_≡_; refl; subst; sym; PathP; ap; apd; ap₂; i0; i1; _∙_; _∙P_
+  ; transport; _∨_; _∧_; ~_; Square; funext)
+open import 1Lab.Path.Cartesian using (I-interp)
 
 open import DepTyChk.CubicalUtils 
-  using (_≡[_]≡_; apd₂; eq-left; eq-right; _∙[]_)
+  using (_≡[_]≡_; apd₂; eq-left; eq-right; _∙[]_; inspect≡; [_]; eq-left≡)
 
 module DepTyChk.ExplicitSub.Syntax where
 
@@ -21,6 +23,63 @@ data Ty where
   U  : ∀ {Γ} → Ty Γ
   El : ∀ {Γ} → Tm Γ U → Ty Γ
   Π  : ∀ {Γ} (A : Ty Γ) → Ty (Γ , A) → Ty Γ
+
+Π-diverge : ∀ {Γ} → Ty Γ → Type
+Π-diverge U = ⊤
+Π-diverge (El _) = ⊤
+Π-diverge (Π _ _) = ⊥
+
+El-diverge : ∀ {Γ} → Ty Γ → Type
+El-diverge U = ⊤
+El-diverge (El _) = ⊥
+El-diverge (Π _ _) = ⊤
+
+Π-U-disj : ∀ {Γ} {A : Ty Γ} {B} → ¬ U ≡ Π A B
+Π-U-disj p = subst Π-diverge p tt
+
+Π-El-disj : ∀ {Γ} {A : Ty Γ} {B M} → ¬ El M ≡ Π A B
+Π-El-disj p = subst Π-diverge p tt
+
+El-U-disj : ∀ {Γ} {M : Tm Γ U} → ¬ U ≡ El M
+El-U-disj p = subst El-diverge p tt
+
+El-proj : ∀ {Γ M} (A : Ty Γ) → A ≡ El M → Tm Γ U
+El-proj U p = absurd (El-U-disj p)
+El-proj (El M) _ = M
+El-proj (Π A B) p = absurd (Π-El-disj (sym p))
+
+El-inj : ∀ {Γ} {M N : Tm Γ U} → El M ≡ El N → M ≡ N
+El-inj p = ap₂ El-proj p (eq-left≡ p)
+
+Π-proj₁ : ∀ {Γ A B} (ΠAB : Ty Γ) → ΠAB ≡ Π A B → Ty Γ
+Π-proj₁ U p = absurd (Π-U-disj p)
+Π-proj₁ (El M) p = absurd (Π-El-disj p)
+Π-proj₁ (Π A B) p = A
+
+Π-proj₂ : ∀ {Γ A B} (ΠAB : Ty Γ) (p : ΠAB ≡ Π A B) → Ty (Γ , Π-proj₁ ΠAB p)
+Π-proj₂ U p = absurd (Π-U-disj p)
+Π-proj₂ (El M) p = absurd (Π-El-disj p)
+Π-proj₂ (Π A B) p = B
+
+Π-inj₁ : ∀ {Γ} {A C : Ty Γ} {B D} → Π A B ≡ Π C D → A ≡ C
+Π-inj₁ p = ap₂ Π-proj₁ p (eq-left≡ p)
+
+Π-inj₂ : ∀ {Γ} {A C : Ty Γ} {B D} (p : Π A B ≡ Π C D) 
+       → B ≡[ ap (Ty ∘ (Γ ,_)) (Π-inj₁ p) ]≡ D
+Π-inj₂ p = ap₂ Π-proj₂ p (eq-left≡ p)
+
+postulate
+  squashTy : ∀ {Γ} {A B : Ty Γ} (p q : A ≡ B) → p ≡ q
+
+-- I would hope that these lemmas are provable without UIP, but it's quite 
+-- tricky
+El-inj-η : ∀ {Γ} {M N : Tm Γ U} (p : El M ≡ El N)
+         → p ≡ apd (λ _ → El) (El-inj p)
+El-inj-η p = squashTy p (apd (λ _ → El) (El-inj p))
+
+Π-inj-η : ∀ {Γ} {A C : Ty Γ} {B D} (p : Π A B ≡ Π C D)
+        → p ≡ apd₂ (λ _ → Π) (Π-inj₁ p) (Π-inj₂ p)
+Π-inj-η p = squashTy p (apd₂ (λ _ → Π) (Π-inj₁ p) (Π-inj₂ p))
 
 data Sub : Ctx → Ctx → Type
 

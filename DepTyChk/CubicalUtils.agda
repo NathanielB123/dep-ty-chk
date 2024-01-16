@@ -1,7 +1,7 @@
-open import 1Lab.Type using (Type; lsuc; id)
+open import 1Lab.Type using (Type; lsuc; id; _⊔_; _∘_)
 open import 1Lab.Path 
   using (PathP; _≡_; transport; refl; _∨_; _∧_; ~_; ap; subst; _∙_; from-pathp
-  ; transport-filler; transp; i0; i1; sym; I; _∙P_
+  ; transport-filler; transp; i0; i1; sym; I; _∙P_; ap₂; funext
   )
 open import 1Lab.Path.Cartesian using (I-interp)
 open import 1Lab.Path.Reasoning 
@@ -82,6 +82,10 @@ apd₂ f p q i = f i (p i) (q i)
 eq-left : ∀ {ℓ} {A : Type ℓ} {x y : A} (p : x ≡ y) (i : I) → p i ≡ x
 eq-left p i j = p (i ∧ ~ j)
 
+eq-left≡ : ∀ {ℓ} {A : Type ℓ} {x y : A} (p : x ≡ y) 
+         → eq-left p i0 ≡[ (λ i → p i ≡ x) ]≡ eq-left p i1
+eq-left≡ p i = eq-left p i
+
 eq-right : ∀ {ℓ} {A : Type ℓ} {x y : A} (p : x ≡ y) (i : I) → p i ≡ y
 eq-right p i j = p (i ∨ j)
 
@@ -93,3 +97,31 @@ subst-application : ∀ {a b c} {A : Type a}
                      subst C p (g x z) ≡ g y (subst B p z)
 subst-application B {C} {z = z} g p 
   = from-pathp λ i → g (p i) (transport-filler (ap B p) z i)
+
+-- with ... in ... syntax does not seem to be compatible with cubical equality
+-- (it uses the BUILTIN EQUALITY pragma, which requires the equality type to be
+-- an inductive datatype).
+-- Therefore, we must (bregrudgingly) use the inspect idiom
+-- (https://agda.github.io/agda-stdlib/Relation.Binary.PropositionalEquality.html#4457)
+
+record Reveal_·_is_ {a b} {A : Type a} {B : A → Type b}
+                    (f : (x : A) → B x) (x : A) (y : B x)
+                  : Type (a ⊔ b) where
+  constructor [_]
+  field 
+    eq : f x ≡ y
+
+inspect : ∀ {a b} {A : Type a} {B : A → Type b}
+            (f : (x : A) → B x) (x : A) 
+          → Reveal f · x is f x
+inspect f x = [ refl ]
+
+record Reveal≡_·_is_ {a} {A : Type a} {x y : A} (p : x ≡ y) (i : I) (x : A) 
+                   : Type a where
+  constructor [_]
+  field 
+    eq : p i ≡ x
+
+inspect≡ : ∀ {a} {A : Type a} {x y : A} (p : x ≡ y) (i : I) 
+         → Reveal≡ p · i is p i
+inspect≡ p i = [ refl ]
