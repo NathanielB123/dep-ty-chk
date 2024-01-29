@@ -12,6 +12,7 @@ open import Data.Maybe using (Maybe; just; nothing; map)
 
 open import Syntax
 open import EqUtils
+open import Coercions
 
 module Equations where
 
@@ -35,52 +36,14 @@ data Is,C : Pred ctx where
 ,ε-disj (trs (ε  ¹) p) = ,ε-disj p
 ,ε-disj (trs (ε ⁻¹) p) = ,ε-disj p
 
-coe-T : ∀ {Γ₁ Γ₂} → Γ₁ ≈C Γ₂ → Ty Γ₁ → Ty Γ₂
-coe-T rfl A = A
-coe-T (trs p q) A = coe p (coe-T q A)
-
-coh-T : ∀ {Γ₁ Γ₂} (Γ : Γ₁ ≈C Γ₂) {A : Ty Γ₁} → coe-T Γ A ≈T A
-coh-T rfl = rfl
-coh-T (trs p r) = coh-T r ∙ ⟦ _≋T_.coh p ⟧
-
-coe-T≈ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} (p : Γ₁ ≈C Γ₂) (q : Δ₁ ≈C Δ₂) {A₁ A₂}
-       → A₁ ≈T A₂ → coe-T p A₁ ≈T coe-T q A₂
-coe-T≈ rfl q A = sym (coh-T q)  ∙ A
-coe-T≈ (trs p r) q A = coe-T≈ r q A ∙ ⟦ coh p ⟧
-
-coe-t :  ∀ {Γ₁ Γ₂ A₁ A₂} (A : A₁ ≈T A₂) → Tm Γ₁ A₁ → Tm Γ₂ A₂
-coe-t rfl M = M
-coe-t (trs p r) M = coe p (coe-t r M)
-
-coh-t : ∀ {Γ₁ Γ₂ A₁} {A₂ : Ty Γ₂} (A : A₁ ≈T A₂) {M : Tm Γ₁ A₁} 
-      → coe-t A M ≈t M
-coh-t rfl = rfl
-coh-t (trs p r) = coh-t r ∙ ⟦ coh p ⟧
-
-coe-s₁ : ∀ {Γ₁ Γ₂ Δ} → Γ₁ ≈C Γ₂ → Sub Γ₁ Δ → Sub Γ₂ Δ
-coe-s₁ rfl δ = δ
-coe-s₁ (trs p r) δ = coe₁ p (coe-s₁ r δ)
-
-coh-s₁ : ∀ {Γ₁ Γ₂ Δ} (Γ : Γ₁ ≈C Γ₂) {δ : Sub Γ₁ Δ} → coe-s₁ Γ δ ≈s δ
-coh-s₁ rfl = rfl
-coh-s₁ (trs p r) = coh-s₁ r ∙ ⟦ coh₁ p ⟧
-
-coe-s₂ : ∀ {Γ Δ₁ Δ₂} → Δ₁ ≈C Δ₂ → Sub Γ Δ₁ → Sub Γ Δ₂
-coe-s₂ rfl δ = δ
-coe-s₂ (trs p r) δ = coe₂ p (coe-s₂ r δ)
-
-coh-s₂ : ∀ {Γ Δ₁ Δ₂} (Δ : Δ₁ ≈C Δ₂) {δ : Sub Γ Δ₁} → coe-s₂ Δ δ ≈s δ
-coh-s₂ rfl = rfl
-coh-s₂ (trs p r) = coh-s₂ r ∙ ⟦ coh₂ p ⟧
-
 U-diverge : ∀ {Γ} → Ty Γ → Set
-U-diverge (coe _ A) = U-diverge A
+-- U-diverge (coe _ A) = U-diverge A
 U-diverge U = ⊥
 U-diverge (El M) = ⊤
 U-diverge (Π A B) = ⊤
 
 Π-diverge : ∀ {Γ} → Ty Γ → Set
-Π-diverge (coe _ A) = Π-diverge A
+-- Π-diverge (coe _ A) = Π-diverge A
 Π-diverge U = ⊤
 Π-diverge (El _) = ⊤
 Π-diverge (Π _ _) = ⊥
@@ -88,11 +51,11 @@ U-diverge (Π A B) = ⊤
 U-diverge≈ : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} 
                   → A₁ ≈T A₂ → U-diverge A₁ ≡ U-diverge A₂
 U-diverge≈ rfl = refl
-U-diverge≈ (trs (coh _  ¹) r) = U-diverge≈ r
+-- U-diverge≈ (trs (coh _  ¹) r) = U-diverge≈ r
 U-diverge≈ (trs (U _    ¹) r) = U-diverge≈ r
 U-diverge≈ (trs (El _   ¹) r) = U-diverge≈ r
 U-diverge≈ (trs (Π _ _  ¹) r) = U-diverge≈ r
-U-diverge≈ (trs (coh _ ⁻¹) r) = U-diverge≈ r
+-- U-diverge≈ (trs (coh _ ⁻¹) r) = U-diverge≈ r
 U-diverge≈ (trs (U _   ⁻¹) r) = U-diverge≈ r
 U-diverge≈ (trs (El _  ⁻¹) r) = U-diverge≈ r
 U-diverge≈ (trs (Π _ _ ⁻¹) r) = U-diverge≈ r
@@ -101,15 +64,14 @@ U-El-disj : ∀ {Γ₁ Γ₂} {M : Tm Γ₂ U} → ¬ El M ≈T U {Γ₁}
 U-El-disj p = subst id (U-diverge≈ p) tt
 
 πEl : ∀ {Γ} → Ty Γ → Maybe (Tm Γ U)
-πEl (coe p A) = map (coe (U (trs p rfl) ¹)) (πEl A)
+-- πEl (coe p A) = map (coe (U (trs p rfl) ¹)) (πEl A)
 πEl U = nothing
 πEl (El A) = just A
 πEl (Π _ _) = nothing
 
 πEl≈ : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂ 
      → πEl A₁ ≈Maybe[ *SymClosure _≋t_ ] πEl A₂
-πEl≈ r = lift-proof πEl (λ where (coh p) → ⟦ mapInv ⟦ coh _ ⟧ ⟧
-                                 (U _)   → ⟦ nothing ⟧
+πEl≈ r = lift-proof πEl (λ where (U _)   → ⟦ nothing ⟧
                                  (El M)  → ⟦ just M ⟧
                                  (Π _ _) → ⟦ nothing ⟧) r
 
@@ -117,15 +79,13 @@ El-inj : ∀ {Γ₁ Γ₂} {M₁ : Tm Γ₁ U} {M₂ : Tm Γ₂ U} → El M₁ �
 El-inj r = collapse* (just-inj (πEl≈ r))
 
 πΠ₁ : ∀ {Γ} → Ty Γ → Maybe (Ty Γ)
-πΠ₁ (coe p A) = map (coe p) (πΠ₁ A)
 πΠ₁ U         = nothing
 πΠ₁ (El M)    = nothing
 πΠ₁ (Π A B)   = just A
 
 πΠ≈₁ : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂ 
      → πΠ₁ A₁ ≈Maybe[ *SymClosure _≋T_ ] πΠ₁ A₂
-πΠ≈₁ r = lift-proof πΠ₁ (λ where (coh p) → ⟦ mapInv ⟦ coh _ ⟧ ⟧
-                                 (U _)   → ⟦ nothing ⟧
+πΠ≈₁ r = lift-proof πΠ₁ (λ where (U _)   → ⟦ nothing ⟧
                                  (El M)  → ⟦ nothing ⟧
                                  (Π A _) → ⟦ just A ⟧) r
 
@@ -134,15 +94,13 @@ El-inj r = collapse* (just-inj (πEl≈ r))
 Π-inj₁ r = collapse* (just-inj (πΠ≈₁ r))
 
 ∃πΠ₂ : ∀ {Γ} → Ty Γ → Maybe (∃ Ty)
-∃πΠ₂ (coe _ A) = ∃πΠ₂ A
 ∃πΠ₂ U = nothing
 ∃πΠ₂ (El _) = nothing
 ∃πΠ₂ (Π A B) = just (_ , B)
 
 πΠ₂≈ : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂  
      → ∃πΠ₂ A₁ ≈Maybe[ _≋Σ[ _≈T_ ]_ ] ∃πΠ₂ A₂
-πΠ₂≈ r = lift-proof ∃πΠ₂ (λ where (coh p) → rfl
-                                  (U _) → ⟦ nothing ⟧
+πΠ₂≈ r = lift-proof ∃πΠ₂ (λ where (U _) → ⟦ nothing ⟧
                                   (El _) → ⟦ nothing ⟧
                                   (Π A B) → ⟦ just B ⟧) r
 
@@ -155,18 +113,14 @@ El-inj r = collapse* (just-inj (πEl≈ r))
 -- Andras Kovacs makes these projections constructors
 -- I would like to define these recursively (so proofs don't have to handle
 -- these as cases) but it might turn out to be impossible. We shall see...
-≈T↑≈C : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂ → Γ₁ ≈C Γ₂
-≈Ts↑≈C : ∀ {Γ₁ Γ₂} {Δ₁ : Tys Γ₁} {Δ₂ : Tys Γ₂} → Δ₁ ≈Ts Δ₂ → Γ₁ ≈C Γ₂
-≈t↑≈C : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} → M₁ ≈t M₂ → Γ₁ ≈C Γ₂
-≈s↑≈C₁ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} → δ₁ ≈s δ₂ → Γ₁ ≈C Γ₂
-≈s↑≈C₂ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} → δ₁ ≈s δ₂ → Δ₁ ≈C Δ₂
-
-_++≈_ : ∀ {Γ₁ Γ₂} {Δ₁ : Tys Γ₁} {Δ₂ : Tys Γ₂}
-    → Γ₁ ≈C Γ₂ → Δ₁ ≈Ts Δ₂ → Γ₁ ++ Δ₁ ≈C Γ₂ ++ Δ₂
+-- ≈T↑≈C : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂ → Γ₁ ≈C Γ₂
+-- ≈Ts↑≈C : ∀ {Γ₁ Γ₂} {Δ₁ : Tys Γ₁} {Δ₂ : Tys Γ₂} → Δ₁ ≈Ts Δ₂ → Γ₁ ≈C Γ₂
+-- ≈t↑≈C : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} → M₁ ≈t M₂ → Γ₁ ≈C Γ₂
+-- ≈s↑≈C₁ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} → δ₁ ≈s δ₂ → Γ₁ ≈C Γ₂
+-- ≈s↑≈C₂ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} → δ₁ ≈s δ₂ → Δ₁ ≈C Δ₂
 
 _rfl[_]T≈ : ∀ {Γ Δ₁ Δ₂} A {δ₁ : Sub Δ₁ Γ} {δ₂ : Sub Δ₂ Γ}
           → δ₁ ≈s δ₂ → A [ δ₁ ]T ≋T A [ δ₂ ]T
-coe p A rfl[ δ ]T≈ = A rfl[ ⟦ coh₂ (symsym p) ⟧⁻¹ ∙ δ ∙ ⟦ coh₂ (symsym p) ⟧ ]T≈
 U rfl[ δ ]T≈ = U (≈s↑≈C₁ δ)
 El M rfl[ δ ]T≈ = El ⟦ rfl [ δ ]≋ ⟧
 Π A B rfl[ δ ]T≈ = Π ⟦ A rfl[ δ ]T≈ ⟧ ⟦ B rfl[ ⟦ δ ↑ rfl ⟧ ]T≈ ⟧
@@ -174,11 +128,6 @@ El M rfl[ δ ]T≈ = El ⟦ rfl [ δ ]≋ ⟧
 _[_]T≈ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂} {δ₁ : Sub Δ₁ Γ₁} {δ₂ : Sub Δ₂ Γ₂}
        → A₁ ≈T A₂ → δ₁ ≈s δ₂ → A₁ [ δ₁ ]T ≈T A₂ [ δ₂ ]T
 rfl {x = A} [ δ ]T≈ = ⟦ A rfl[ δ ]T≈ ⟧
-trs (coh {A = A′} p ¹) A [ δ ]T≈ 
-  = ⟦ A′ rfl[ ⟦ coh₂ p ⟧ ∙ ⟦ coh₂ (symsym p) ⟧ ]T≈ ⟧ ∙ A [ ⟦ coh₂ p ⟧⁻¹ ∙ δ ]T≈
-trs (coh {A = A′} p ⁻¹) A [ δ ]T≈ 
-  = ⟦ A′ rfl[ ⟦ coh₂ p ⟧ ∙ ⟦ coh₂ p ⟧⁻¹ ]T≈ ⟧
- ∙ A [ ⟦ coh₂ (symsym p) ⟧⁻¹ ∙ δ ]T≈
 trs (U Γ  ¹) A [ δ ]T≈ = A [ sym (coh-s₂ (sym Γ)) ∙ δ ]T≈
 trs (U Γ ⁻¹) A [ δ ]T≈ = A [ sym (coh-s₂ Γ) ∙ δ ]T≈
 trs (El M ¹) A [ δ ]T≈ 
@@ -198,18 +147,12 @@ trs (Π A B ⁻¹) C [ δ ]T≈
 
 _↑↑rfl≈_ : ∀ {Γ₁ Γ₂ Δ} {δ₁ : Sub Γ₁ Δ} {δ₂ : Sub Γ₂ Δ} → δ₁ ≈s δ₂ → ∀ Σ 
       → δ₁ ↑↑ Σ ≈s δ₂ ↑↑ Σ 
-δ ↑↑rfl≈ coe x Σ  = (⟦ coh₂ _ ⟧⁻¹ ∙ δ ∙ ⟦ coh₂ _ ⟧) ↑↑rfl≈ Σ
 δ ↑↑rfl≈ ε = δ
 δ ↑↑rfl≈ (Σ , A) = ⟦ (δ ↑↑rfl≈ Σ) ↑ rfl ⟧
 
 _↑↑≈_ :  ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {Σ₁ Σ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} 
       → δ₁ ≈s δ₂ → Σ₁ ≈Ts Σ₂ → δ₁ ↑↑ Σ₁ ≈s δ₂ ↑↑ Σ₂ 
 δ ↑↑≈ rfl {x = Σ} = δ ↑↑rfl≈ Σ 
-δ ↑↑≈ trs (coh {Δ = Σ′} p ¹) Σ 
-  = ((⟦ coh₂ _ ⟧ ∙ ⟦ coh₂ _ ⟧) ↑↑rfl≈ Σ′) ∙ ((⟦ coh₂ p ⟧⁻¹ ∙ δ) ↑↑≈ Σ)
-δ ↑↑≈ trs (coh {Δ = Σ′} p ⁻¹) Σ 
-  = ((⟦ coh₂ _ ⟧⁻¹ ∙ ⟦ coh₂ (symsym p) ⟧) ↑↑rfl≈ Σ′) 
-  ∙ ((⟦ coh₂ _ ⟧⁻¹ ∙ δ) ↑↑≈ Σ)
 δ ↑↑≈ trs (ε Γ ¹) Σ = coh-s₂ (sym Γ) ∙ ((sym (coh-s₂ (sym Γ)) ∙ δ) ↑↑≈ Σ)
 δ ↑↑≈ trs (ε Γ ⁻¹) Σ = coh-s₂ Γ ∙ ((sym (coh-s₂ Γ) ∙ δ) ↑↑≈ Σ)
 δ ↑↑≈ trs (Σ , A ¹) Ξ 
@@ -219,17 +162,12 @@ _↑↑≈_ :  ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {Σ₁ Σ₂} {δ₁ : Sub Γ₁ Δ
 
 _rfl[_]Ts≈ : ∀ {Γ Δ₁ Δ₂} Σ {δ₁ : Sub Δ₁ Γ} {δ₂ : Sub Δ₂ Γ}
            → δ₁ ≈s δ₂ → Σ [ δ₁ ]Ts ≋Ts Σ [ δ₂ ]Ts
-coe p Σ rfl[ δ ]Ts≈ = Σ rfl[ ⟦ coh₂ _ ⟧⁻¹ ∙ δ ∙ ⟦ coh₂ _ ⟧  ]Ts≈
 ε rfl[ δ ]Ts≈ = ε (≈s↑≈C₁ δ)
 (Σ , A) rfl[ δ ]Ts≈ = ⟦ Σ rfl[ δ ]Ts≈ ⟧ , ⟦ A rfl[ δ ↑↑rfl≈ Σ ]T≈ ⟧
 
 _[_]Ts≈ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ Σ₁ Σ₂} {δ₁ : Sub Δ₁ Γ₁} {δ₂ : Sub Δ₂ Γ₂}
        → Σ₁ ≈Ts Σ₂ → δ₁ ≈s δ₂ → Σ₁ [ δ₁ ]Ts ≈Ts Σ₂ [ δ₂ ]Ts
 rfl {x = Σ} [ δ ]Ts≈ = ⟦ Σ rfl[ δ ]Ts≈ ⟧
-trs (coh {Δ = Δ} p ¹) Σ [ δ ]Ts≈ 
-  = ⟦ Δ rfl[ ⟦ coh₂ _ ⟧ ∙ ⟦ coh₂ _ ⟧ ]Ts≈ ⟧ ∙ Σ [ ⟦ coh₂ p ⟧⁻¹ ∙ δ ]Ts≈
-trs (coh {Δ = Δ} p ⁻¹) Σ [ δ ]Ts≈ 
-  = ⟦ Δ rfl[ ⟦ coh₂ p ⟧ ∙ ⟦ coh₂ _ ⟧⁻¹ ]Ts≈ ⟧ ∙ Σ [ ⟦ coh₂ _ ⟧⁻¹ ∙ δ ]Ts≈
 trs (ε Γ  ¹) Σ [ δ ]Ts≈ = Σ [ sym (coh-s₂ (sym Γ)) ∙ δ ]Ts≈
 trs (ε Γ ⁻¹) Σ [ δ ]Ts≈ = Σ [ sym (coh-s₂ Γ) ∙ δ ]Ts≈
 trs (Δ , A  ¹) Σ [ δ ]Ts≈
@@ -309,12 +247,3 @@ trs (Δ , A ⁻¹) Σ [ δ ]Ts≈
 --             (x ⁻¹) prf → ≋t→IsTm₁ x
 --           ) {C = λ _ _ → ctx}
 --           (λ where _ (prf {Γ}) → Γ) (λ where prf prf → ≋t↑≈C) prf prf p
-
-Γ ++≈ rfl = rfl
-Γ ++≈ trs (coh p  ¹) r = (trs p rfl ∙ Γ) ++≈ r
-Γ ++≈ trs (coh p ⁻¹) r = (trs (symsym p) rfl ∙ Γ) ++≈ r
-Γ ++≈ trs (ε Σ    ¹) Δ = Σ ∙ ((sym Σ ∙ Γ) ++≈ Δ) 
-Γ ++≈ trs (ε Σ   ⁻¹) Δ = sym Σ ∙ ((Σ ∙ Γ) ++≈ Δ)
-Γ ++≈ trs (Δ , A  ¹) p = ⟦ (≈Ts↑≈C Δ ++≈ Δ) , A ⟧ ∙ ((sym (≈Ts↑≈C Δ) ∙ Γ) ++≈ p)
-Γ ++≈ trs (Δ , A ⁻¹) p = sym ⟦ (≈Ts↑≈C Δ ++≈ Δ) ,  A ⟧ ∙ ((≈Ts↑≈C Δ ∙ Γ) ++≈ p)
-  

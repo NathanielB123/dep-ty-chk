@@ -215,8 +215,6 @@ data Ctx where
   _,_ : (Γ : Ctx) → Ty Γ → Ctx
 
 data Ty Γ where
-  coe : ∀ {Δ : Ctx} → Δ ↭C Γ → Ty Δ → Ty Γ
-
   U  : Ty Γ
   El : Tm Γ U → Ty Γ
   Π  : (A : Ty Γ) → Ty (Γ , A) → Ty Γ
@@ -224,12 +222,8 @@ data Ty Γ where
 _++_ : ∀ Γ → Tys Γ → Ctx
 
 data Tys Γ where
-  coe : ∀ {Δ : Ctx} → Δ ↭C Γ → Tys Δ → Tys Γ
-
   ε   : Tys Γ
   _,_ : (Δ : Tys Γ) → Ty (Γ ++ Δ) → Tys Γ
-
-_ ++ coe {Δ = Σ} p Δ = Σ ++ Δ
 
 Γ ++ ε = Γ
 Γ ++ (Δ , A) = (Γ ++ Δ) , A
@@ -240,6 +234,9 @@ data Sub where
   coe₁ : ∀ {Γ₁ Γ₂ Δ} → Γ₁ ↭C Γ₂ → Sub Γ₁ Δ → Sub Γ₂ Δ
   coe₂ : ∀ {Γ Δ₁ Δ₂} → Δ₁ ↭C Δ₂ → Sub Γ Δ₁ → Sub Γ Δ₂
 
+  -- Note that requiring the same Γ here in argumemt and return positions
+  -- prevents implementing coercions recursively. It is unclear to me which 
+  -- approach is nicer.
   wk  : ∀ {Γ A} → Sub (Γ , A) Γ
   <_> : ∀ {Γ A} → Tm Γ A → Sub Γ (Γ , A)
   _↑_ : ∀ {Γ Δ} (δ : Sub Γ Δ) (A : Ty Δ) → Sub (Γ , A [ δ ]T) (Δ , A)
@@ -252,8 +249,6 @@ data Tm where
   _[_] : ∀ {Γ Δ A} → Tm Γ A → (δ : Sub Δ Γ) → Tm Δ (A [ δ ]T)
   vz    : ∀ {Γ A} → Tm (Γ , A) (A [ wk ]T)
 
-coe p A [ δ ]T = A [ coe₂ (symsym p) δ ]T
-
 U [ δ ]T = U
 El M [ δ ]T = El (M [ δ ])
 Π A B [ δ ]T = Π (A [ δ ]T) (B [ δ ↑ A ]T)
@@ -261,12 +256,8 @@ El M [ δ ]T = El (M [ δ ])
 _[_]Ts : ∀ {Γ Δ} → Tys Γ → Sub Δ Γ → Tys Δ
 _↑↑_   : ∀ {Γ Δ} (δ : Sub Δ Γ) (Σ : Tys Γ) → Sub (Δ ++ Σ [ δ ]Ts) (Γ ++ Σ)
 
-coe p Σ [ δ ]Ts = Σ [ coe₂ (symsym p) δ ]Ts
-
 ε [ δ ]Ts = ε
 (Σ , A) [ δ ]Ts = Σ [ δ ]Ts , A [ δ ↑↑ Σ ]T
-
-δ ↑↑ coe p Σ = coe₂ (symsym p) δ ↑↑ Σ
 
 δ ↑↑ ε = δ
 δ ↑↑ (Σ , A) = (δ ↑↑ Σ) ↑ A
@@ -276,8 +267,6 @@ data _≋C_ where
   _,_ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ ≈C Γ₂ → A₁ ≈T A₂ → Γ₁ , A₁ ≋C Γ₂ , A₂
 
 data _≋T_ where
-  coh : ∀ {Γ₁ Γ₂ A} (p : Γ₁ ↭C Γ₂) → Ty.coe p A ≋T A
-
   U  : ∀ {Γ₁ Γ₂} → Γ₁ ≈C Γ₂ → U {Γ₁} ≋T U {Γ₂}
   El : ∀ {Γ₁ Γ₂} {M₁ : Tm Γ₁ U} {M₂ : Tm Γ₂ U} → M₁ ≈t M₂ → El M₁ ≋T El M₂ 
   -- Note I think we could elide A₁ ≈T A₂ as this is derivable from B₁ ≈T B₂ 
@@ -285,8 +274,6 @@ data _≋T_ where
      → A₁ ≈T A₂ → B₁ ≈T B₂ → Π A₁ B₁ ≋T Π A₂ B₂
 
 data _≋Ts_ where
-  coh : ∀ {Γ₁ Γ₂ Δ} (p : Γ₁ ↭C Γ₂) → Tys.coe p Δ ≋Ts Δ
-
   ε   : ∀ {Γ₁ Γ₂} → Γ₁ ≈C Γ₂ → Tys.ε {Γ₁} ≋Ts Tys.ε {Γ₂}
   _,_ : ∀ {Γ₁ Γ₂} {Δ₁ : Tys Γ₁} {Δ₂ : Tys Γ₂} {A₁ A₂} 
       → Δ₁ ≈Ts Δ₂ → A₁ ≈T A₂ → Δ₁ , A₁ ≋Ts Δ₂ , A₂
