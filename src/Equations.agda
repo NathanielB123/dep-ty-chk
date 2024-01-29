@@ -108,16 +108,10 @@ El-inj r = collapse* (just-inj (πEl≈ r))
        → B₁ ≈T B₂
 Π-inj₂ r = collapseΣ* (just-inj (πΠ₂≈ r))
 
--- Reached here with no holes!
-
--- Andras Kovacs makes these projections constructors
--- I would like to define these recursively (so proofs don't have to handle
--- these as cases) but it might turn out to be impossible. We shall see...
--- ≈T↑≈C : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂ → Γ₁ ≈C Γ₂
--- ≈Ts↑≈C : ∀ {Γ₁ Γ₂} {Δ₁ : Tys Γ₁} {Δ₂ : Tys Γ₂} → Δ₁ ≈Ts Δ₂ → Γ₁ ≈C Γ₂
--- ≈t↑≈C : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} → M₁ ≈t M₂ → Γ₁ ≈C Γ₂
--- ≈s↑≈C₁ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} → δ₁ ≈s δ₂ → Γ₁ ≈C Γ₂
--- ≈s↑≈C₂ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} → δ₁ ≈s δ₂ → Δ₁ ≈C Δ₂
+≈T↑≈C : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂ → Γ₁ ≈C Γ₂
+≈t↑≈C : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} → M₁ ≈t M₂ → Γ₁ ≈C Γ₂
+≈s↑≈C₁ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} → δ₁ ≈s δ₂ → Γ₁ ≈C Γ₂
+≈s↑≈C₂ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} → δ₁ ≈s δ₂ → Δ₁ ≈C Δ₂
 
 _rfl[_]T≈ : ∀ {Γ Δ₁ Δ₂} A {δ₁ : Sub Δ₁ Γ} {δ₂ : Sub Δ₂ Γ}
           → δ₁ ≈s δ₂ → A [ δ₁ ]T ≋T A [ δ₂ ]T
@@ -177,54 +171,35 @@ trs (Δ , A ⁻¹) Σ [ δ ]Ts≈
   = ⟦ Δ [ sym (coh-s₂ _) ]Ts≈ , A [ sym (coh-s₂ _) ↑↑≈ Δ ]T≈ ⟧⁻¹
   ∙ Σ [ sym (coh-s₂ (≈Ts↑≈C Δ)) ∙ δ ]Ts≈
 
--- <>-comm-subTs : ∀ {Γ Δ A N} (Σ : Tys (Γ , A)) (δ : Sub Δ Γ)
---               → Σ [ δ ↑ A ]Ts [ < N [ δ ] > ]Ts
---             ≈Ts Σ [ < N > ]Ts [ δ ]Ts
--- <>-comm-subT[] : ∀ {Γ Δ A Σ N} (B : Ty (Γ , A ++ Σ)) (δ : Sub Δ Γ)
---                → (p : Σ [ δ ↑ A ]Ts [ < N [ δ ] > ]Ts ≈Ts Σ [ < N > ]Ts [ δ ]Ts)
---                → B [ (δ ↑ A) ↑↑ Σ ]T [ < N [ δ ] > ↑↑ (Σ [ δ ↑ A ]Ts) ]T
---               ≈[ rfl ++≈ p ]T B [ < N > ↑↑ Σ ]T [ δ ↑↑ (Σ [ < N > ]Ts) ]T
--- <>-comm-subT : ∀ {Γ Δ A Σ N} (B : Ty (Γ , A ++ Σ)) (δ : Sub Δ Γ)
---              → B [ (δ ↑ A) ↑↑ Σ ]T [ < N [ δ ] > ↑↑ (Σ [ δ ↑ A ]Ts) ]T
---             ≈T B [ < N > ↑↑ Σ ]T [ δ ↑↑ (Σ [ < N > ]Ts) ]T
+<>-commTs : ∀ {Γ Δ A N} (Σ : Tys (Γ , A)) (δ : Sub Δ Γ)
+              → Σ [ δ ↑ A ]Ts [ < N [ δ ] > ]Ts
+            ≈Ts Σ [ < N > ]Ts [ δ ]Ts
+<>-commT[] : ∀ {Γ Δ A Σ N} (B : Ty (Γ , A ++ Σ)) (δ : Sub Δ Γ)
+               → (p : Σ [ δ ↑ A ]Ts [ < N [ δ ] > ]Ts ≈Ts Σ [ < N > ]Ts [ δ ]Ts)
+               → B [ (δ ↑ A) ↑↑ Σ ]T [ < N [ δ ] > ↑↑ (Σ [ δ ↑ A ]Ts) ]T
+              ≈[ rfl ++≈ p ]T B [ < N > ↑↑ Σ ]T [ δ ↑↑ (Σ [ < N > ]Ts) ]T
+<>-commT : ∀ {Γ Δ A Σ N} (B : Ty (Γ , A ++ Σ)) (δ : Sub Δ Γ)
+             → B [ (δ ↑ A) ↑↑ Σ ]T [ < N [ δ ] > ↑↑ (Σ [ δ ↑ A ]Ts) ]T
+            ≈T B [ < N > ↑↑ Σ ]T [ δ ↑↑ (Σ [ < N > ]Ts) ]T
 
--- <>-comm-subTs (coe {Δ = ε} p Σ) δ = ⊥-elim (,ε-disj (trs (symsym p) rfl))
--- <>-comm-subTs {N = N} (coe {Δ = Ξ , B} p Σ) δ 
---   = ⟦ Σ rfl[ {!!} ]Ts≈ ⟧ [ {!!} ]Ts≈ 
---   ∙ <>-comm-subTs {N = {!coe (≈C-inj₂ p′!) N!}} Σ {!(coe rfl (≈C-inj₁ p′) δ)!}
---   ∙ ⟦ Σ rfl[ {!!} ]Ts≈ ⟧ [ {!!} ]Ts≈
---   where 
---     p′ = symsym p
---     coh1 : coe₂ p′ (δ ↑ _) ≈s coe₂ (≈C-inj₁ p′) δ ↑ B
---     coh1 = ⟦ coh₂ p′ ⟧ ∙ ⟦ ⟦ coh₂ (≈C-inj₁ p′) ⟧⁻¹ ↑ ≈C-inj₂ p′ ⟧
---     coh2 : < N [ δ ] > ≈s < coe (≈C-inj₂ p′) N [ coe₂ (≈C-inj₁ p′) δ ] >
---     coh2 = ⟦ < ⟦ ⟦ coh (≈C-inj₂ p′) ⟧⁻¹ [ ⟦ coh₂ (≈C-inj₁ p′) ⟧⁻¹ ]≋ ⟧ > ⟧
---     coh3 : < coe (≈C-inj₂ p′) N > ≈s coe₂ p′ < N >
---     coh3 = ⟦ < ⟦ coh (≈C-inj₂ p′) ⟧ > ⟧ ∙ ⟦ coh₂ p′ ⟧⁻¹
---     coh4 : coe₂ (≈C-inj₁ p′) δ ≈s δ
---     coh4 = ⟦ coh₂ (≈C-inj₁ p′) ⟧
+<>-commTs ε δ = rfl
+<>-commTs (Σ , B) δ 
+  = ⟦ Σδ , <>-commT[] {Σ = Σ} B δ Σδ ⟧
+  where
+    Σδ = <>-commTs Σ δ
 
--- <>-comm-subTs ε δ = rfl
--- <>-comm-subTs (Σ , B) δ 
---   = ⟦ Σδ , <>-comm-subT[] {Σ = Σ} B δ Σδ ⟧
---   where
---     Σδ = <>-comm-subTs Σ δ
+<>-commT[] {Σ = Σ} U δ p = ⟦ U (rfl ++≈ p) ⟧
+<>-commT[] {Σ = Σ} (El M) δ _ = ⟦ El ⟦ <>-comm {Σ = Σ} M δ ⟧ ⟧
+<>-commT[] {Σ = Σ} (Π B C) δ p
+  = ⟦ Π <>B (<>-commT[] {Σ = Σ , B} C δ ⟦ p , <>B ⟧) ⟧
+  where <>B = <>-commT[] B δ p
 
--- -- Oh god I don't want to have to prove a billion coherences again
--- <>-comm-subT[] (coe x B) δ _ = {!   !}
+<>-commT {Σ = Σ} B δ = <>-commT[] {Σ = Σ} B δ (<>-commTs Σ δ)
 
--- <>-comm-subT[] {Σ = Σ} U δ p = ⟦ U (rfl ++≈ p) ⟧
--- <>-comm-subT[] {Σ = Σ} (El M) δ _ = ⟦ El ⟦ <>-comm-sub {Σ = Σ} M δ ⟧ ⟧
--- <>-comm-subT[] {Σ = Σ} (Π B C) δ p
---   = ⟦ Π (<>-comm-subT[] {Σ = Σ , B} C δ ⟦ p , <>-comm-subT[] {Σ = Σ} B δ p ⟧) ⟧
-  
--- <>-comm-subT {Σ = Σ} B δ = <>-comm-subT[] {Σ = Σ} B δ (<>-comm-subTs Σ δ)
-
--- ≋T↑≈C : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≋T A₂ → Γ₁ ≈C Γ₂
--- ≋T↑≈C (coh p) = sym p
--- ≋T↑≈C (U Γ)   = Γ
--- ≋T↑≈C (El M)  = ≈t↑≈C M
--- ≋T↑≈C (Π B)   = {!!}
+≋T↑≈C : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≋T A₂ → Γ₁ ≈C Γ₂
+≋T↑≈C (U Γ)   = Γ
+≋T↑≈C (El M)  = ≈t↑≈C M
+≋T↑≈C (Π A B) = ≈T↑≈C A
 
 -- ≈T↑≈C = lift-proof IsTy (λ where prf prf refl → refl) (λ where 
 --           (x  ¹) prf → ≋T→IsTy₂ x
@@ -240,7 +215,7 @@ trs (Δ , A ⁻¹) Σ [ δ ]Ts≈
 -- ≋t↑≈C (M [ δ ]≋) = {!!}
 -- ≋t↑≈C β = rfl
 -- ≋t↑≈C η = rfl
--- ≋t↑≈C (<>-comm-sub {Σ = Σ} M δ) = rfl ++≈ <>-comm-subTs Σ δ
+-- ≋t↑≈C (<>-comm {Σ = Σ} M δ) = rfl ++≈ <>-commTs Σ δ
 
 -- ≈t↑≈C p = lift-proof IsTm (λ where prf prf refl → refl) (λ where 
 --             (x  ¹) prf → ≋t→IsTm₂ x

@@ -7,13 +7,7 @@ module Coercions where
 -- I am hoping to be able to prove these projections by induction at some point,
 -- but it might turn out we need to add them as constructors...
 postulate
-  ≈T↑≈C : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂ → Γ₁ ≈C Γ₂
   ≈Ts↑≈C : ∀ {Γ₁ Γ₂} {Δ₁ : Tys Γ₁} {Δ₂ : Tys Γ₂} → Δ₁ ≈Ts Δ₂ → Γ₁ ≈C Γ₂
-  ≈t↑≈C : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} → M₁ ≈t M₂ → Γ₁ ≈C Γ₂
-  ≈s↑≈C₁ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} 
-         → δ₁ ≈s δ₂ → Γ₁ ≈C Γ₂
-  ≈s↑≈C₂ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} 
-         → δ₁ ≈s δ₂ → Δ₁ ≈C Δ₂
 
 _++≈_ : ∀ {Γ₁ Γ₂} {Δ₁ : Tys Γ₁} {Δ₂ : Tys Γ₂}
     → Γ₁ ≈C Γ₂ → Δ₁ ≈Ts Δ₂ → Γ₁ ++ Δ₁ ≈C Γ₂ ++ Δ₂
