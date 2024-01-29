@@ -11,97 +11,11 @@ open import Data.Unit using (⊤; tt)
 open import Data.Maybe using (Maybe; just; nothing; map) 
 
 open import Syntax
-open import EqUtils
-open import Coercions
+open import Equations.EqUtils
+open import Equations.Coercions
+open import Equations.Injectivity
 
-module Equations where
-
-data Is,C : Pred ctx where
-  prf : ∀ {Γ} {A : Ty Γ} → Is,C (Γ , A)
-
-≈C-inj₁ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → Γ₁ ≈C Γ₂
-≈C-inj₁
-  = lift-proofP Is,C (λ where prf prf refl → refl) 
-    (λ where (_ , _ ¹) prf → prf; (_ , _ ⁻¹) prf → prf)
-    (λ where .(Γ , _) (prf {Γ}) → Γ) (λ where prf prf (Γ , _) → Γ) prf prf
-
-≈C-inj₂ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → A₁ ≈T A₂
-≈C-inj₂
-  = lift-proofP Is,C (λ where prf prf refl → refl) 
-    (λ where (_ , _ ¹) prf → prf; (_ , _ ⁻¹) prf → prf) 
-    {C = λ where _ prf → _}
-    (λ where (_ , A) prf → A) (λ where prf prf (_ , A) → A) prf prf
-
-,ε-disj : ∀ {Γ A} → ¬ Γ , A ≈C ε
-,ε-disj (trs (ε  ¹) p) = ,ε-disj p
-,ε-disj (trs (ε ⁻¹) p) = ,ε-disj p
-
-U-diverge : ∀ {Γ} → Ty Γ → Set
-U-diverge U = ⊥
-U-diverge (El M) = ⊤
-U-diverge (Π A B) = ⊤
-
-Π-diverge : ∀ {Γ} → Ty Γ → Set
-Π-diverge U = ⊤
-Π-diverge (El _) = ⊤
-Π-diverge (Π _ _) = ⊥
-
-U-diverge≈ : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} 
-                  → A₁ ≈T A₂ → U-diverge A₁ ≡ U-diverge A₂
-U-diverge≈ rfl = refl
-U-diverge≈ (trs (U _    ¹) r) = U-diverge≈ r
-U-diverge≈ (trs (El _   ¹) r) = U-diverge≈ r
-U-diverge≈ (trs (Π _ _  ¹) r) = U-diverge≈ r
-U-diverge≈ (trs (U _   ⁻¹) r) = U-diverge≈ r
-U-diverge≈ (trs (El _  ⁻¹) r) = U-diverge≈ r
-U-diverge≈ (trs (Π _ _ ⁻¹) r) = U-diverge≈ r
-
-U-El-disj : ∀ {Γ₁ Γ₂} {M : Tm Γ₂ U} → ¬ El M ≈T U {Γ₁}
-U-El-disj p = subst id (U-diverge≈ p) tt
-
-πEl : ∀ {Γ} → Ty Γ → Maybe (Tm Γ U)
-πEl U = nothing
-πEl (El A) = just A
-πEl (Π _ _) = nothing
-
-πEl≈ : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂ 
-     → πEl A₁ ≈Maybe[ *SymClosure _≋t_ ] πEl A₂
-πEl≈ r = lift-proof πEl (λ where (U _)   → ⟦ nothing ⟧
-                                 (El M)  → ⟦ just M ⟧
-                                 (Π _ _) → ⟦ nothing ⟧) r
-
-El-inj : ∀ {Γ₁ Γ₂} {M₁ : Tm Γ₁ U} {M₂ : Tm Γ₂ U} → El M₁ ≈T El M₂ → M₁ ≈t M₂
-El-inj r = collapse* (just-inj (πEl≈ r))
-
-πΠ₁ : ∀ {Γ} → Ty Γ → Maybe (Ty Γ)
-πΠ₁ U       = nothing
-πΠ₁ (El M)  = nothing
-πΠ₁ (Π A B) = just A
-
-πΠ≈₁ : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂ 
-     → πΠ₁ A₁ ≈Maybe[ *SymClosure _≋T_ ] πΠ₁ A₂
-πΠ≈₁ r = lift-proof πΠ₁ (λ where (U _)   → ⟦ nothing ⟧
-                                 (El M)  → ⟦ nothing ⟧
-                                 (Π A _) → ⟦ just A ⟧) r
-
-Π-inj₁ : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} {B₁ B₂} → Π A₁ B₁ ≈T Π A₂ B₂
-       → A₁ ≈T A₂
-Π-inj₁ r = collapse* (just-inj (πΠ≈₁ r))
-
-∃πΠ₂ : ∀ {Γ} → Ty Γ → Maybe (∃ Ty)
-∃πΠ₂ U       = nothing
-∃πΠ₂ (El _)  = nothing
-∃πΠ₂ (Π A B) = just (_ , B)
-
-πΠ₂≈ : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂  
-     → ∃πΠ₂ A₁ ≈Maybe[ _≋Σ[ _≈T_ ]_ ] ∃πΠ₂ A₂
-πΠ₂≈ r = lift-proof ∃πΠ₂ (λ where (U _)   → ⟦ nothing ⟧
-                                  (El _)  → ⟦ nothing ⟧
-                                  (Π A B) → ⟦ just B ⟧) r
-
-Π-inj₂ : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} {B₁ B₂} → Π A₁ B₁ ≈T Π A₂ B₂ 
-       → B₁ ≈T B₂
-Π-inj₂ r = collapseΣ* (just-inj (πΠ₂≈ r))
+module Equations.Equations where
 
 ≈T↑≈C : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂ → Γ₁ ≈C Γ₂
 ≈t↑≈C : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} → M₁ ≈t M₂ → Γ₁ ≈C Γ₂
@@ -173,23 +87,43 @@ trs (Δ , A ⁻¹) Σ [ δ ]Ts≈
 <>-commT[] : ∀ {Γ Δ A Σ N} (B : Ty (Γ , A ++ Σ)) (δ : Sub Δ Γ)
            → (p : Σ [ δ ↑ A ]Ts [ < N [ δ ] > ]Ts ≈Ts Σ [ < N > ]Ts [ δ ]Ts)
            → B [ (δ ↑ A) ↑↑ Σ ]T [ < N [ δ ] > ↑↑ (Σ [ δ ↑ A ]Ts) ]T
-          ≈[ rfl ++≈ p ]T B [ < N > ↑↑ Σ ]T [ δ ↑↑ (Σ [ < N > ]Ts) ]T
+          ≋T B [ < N > ↑↑ Σ ]T [ δ ↑↑ (Σ [ < N > ]Ts) ]T
 <>-commT : ∀ {Γ Δ A Σ N} (B : Ty (Γ , A ++ Σ)) (δ : Sub Δ Γ)
          → B [ (δ ↑ A) ↑↑ Σ ]T [ < N [ δ ] > ↑↑ (Σ [ δ ↑ A ]Ts) ]T
-        ≈T B [ < N > ↑↑ Σ ]T [ δ ↑↑ (Σ [ < N > ]Ts) ]T
+        ≋T B [ < N > ↑↑ Σ ]T [ δ ↑↑ (Σ [ < N > ]Ts) ]T
 
 <>-commTs ε δ = rfl
-<>-commTs (Σ , B) δ = ⟦ Σδ , <>-commT[] {Σ = Σ} B δ Σδ ⟧
+<>-commTs (Σ , B) δ = ⟦ Σδ , ⟦ <>-commT[] {Σ = Σ} B δ Σδ ⟧ ⟧
   where
     Σδ = <>-commTs Σ δ
 
-<>-commT[] {Σ = Σ} U δ p = ⟦ U (rfl ++≈ p) ⟧
-<>-commT[] {Σ = Σ} (El M) δ _ = ⟦ El ⟦ <>-comm {Σ = Σ} M δ ⟧ ⟧
+<>-commT[] {Σ = Σ} U δ p = U (rfl ++≈ p)
+<>-commT[] {Σ = Σ} (El M) δ _ = El ⟦ <>-comm {Σ = Σ} M δ ⟧
 <>-commT[] {Σ = Σ} (Π B C) δ p
-  = ⟦ Π <>B (<>-commT[] {Σ = Σ , B} C δ ⟦ p , <>B ⟧) ⟧
-  where <>B = <>-commT[] B δ p
+  = Π <>B ⟦ <>-commT[] {Σ = Σ , B} C δ ⟦ p , <>B ⟧ ⟧
+  where <>B = ⟦ <>-commT[] B δ p ⟧
 
 <>-commT {Σ = Σ} B δ = <>-commT[] {Σ = Σ} B δ (<>-commTs Σ δ)
+
+
+wk-vz-idTs : ∀ {Γ B} (Δ : Tys (Γ , B)) 
+           → Δ [ wk ↑ B ]Ts [ < vz > ]Ts ≈Ts Δ
+wk-vz-idT : ∀ {Γ B Δ} (A : Ty ((Γ , B) ++ Δ)) 
+          → A [ (wk ↑ B) ↑↑ Δ ]T [ < vz > ↑↑ (Δ [ wk ↑ B ]Ts) ]T ≋T A
+wk-vz-idT′ : ∀ {Γ B Δ} (A : Ty ((Γ , B) ++ Δ))
+           → Δ [ wk ↑ B ]Ts [ < vz > ]Ts ≈Ts Δ
+           → A [ (wk ↑ B) ↑↑ Δ ]T [ < vz > ↑↑ (Δ [ wk ↑ B ]Ts) ]T ≋T A
+
+wk-vz-idT′ U Δ = U (rfl ++≈ Δ)
+wk-vz-idT′ (El M) Δ = El ⟦ wk-vz-id M ⟧
+wk-vz-idT′ (Π A B) Δ = Π Awkvz ⟦ wk-vz-idT′ B ⟦ Δ , Awkvz ⟧ ⟧
+  where Awkvz = ⟦ wk-vz-idT′ A Δ ⟧
+
+wk-vz-idTs ε = rfl
+wk-vz-idTs (Δ , A) = ⟦ wk-vz-idTs Δ , ⟦ wk-vz-idT′ A Δwkvz ⟧ ⟧
+  where Δwkvz = wk-vz-idTs Δ
+
+wk-vz-idT A = wk-vz-idT′ A (wk-vz-idTs _)
 
 ≋T↑≈C : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≋T A₂ → Γ₁ ≈C Γ₂
 ≋T↑≈C (U Γ)   = Γ
@@ -215,6 +149,7 @@ trs (Δ , A ⁻¹) Σ [ δ ]Ts≈
 ≋t↑≈C β = rfl
 ≋t↑≈C η = rfl
 ≋t↑≈C (<>-comm {Σ = Σ} M δ) = rfl ++≈ <>-commTs Σ δ
+≋t↑≈C (wk-vz-id _) = rfl ++≈ wk-vz-idTs _
 
 ≈t↑≈C rfl = rfl
 ≈t↑≈C (trs (M ¹) r) = ≋t↑≈C M ∙ ≈t↑≈C r
@@ -227,8 +162,9 @@ trs (Δ , A ⁻¹) Σ [ δ ]Ts≈
 ≋t↑≈T (vz A) = A [ ⟦ wk A ⟧ ]T≈
 ≋t↑≈T (M [ δ ]≋) = ≈t↑≈T M [ δ ]T≈
 ≋t↑≈T β = rfl
-≋t↑≈T η = ⟦ Π rfl {!!} ⟧
-≋t↑≈T (<>-comm {B = B} M δ) = <>-commT B δ
+≋t↑≈T η = ⟦ Π rfl ⟦ wk-vz-idT _ ⟧ ⟧
+≋t↑≈T (<>-comm {B = B} M δ) = ⟦ <>-commT B δ ⟧
+≋t↑≈T (wk-vz-id _) = ⟦ wk-vz-idT _ ⟧
 
 ≈t↑≈T rfl = rfl
 ≈t↑≈T (trs (M  ¹) r) = ≋t↑≈T M ∙ ≈t↑≈T r
@@ -255,6 +191,7 @@ trs (Δ , A ⁻¹) Σ [ δ ]Ts≈
 ≈s↑≈C₂ rfl = rfl
 ≈s↑≈C₂ (trs (δ  ¹) r) = {!!} -- ≋s↑≈C₂ δ ∙ ≈s↑≈C₂ r
 ≈s↑≈C₂ (trs (δ ⁻¹) r) = {!!} -- sym (≋s↑≈C₂ δ) ∙ ≈s↑≈C₂ r
+
 
 -- ≈t↑≈C p = lift-proof IsTm (λ where prf prf refl → refl) (λ where 
 --             (x  ¹) prf → ≋t→IsTm₂ x

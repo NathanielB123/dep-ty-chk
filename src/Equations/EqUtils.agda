@@ -8,7 +8,7 @@ open import Data.Product using () renaming (_,_ to infixl 6 _,_)
 
 open import Syntax
 
-module EqUtils where
+module Equations.EqUtils where
 
 infix 4 _≈Maybe[_]_
 infix 4 _≋Σ[_]_ 

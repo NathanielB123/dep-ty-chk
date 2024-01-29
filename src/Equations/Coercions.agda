@@ -2,12 +2,17 @@
 
 open import Syntax
 
-module Coercions where
+module Equations.Coercions where
 
--- I am hoping to be able to prove these projections by induction at some point,
--- but it might turn out we need to add them as constructors...
-postulate
-  ≈Ts↑≈C : ∀ {Γ₁ Γ₂} {Δ₁ : Tys Γ₁} {Δ₂ : Tys Γ₂} → Δ₁ ≈Ts Δ₂ → Γ₁ ≈C Γ₂
+≈Ts↑≈C : ∀ {Γ₁ Γ₂} {Δ₁ : Tys Γ₁} {Δ₂ : Tys Γ₂} → Δ₁ ≈Ts Δ₂ → Γ₁ ≈C Γ₂
+
+≋Ts↑≈C : ∀ {Γ₁ Γ₂} {Δ₁ : Tys Γ₁} {Δ₂ : Tys Γ₂} → Δ₁ ≋Ts Δ₂ → Γ₁ ≈C Γ₂
+≋Ts↑≈C (ε Γ)   = Γ
+≋Ts↑≈C (Δ , A) = ≈Ts↑≈C Δ
+
+≈Ts↑≈C rfl = rfl
+≈Ts↑≈C (trs (Δ  ¹) r) = ≋Ts↑≈C Δ ∙ ≈Ts↑≈C r
+≈Ts↑≈C (trs (Δ ⁻¹) r) = sym (≋Ts↑≈C Δ) ∙ ≈Ts↑≈C r
 
 _++≈_ : ∀ {Γ₁ Γ₂} {Δ₁ : Tys Γ₁} {Δ₂ : Tys Γ₂}
     → Γ₁ ≈C Γ₂ → Δ₁ ≈Ts Δ₂ → Γ₁ ++ Δ₁ ≈C Γ₂ ++ Δ₂
