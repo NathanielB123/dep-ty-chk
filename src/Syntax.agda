@@ -287,7 +287,7 @@ data _≋t_ where
         → M₁ ≈t M₂ → lam M₁ ≋t lam M₂
   app   : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂} {M₁ : Tm Γ₁ (Π A₁ B₁)} {M₂ : Tm Γ₂ (Π A₂ B₂)}
             {N₁ N₂}
-        → M₁ ≈t M₂ → N₁ ≈t N₂ → app M₁ N₁ ≋t app M₁ N₂
+        → M₁ ≈t M₂ → N₁ ≈t N₂ → app M₁ N₁ ≋t app M₂ N₂
   vz    : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂ 
         → vz {A = A₁} ≋t vz {A = A₂}
   _[_]≋ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} 

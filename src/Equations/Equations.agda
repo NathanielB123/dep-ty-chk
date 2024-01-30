@@ -154,7 +154,7 @@ wk-vz-idT A = wk-vz-idT′ A (wk-vz-idTs _)
 ≋t↑≈C : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} → M₁ ≋t M₂ → Γ₁ ≈C Γ₂
 ≋t↑≈C (coh A) = sym (↭T↑≈C A)
 ≋t↑≈C (lam M) = ≈C-inj₁ (≈t↑≈C M)
-≋t↑≈C (app M N) = rfl
+≋t↑≈C (app M N) = ≈t↑≈C M
 ≋t↑≈C (vz A) = ⟦ ≈T↑≈C A , A ⟧
 ≋t↑≈C (M [ δ ]≋) = ≈s↑≈C₁ δ
 ≋t↑≈C β = rfl
@@ -169,7 +169,7 @@ wk-vz-idT A = wk-vz-idT′ A (wk-vz-idTs _)
 ≋t↑≈T : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} → M₁ ≋t M₂ → A₁ ≈T A₂
 ≋t↑≈T (coh A) = trs (symsym A) rfl
 ≋t↑≈T (lam M) = ⟦ Π (≈C-inj₂ (≈t↑≈C M)) (≈t↑≈T M) ⟧
-≋t↑≈T (app {B₁ = B₁} M N) = ⟦ B₁ rfl[ ⟦ [ rfl , rfl ]< N > ⟧ ]T≈ ⟧
+≋t↑≈T (app M N) = Π-inj₂ (≈t↑≈T M) [ ⟦ [ ≈t↑≈C M , ≈t↑≈T N ]< N > ⟧ ]T≈
 ≋t↑≈T (vz A) = A [ ⟦ wk (≈T↑≈C A) A ⟧ ]T≈
 ≋t↑≈T (M [ δ ]≋) = ≈t↑≈T M [ δ ]T≈
 ≋t↑≈T β = rfl
