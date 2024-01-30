@@ -19,24 +19,18 @@ module Equations.Injectivity where
 data Is,C : Pred ctx where
   prf : ∀ {Γ} {A : Ty Γ} → Is,C (Γ , A)
 
--- These are gonna be trickier to prove now with the index projections...
--- TODO
--- ≈C-inj₁ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → Γ₁ ≈C Γ₂
--- ≈C-inj₁
---   = lift-proofP Is,C (λ where prf prf refl → refl) 
---     (λ where (_ , _ ¹) prf → prf; (_ , _ ⁻¹) prf → prf)
---     (λ where .(Γ , _) (prf {Γ}) → Γ) (λ where prf prf (Γ , _) → Γ) prf prf
+≈C-inj₁ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → Γ₁ ≈C Γ₂
+≈C-inj₁
+  = lift-proofP Is,C (λ where prf prf refl → refl) 
+    (λ where (_ , _ ¹) prf → prf; (_ , _ ⁻¹) prf → prf)
+    (λ where .(Γ , _) (prf {Γ}) → Γ) (λ where prf prf (Γ , _) → Γ) prf prf
 
--- ≈C-inj₂ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → A₁ ≈T A₂
--- ≈C-inj₂
---   = lift-proofP Is,C (λ where prf prf refl → refl) 
---     (λ where (_ , _ ¹) prf → prf; (_ , _ ⁻¹) prf → prf) 
---     {C = λ where _ prf → _}
---     (λ where (_ , A) prf → A) (λ where prf prf (_ , A) → A) prf prf
-
-postulate
-  ≈C-inj₁ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → Γ₁ ≈C Γ₂
-  ≈C-inj₂ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → A₁ ≈T A₂
+≈C-inj₂ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → A₁ ≈T A₂
+≈C-inj₂
+  = lift-proofP Is,C (λ where prf prf refl → refl) 
+    (λ where (_ , _ ¹) prf → prf; (_ , _ ⁻¹) prf → prf) 
+    {C = λ where _ prf → _}
+    (λ where (_ , A) prf → A) (λ where prf prf (_ , A) → A) prf prf
 
 ε-diverge : Ctx → Set
 ε-diverge ε = ⊥
@@ -48,16 +42,6 @@ postulate
 
 ε-diverge≋ ε = refl
 ε-diverge≋ (_ , _) = refl
-ε-diverge≋ (≋s↑≋C₁ (coh₁ Γ)) = sym≡ (ε-diverge↭ Γ)
-ε-diverge≋ (≋s↑≋C₁ (coh₂ Δ)) = refl
-ε-diverge≋ (≋s↑≋C₁ (wk Γ A)) = refl
-ε-diverge≋ (≋s↑≋C₁ ([ Γ ]< M >)) = ε-diverge≈ Γ
-ε-diverge≋ (≋s↑≋C₁ (δ ↑ A)) = refl
-ε-diverge≋ (≋s↑≋C₂ (coh₁ Γ)) = refl
-ε-diverge≋ (≋s↑≋C₂ (coh₂ Δ)) = sym≡ (ε-diverge↭ Δ)
-ε-diverge≋ (≋s↑≋C₂ (wk Γ A)) = ε-diverge≈  Γ
-ε-diverge≋ (≋s↑≋C₂ ([ Γ ]< M >)) = refl
-ε-diverge≋ (≋s↑≋C₂ (δ ↑ A)) = refl
 
 ε-diverge↭ (p  ¹) = ε-diverge≋ p
 ε-diverge↭ (p ⁻¹) = sym≡ (ε-diverge≋ p)
@@ -93,6 +77,10 @@ U-diverge≈ (trs (p ⁻¹) r) = trans (U-diverge≈ r) (sym≡ (U-diverge≋ p)
 U-El-disj : ∀ {Γ₁ Γ₂} {M : Tm Γ₂ U} → ¬ El M ≈T U {Γ₁}
 U-El-disj p = subst id (U-diverge≈ p) tt
 
+-- Here I am proving injectivity via partial projection functions
+-- I think an alternative could be to attach a predicate to such projections,
+-- making them total, though this becomes a bit tricky in the presense of
+-- non-trivial ≋-constructors (i.e. coherences)
 πEl : ∀ {Γ} → Ty Γ → Maybe (Tm Γ U)
 πEl U = nothing
 πEl (El A) = just A

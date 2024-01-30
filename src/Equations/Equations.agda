@@ -25,29 +25,40 @@ module Equations.Equations where
 
 _rfl[_]T≈ : ∀ {Γ Δ₁ Δ₂} A {δ₁ : Sub Δ₁ Γ} {δ₂ : Sub Δ₂ Γ}
           → δ₁ ≈s δ₂ → A [ δ₁ ]T ≋T A [ δ₂ ]T
-U rfl[ δ ]T≈ = U (≈s↑≈C₁ δ)
-El M rfl[ δ ]T≈ = El ⟦ rfl [ δ ]≋ ⟧
-Π A B rfl[ δ ]T≈ = Π ⟦ A rfl[ δ ]T≈ ⟧ ⟦ B rfl[ ⟦ δ ↑ rfl ⟧ ]T≈ ⟧
-
 _[_]T≈ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂} {δ₁ : Sub Δ₁ Γ₁} {δ₂ : Sub Δ₂ Γ₂}
        → A₁ ≈T A₂ → δ₁ ≈s δ₂ → A₁ [ δ₁ ]T ≈T A₂ [ δ₂ ]T
-rfl {x = A} [ δ ]T≈ = ⟦ A rfl[ δ ]T≈ ⟧
-trs (U Γ  ¹) A [ δ ]T≈ = A [ sym (coh-s₂ (sym Γ)) ∙ δ ]T≈
-trs (U Γ ⁻¹) A [ δ ]T≈ = A [ sym (coh-s₂ Γ) ∙ δ ]T≈
-trs (El M ¹) A [ δ ]T≈ 
+
+_rfl[_]T≈′_ : ∀ {Γ Δ₁ Δ₂} A {δ₁ : Sub Δ₁ Γ} {δ₂ : Sub Δ₂ Γ}
+            → δ₁ ≈s δ₂ → Δ₁ ≈C Δ₂ → A [ δ₁ ]T ≋T A [ δ₂ ]T
+U rfl[ δ ]T≈′ p = U p
+El M rfl[ δ ]T≈′ p = El ⟦ rfl [ δ ]≋ ⟧
+Π A B rfl[ δ ]T≈′ p = Π A[] ⟦ B rfl[ ⟦ δ ↑ rfl ⟧ ]T≈′ ⟦ p , A[] ⟧ ⟧
+  where A[] = ⟦ A rfl[ δ ]T≈′ p ⟧
+
+_[_]T≈′_ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂} {δ₁ : Sub Δ₁ Γ₁} {δ₂ : Sub Δ₂ Γ₂}
+         → A₁ ≈T A₂ → δ₁ ≈s δ₂ → Δ₁ ≈C Δ₂ → A₁ [ δ₁ ]T ≈T A₂ [ δ₂ ]T
+rfl {x = A} [ δ ]T≈′ p = ⟦ A rfl[ δ ]T≈′ p ⟧
+trs (U Γ  ¹) A [ δ ]T≈′ p = A [ sym (coh-s₂ (sym Γ)) ∙ δ ]T≈′ p
+trs (U Γ ⁻¹) A [ δ ]T≈′ p = A [ sym (coh-s₂ Γ) ∙ δ ]T≈′ p
+trs (El M ¹) A [ δ ]T≈′ p 
   = ⟦ El ⟦ M [ δ ∙ coh-s₂ (sym (≈t↑≈C M) ∙ ≈s↑≈C₂ δ) ]≋ ⟧ ⟧ 
-  ∙ A [ sym (coh-s₂ (sym (≈t↑≈C M) ∙ ≈s↑≈C₂ δ)) ]T≈
-trs (El M ⁻¹) A [ δ ]T≈ 
+  ∙ A [ sym (coh-s₂ (sym (≈t↑≈C M) ∙ ≈s↑≈C₂ δ)) ]T≈′ rfl
+trs (El M ⁻¹) A [ δ ]T≈′ p 
   = ⟦ El ⟦ sym M [ δ ∙ coh-s₂ (≈t↑≈C M ∙ ≈s↑≈C₂ δ) ]≋ ⟧ ⟧ 
-  ∙ A [ sym (coh-s₂ (≈t↑≈C M ∙ ≈s↑≈C₂ δ)) ]T≈
-trs (Π A B ¹) C [ δ ]T≈ 
-  = ⟦ Π (A [ δ ∙ coh-s₂ (sym (≈T↑≈C A) ∙ ≈s↑≈C₂ δ) ]T≈) 
-        (B [ ⟦ (δ ∙ coh-s₂ (sym (≈T↑≈C A) ∙ ≈s↑≈C₂ δ)) ↑ A ⟧ ]T≈) ⟧ 
-  ∙ C [ sym (coh-s₂ (sym (≈T↑≈C A) ∙ ≈s↑≈C₂ δ)) ]T≈
-trs (Π A B ⁻¹) C [ δ ]T≈
-  = ⟦ Π (sym (A [ sym (δ ∙ coh-s₂ (≈T↑≈C A ∙ ≈s↑≈C₂ δ)) ]T≈))
-        (sym (B [ ⟦ (δ ∙ coh-s₂ (≈T↑≈C A ∙ ≈s↑≈C₂ δ)) ↑ sym A ⟧⁻¹ ]T≈)) ⟧
-  ∙ C [ sym (coh-s₂ (≈T↑≈C A ∙ ≈s↑≈C₂ δ)) ]T≈
+  ∙ A [ sym (coh-s₂ (≈t↑≈C M ∙ ≈s↑≈C₂ δ)) ]T≈′ rfl
+trs (Π A B ¹) C [ δ ]T≈′ p 
+  = ⟦ Π A[] (B [ ⟦ (δ ∙ coh-s₂ (sym (≈T↑≈C A) ∙ ≈s↑≈C₂ δ)) ↑ A ⟧ ]T≈′ 
+               ⟦ p , A[] ⟧) ⟧ 
+  ∙ C [ sym (coh-s₂ (sym (≈T↑≈C A) ∙ ≈s↑≈C₂ δ)) ]T≈′ rfl
+  where A[] = A [ δ ∙ coh-s₂ (sym (≈T↑≈C A) ∙ ≈s↑≈C₂ δ) ]T≈′ p
+trs (Π A B ⁻¹) C [ δ ]T≈′ p
+  = ⟦ Π A[] (sym (B [ ⟦ (δ ∙ coh-s₂ (≈T↑≈C A ∙ ≈s↑≈C₂ δ)) ↑ sym A ⟧⁻¹ ]T≈′ 
+                    ⟦ p , A[] ⟧⁻¹)) ⟧
+  ∙ C [ sym (coh-s₂ (≈T↑≈C A ∙ ≈s↑≈C₂ δ)) ]T≈′ rfl
+  where A[] = sym (A [ sym (δ ∙ coh-s₂ (≈T↑≈C A ∙ ≈s↑≈C₂ δ)) ]T≈′ sym p)
+
+A rfl[ δ ]T≈ = A rfl[ δ ]T≈′ ≈s↑≈C₁ δ
+A [ δ ]T≈ = A [ δ ]T≈′ ≈s↑≈C₁ δ
 
 _↑↑rfl≈_ : ∀ {Γ₁ Γ₂ Δ} {δ₁ : Sub Γ₁ Δ} {δ₂ : Sub Γ₂ Δ} → δ₁ ≈s δ₂ → ∀ Σ 
       → δ₁ ↑↑ Σ ≈s δ₂ ↑↑ Σ 
@@ -158,7 +169,7 @@ wk-vz-idT A = wk-vz-idT′ A (wk-vz-idTs _)
 ≋t↑≈T : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} → M₁ ≋t M₂ → A₁ ≈T A₂
 ≋t↑≈T (coh A) = trs (symsym A) rfl
 ≋t↑≈T (lam M) = ⟦ Π (≈C-inj₂ (≈t↑≈C M)) (≈t↑≈T M) ⟧
-≋t↑≈T (app {B₁ = B₁} M N) = ⟦ B₁ rfl[ ⟦ [ rfl ]< N > ⟧ ]T≈ ⟧
+≋t↑≈T (app {B₁ = B₁} M N) = ⟦ B₁ rfl[ ⟦ [ rfl , rfl ]< N > ⟧ ]T≈ ⟧
 ≋t↑≈T (vz A) = A [ ⟦ wk (≈T↑≈C A) A ⟧ ]T≈
 ≋t↑≈T (M [ δ ]≋) = ≈t↑≈T M [ δ ]T≈
 ≋t↑≈T β = rfl
@@ -170,10 +181,27 @@ wk-vz-idT A = wk-vz-idT′ A (wk-vz-idTs _)
 ≈t↑≈T (trs (M  ¹) r) = ≋t↑≈T M ∙ ≈t↑≈T r
 ≈t↑≈T (trs (M ⁻¹) r) = sym (≋t↑≈T M) ∙ ≈t↑≈T r
 
+≋s↑≈C₁ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} 
+        → δ₁ ≋s δ₂ → Γ₁ ≈C Γ₂
+≋s↑≈C₁ (coh₁ Γ) = trs (symsym Γ) rfl
+≋s↑≈C₁ (coh₂ Δ) = rfl
+≋s↑≈C₁ (wk Γ A) = ⟦ Γ , A ⟧
+≋s↑≈C₁ [ Γ , A ]< M > = Γ
+≋s↑≈C₁ (δ ↑ A) = ⟦ Γ , A [ δ ]T≈′ Γ ⟧
+  where Γ = ≈s↑≈C₁ δ
+
+≋s↑≈C₂ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} 
+        → δ₁ ≋s δ₂ → Δ₁ ≈C Δ₂
+≋s↑≈C₂ (coh₁ Γ) = rfl
+≋s↑≈C₂ (coh₂ Δ) = trs (symsym Δ) rfl
+≋s↑≈C₂ (wk Γ δ) = Γ
+≋s↑≈C₂ [ Γ , A ]< M > = ⟦ Γ , A ⟧
+≋s↑≈C₂ (δ ↑ A) = ⟦ ≈s↑≈C₂ δ , A ⟧
+
 ≈s↑≈C₁ rfl = rfl
-≈s↑≈C₁ (trs (δ  ¹) r) = ⟦ ≋s↑≋C₁ δ ⟧ ∙ ≈s↑≈C₁ r
-≈s↑≈C₁ (trs (δ ⁻¹) r) = ⟦ ≋s↑≋C₁ δ ⟧⁻¹ ∙ ≈s↑≈C₁ r
+≈s↑≈C₁ (trs (δ  ¹) r) = ≋s↑≈C₁ δ ∙ ≈s↑≈C₁ r
+≈s↑≈C₁ (trs (δ ⁻¹) r) = sym (≋s↑≈C₁ δ) ∙ ≈s↑≈C₁ r
 
 ≈s↑≈C₂ rfl = rfl
-≈s↑≈C₂ (trs (δ  ¹) r) = ⟦ ≋s↑≋C₂ δ ⟧ ∙ ≈s↑≈C₂ r
-≈s↑≈C₂ (trs (δ ⁻¹) r) = ⟦ ≋s↑≋C₂ δ ⟧⁻¹ ∙ ≈s↑≈C₂ r
+≈s↑≈C₂ (trs (δ  ¹) r) = ≋s↑≈C₂ δ ∙ ≈s↑≈C₂ r
+≈s↑≈C₂ (trs (δ ⁻¹) r) = sym (≋s↑≈C₂ δ) ∙ ≈s↑≈C₂ r
