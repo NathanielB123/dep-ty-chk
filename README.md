@@ -6,20 +6,20 @@ A WIP (see "Current Progress"), simple, sound dependent type checker.
 - **Dependent:** The type theory contains pi-types and an eliminator from terms to types.
 
 ## Current Progress
-Done: 
+### Done: 
 - Definition of typed syntax
 - Various proofs of useful properties (injectivity of type constructors, congruence of type substitutions, laws about how substitutions commute)
 - Definition of normal forms (as predicates on the typed syntax)
-WIP:
+### WIP:
 - Normalisation (by hereditary substitution)
 - We need a few extra properties of substitutions and a way to `coe`rce variables to fill the remaining holes
 - I think showing termination will be a bit tricky. A good first step would be to split substitutions into single-term substitutions (`< M >`) and weakenings (`wk`).
-Future:
+### Future:
 - Decidable equivalence on typed terms
 - Definition of untyped pre-terms
 - A monadic typechecker (pre-term -> maybe typed term) which takes advantage of all this machinery
 
-# Design Decisions
+## Design Decisions
 The current developments in this repo use a term syntax with explicit substitutions and an inductive equivalence relation on terms (so terms and this relation together form a setoid). 
 
 This is inconvenient, but some sort of explicit substitutions/setoid relation unfortunately appears to be necessary to avoid getting stuck in dependency hell (recursive term substitutions must take advantage of properties about how substitutions commute on types, but types contain terms, so proving those equations requires implementing term substitutions!) 
