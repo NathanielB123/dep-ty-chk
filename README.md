@@ -8,7 +8,7 @@ A WIP (see "Current Progress"), simple, sound dependent type checker.
 ## Current Progress
 ### Done: 
 - Definition of typed syntax
-- Various proofs of useful properties (injectivity of type constructors, congruence of type substitutions, laws about how substitutions commute)
+- Various proofs of useful properties: Injectivity of type constructors, congruence of type substitutions, equivalence index projections (i.e. equivalence of terms implies the types of those terms are equivalent), equations covering how substitutions commute
 - Definition of normal forms (as predicates on the typed syntax)
 ### WIP:
 - Normalisation (by hereditary substitution)
