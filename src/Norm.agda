@@ -57,8 +57,8 @@ x [ coe₁ Γ δ ]v = coe-nf ⟦ rfl [ ⟦ coh₁ Γ ⟧⁻¹ ]≋ ⟧ (x [ δ ]
 x [ coe₂ Δ δ ]v = {!!}
 x [ wk ]v = coe rfl (ne (var (vs x)))
 vz [ < M > ]v = coe-nf {!!} (nf M)
-vs x [ < M > ]v = coe {!!} (ne (var x))
+vs x [ < M > ]v = coe ⟦ wk-<>-id _ ⟧⁻¹ (ne (var x))
 vz [ δ ↑ A ]v = coe {!!} (ne (var vz))
-vs x [ δ ↑ A ]v = coe-nf {!!} (x [ δ ]v [ wk ]nf)
+vs x [ δ ↑ A ]v = coe-nf ⟦ wk-comm _ δ ⟧⁻¹ (x [ δ ]v [ wk ]nf)
  
  

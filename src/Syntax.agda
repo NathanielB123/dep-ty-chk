@@ -298,12 +298,17 @@ data _≋t_ where
   η     : ∀ {Γ A B} {M : Tm Γ (Π A B)} 
         → Tm.lam (app (M [ wk ]) (vz {A = A})) ≋t M
     
-  <>-comm  : ∀ {Γ Δ A Σ B N} (M : Tm ((Γ , A) ++ Σ) B) (δ : Sub Δ Γ)
-           → M [ (δ ↑ A) ↑↑ Σ ] [ < N [ δ ] > ↑↑ (Σ [ δ ↑ A ]Ts) ] 
-          ≋t M [ < N > ↑↑ Σ ] [ δ ↑↑ (Σ [ < N > ]Ts) ]
+  wk-<>-id : ∀ {Γ Δ A B} (M : Tm (Γ ++ Δ) A) {N : Tm Γ B} 
+           → M [ wk ↑↑ Δ ] [ < N > ↑↑ (Δ [ wk ]Ts) ] ≋t M 
   wk-vz-id : ∀ {Γ B Δ A} (M : Tm ((Γ , B) ++ Δ) A) 
            → M [ (wk ↑ B) ↑↑ Δ ] [ < vz > ↑↑ (Δ [ wk ↑ B ]Ts) ] 
           ≋t M
+  wk-comm  : ∀ {Γ Δ Σ A B} (M : Tm (Γ ++ Σ) A) (δ : Sub Δ Γ)
+           → M [ wk ↑↑ Σ ] [ (δ ↑ B) ↑↑ (Σ [ wk ]Ts) ] 
+          ≋t M [ δ ↑↑ Σ ] [ wk {A = B [ δ ]T} ↑↑ (Σ [ δ ]Ts) ]
+  <>-comm  : ∀ {Γ Δ A Σ B N} (M : Tm ((Γ , A) ++ Σ) B) (δ : Sub Δ Γ)
+           → M [ (δ ↑ A) ↑↑ Σ ] [ < N [ δ ] > ↑↑ (Σ [ δ ↑ A ]Ts) ] 
+          ≋t M [ < N > ↑↑ Σ ] [ δ ↑↑ (Σ [ < N > ]Ts) ]
   -- ...
 
   -- We need at least all of these equations:

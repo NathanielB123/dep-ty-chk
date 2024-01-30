@@ -95,7 +95,7 @@ trs (Δ , A ⁻¹) Σ [ δ ]Ts≈
 <>-commTs : ∀ {Γ Δ A N} (Σ : Tys (Γ , A)) (δ : Sub Δ Γ)
           → Σ [ δ ↑ A ]Ts [ < N [ δ ] > ]Ts
         ≈Ts Σ [ < N > ]Ts [ δ ]Ts
-<>-commT[] : ∀ {Γ Δ A Σ N} (B : Ty (Γ , A ++ Σ)) (δ : Sub Δ Γ)
+<>-commT′ : ∀ {Γ Δ A Σ N} (B : Ty (Γ , A ++ Σ)) (δ : Sub Δ Γ)
            → (p : Σ [ δ ↑ A ]Ts [ < N [ δ ] > ]Ts ≈Ts Σ [ < N > ]Ts [ δ ]Ts)
            → B [ (δ ↑ A) ↑↑ Σ ]T [ < N [ δ ] > ↑↑ (Σ [ δ ↑ A ]Ts) ]T
           ≋T B [ < N > ↑↑ Σ ]T [ δ ↑↑ (Σ [ < N > ]Ts) ]T
@@ -104,18 +104,39 @@ trs (Δ , A ⁻¹) Σ [ δ ]Ts≈
         ≋T B [ < N > ↑↑ Σ ]T [ δ ↑↑ (Σ [ < N > ]Ts) ]T
 
 <>-commTs ε δ = rfl
-<>-commTs (Σ , B) δ = ⟦ Σδ , ⟦ <>-commT[] {Σ = Σ} B δ Σδ ⟧ ⟧
-  where
-    Σδ = <>-commTs Σ δ
+<>-commTs (Σ , B) δ = ⟦ Σ<> , ⟦ <>-commT′ {Σ = Σ} B δ Σ<> ⟧ ⟧
+  where Σ<> = <>-commTs Σ δ
 
-<>-commT[] {Σ = Σ} U δ p = U (rfl ++≈ p)
-<>-commT[] {Σ = Σ} (El M) δ _ = El ⟦ <>-comm {Σ = Σ} M δ ⟧
-<>-commT[] {Σ = Σ} (Π B C) δ p
-  = Π <>B ⟦ <>-commT[] {Σ = Σ , B} C δ ⟦ p , <>B ⟧ ⟧
-  where <>B = ⟦ <>-commT[] B δ p ⟧
+<>-commT′ {Σ = Σ} U δ p = U (rfl ++≈ p)
+<>-commT′ {Σ = Σ} (El M) δ _ = El ⟦ <>-comm {Σ = Σ} M δ ⟧
+<>-commT′ {Σ = Σ} (Π B C) δ p
+  = Π B<> ⟦ <>-commT′ {Σ = Σ , B} C δ ⟦ p , B<> ⟧ ⟧
+  where B<> = ⟦ <>-commT′ B δ p ⟧
 
-<>-commT {Σ = Σ} B δ = <>-commT[] {Σ = Σ} B δ (<>-commTs Σ δ)
+<>-commT {Σ = Σ} B δ = <>-commT′ {Σ = Σ} B δ (<>-commTs Σ δ)
 
+wk-commTs : ∀ {Γ Δ A} (Σ : Tys Γ) (δ : Sub Δ Γ)
+          → Σ [ wk ]Ts [ δ ↑ A ]Ts
+        ≈Ts Σ [ δ ]Ts [ wk {A = A [ δ ]T} ]Ts
+wk-commT : ∀ {Γ Δ A Σ} (B : Ty (Γ ++ Σ)) (δ : Sub Δ Γ)
+         → B [ wk ↑↑ Σ ]T [ (δ ↑ A) ↑↑ (Σ [ wk ]Ts) ]T
+        ≋T B [ δ ↑↑ Σ ]T [ wk {A = A [ δ ]T} ↑↑ (Σ [ δ ]Ts) ]T
+wk-commT′ : ∀ {Γ Δ A Σ} (B : Ty (Γ ++ Σ)) (δ : Sub Δ Γ)
+          → Σ [ wk ]Ts [ δ ↑ A ]Ts
+        ≈Ts Σ [ δ ]Ts [ wk {A = A [ δ ]T} ]Ts
+          → B [ wk ↑↑ Σ ]T [ (δ ↑ A) ↑↑ (Σ [ wk ]Ts) ]T
+         ≋T B [ δ ↑↑ Σ ]T [ wk {A = A [ δ ]T} ↑↑ (Σ [ δ ]Ts) ]T
+
+wk-commT′ U δ Σ = U (rfl ++≈ Σ)
+wk-commT′ (El M) δ Σ = El ⟦ wk-comm M δ ⟧
+wk-commT′ (Π A B) δ Σ = Π Awk ⟦ wk-commT′ B δ ⟦ Σ , Awk ⟧ ⟧
+  where Awk = ⟦ wk-commT′ A δ Σ ⟧
+
+wk-commTs ε δ = rfl
+wk-commTs (Σ , A) δ = ⟦ Σwk , ⟦ wk-commT′ {Σ = Σ} A δ Σwk ⟧ ⟧
+  where Σwk = wk-commTs Σ δ
+
+wk-commT {Σ = Σ} A δ = wk-commT′ A δ (wk-commTs Σ _)
 
 wk-vz-idTs : ∀ {Γ B} (Δ : Tys (Γ , B)) 
            → Δ [ wk ↑ B ]Ts [ < vz > ]Ts ≈Ts Δ
@@ -125,16 +146,35 @@ wk-vz-idT′ : ∀ {Γ B Δ} (A : Ty ((Γ , B) ++ Δ))
            → Δ [ wk ↑ B ]Ts [ < vz > ]Ts ≈Ts Δ
            → A [ (wk ↑ B) ↑↑ Δ ]T [ < vz > ↑↑ (Δ [ wk ↑ B ]Ts) ]T ≋T A
 
-wk-vz-idT′ U Δ = U (rfl ++≈ Δ)
-wk-vz-idT′ (El M) Δ = El ⟦ wk-vz-id M ⟧
+wk-vz-idT′ U Δ       = U (rfl ++≈ Δ)
+wk-vz-idT′ (El M) Δ  = El ⟦ wk-vz-id M ⟧
 wk-vz-idT′ (Π A B) Δ = Π Awkvz ⟦ wk-vz-idT′ B ⟦ Δ , Awkvz ⟧ ⟧
   where Awkvz = ⟦ wk-vz-idT′ A Δ ⟧
 
-wk-vz-idTs ε = rfl
+wk-vz-idTs ε       = rfl
 wk-vz-idTs (Δ , A) = ⟦ wk-vz-idTs Δ , ⟦ wk-vz-idT′ A Δwkvz ⟧ ⟧
   where Δwkvz = wk-vz-idTs Δ
 
 wk-vz-idT A = wk-vz-idT′ A (wk-vz-idTs _)
+
+wk-<>-idTs : ∀ {Γ B} (Δ : Tys Γ) {N : Tm Γ B} 
+           → Δ [ wk ]Ts [ < N > ]Ts ≈Ts Δ
+wk-<>-idT : ∀ {Γ Δ B} (A : Ty (Γ ++ Δ)) {N : Tm Γ B} 
+          → A [ wk ↑↑ Δ ]T [ < N > ↑↑ (Δ [ wk ]Ts) ]T ≋T A
+wk-<>-idT′ : ∀ {Γ Δ B} (A : Ty (Γ ++ Δ)) {N : Tm Γ B} 
+           → Δ [ wk ]Ts [ < N > ]Ts ≈Ts Δ
+           → A [ wk ↑↑ Δ ]T [ < N > ↑↑ (Δ [ wk ]Ts) ]T ≋T A
+
+wk-<>-idT′ U       Δ = U (rfl ++≈ Δ)
+wk-<>-idT′ (El M)  Δ = El ⟦ wk-<>-id M ⟧
+wk-<>-idT′ (Π A B) Δ = Π Awk<> ⟦ wk-<>-idT′ B ⟦ Δ , Awk<> ⟧ ⟧
+  where Awk<> = ⟦ wk-<>-idT′ A Δ ⟧
+
+wk-<>-idTs ε       = rfl
+wk-<>-idTs (Δ , A) = ⟦ Δwk<> , ⟦ wk-<>-idT′ A Δwk<> ⟧ ⟧
+  where Δwk<> = wk-<>-idTs Δ
+
+wk-<>-idT A = wk-<>-idT′ A (wk-<>-idTs _)
 
 ≋T↑≈C : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≋T A₂ → Γ₁ ≈C Γ₂
 ≋T↑≈C (U Γ)   = Γ
@@ -159,8 +199,10 @@ wk-vz-idT A = wk-vz-idT′ A (wk-vz-idTs _)
 ≋t↑≈C (M [ δ ]≋) = ≈s↑≈C₁ δ
 ≋t↑≈C β = rfl
 ≋t↑≈C η = rfl
-≋t↑≈C (<>-comm {Σ = Σ} M δ) = rfl ++≈ <>-commTs Σ δ
 ≋t↑≈C (wk-vz-id _) = rfl ++≈ wk-vz-idTs _
+≋t↑≈C (wk-<>-id {Δ = Δ} _) = rfl ++≈ wk-<>-idTs Δ
+≋t↑≈C (<>-comm {Σ = Σ} M δ) = rfl ++≈ <>-commTs Σ δ
+≋t↑≈C (wk-comm {Σ = Σ} M δ) = rfl ++≈ wk-commTs Σ δ
 
 ≈t↑≈C rfl = rfl
 ≈t↑≈C (trs (M ¹) r) = ≋t↑≈C M ∙ ≈t↑≈C r
@@ -174,8 +216,10 @@ wk-vz-idT A = wk-vz-idT′ A (wk-vz-idTs _)
 ≋t↑≈T (M [ δ ]≋) = ≈t↑≈T M [ δ ]T≈
 ≋t↑≈T β = rfl
 ≋t↑≈T η = ⟦ Π rfl ⟦ wk-vz-idT _ ⟧ ⟧
-≋t↑≈T (<>-comm {B = B} M δ) = ⟦ <>-commT B δ ⟧
 ≋t↑≈T (wk-vz-id _) = ⟦ wk-vz-idT _ ⟧
+≋t↑≈T (wk-<>-id _) = ⟦ wk-<>-idT _ ⟧
+≋t↑≈T (<>-comm {B = B} M δ) = ⟦ <>-commT B δ ⟧
+≋t↑≈T (wk-comm {A = A} M δ) = ⟦ wk-commT A δ ⟧
 
 ≈t↑≈T rfl = rfl
 ≈t↑≈T (trs (M  ¹) r) = ≋t↑≈T M ∙ ≈t↑≈T r
