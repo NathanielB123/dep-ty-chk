@@ -158,8 +158,8 @@ wk-vz-idT A = wk-vz-idT′ A (wk-vz-idTs _)
 ≋t↑≈T : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} → M₁ ≋t M₂ → A₁ ≈T A₂
 ≋t↑≈T (coh A) = trs (symsym A) rfl
 ≋t↑≈T (lam M) = ⟦ Π (≈C-inj₂ (≈t↑≈C M)) (≈t↑≈T M) ⟧
-≋t↑≈T (app {B₁ = B₁} M N) = ⟦ B₁ rfl[ ⟦ < N > ⟧ ]T≈ ⟧
-≋t↑≈T (vz A) = A [ ⟦ wk A ⟧ ]T≈
+≋t↑≈T (app {B₁ = B₁} M N) = ⟦ B₁ rfl[ ⟦ [ rfl ]< N > ⟧ ]T≈ ⟧
+≋t↑≈T (vz A) = A [ ⟦ wk (≈T↑≈C A) A ⟧ ]T≈
 ≋t↑≈T (M [ δ ]≋) = ≈t↑≈T M [ δ ]T≈
 ≋t↑≈T β = rfl
 ≋t↑≈T η = ⟦ Π rfl ⟦ wk-vz-idT _ ⟧ ⟧
@@ -170,32 +170,10 @@ wk-vz-idT A = wk-vz-idT′ A (wk-vz-idTs _)
 ≈t↑≈T (trs (M  ¹) r) = ≋t↑≈T M ∙ ≈t↑≈T r
 ≈t↑≈T (trs (M ⁻¹) r) = sym (≋t↑≈T M) ∙ ≈t↑≈T r
 
-≋s↑≈C₁ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} → δ₁ ≋s δ₂ → Γ₁ ≈C Γ₂
-≋s↑≈C₁ (coh₁ Γ) = trs (symsym Γ) rfl
-≋s↑≈C₁ (coh₂ Δ) = rfl
-≋s↑≈C₁ (wk A)   = ⟦ ≈T↑≈C A , A ⟧
-≋s↑≈C₁ < M >    = ≈t↑≈C M
-≋s↑≈C₁ (δ ↑ A)  = ⟦ ≈s↑≈C₁ δ , A [ δ ]T≈ ⟧
-
 ≈s↑≈C₁ rfl = rfl
-≈s↑≈C₁ (trs (δ  ¹) r) = {!!} -- ≋s↑≈C₁ δ ∙ ≈s↑≈C₁ r
-≈s↑≈C₁ (trs (δ ⁻¹) r) = {!!} -- sym (≋s↑≈C₁ δ) ∙ ≈s↑≈C₁ r
-
-≋s↑≈C₂ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} → δ₁ ≋s δ₂ → Δ₁ ≈C Δ₂
-≋s↑≈C₂ (coh₁ Γ) = rfl
-≋s↑≈C₂ (coh₂ Δ) = trs (symsym Δ) rfl
-≋s↑≈C₂ (wk A)   = ≈T↑≈C A
-≋s↑≈C₂ < M >    = ⟦ ≈t↑≈C M , ≈t↑≈T M ⟧
-≋s↑≈C₂ (δ ↑ A)  = ⟦ ≈s↑≈C₂ δ , A ⟧
+≈s↑≈C₁ (trs (δ  ¹) r) = ⟦ ≋s↑≋C₁ δ ⟧ ∙ ≈s↑≈C₁ r
+≈s↑≈C₁ (trs (δ ⁻¹) r) = ⟦ ≋s↑≋C₁ δ ⟧⁻¹ ∙ ≈s↑≈C₁ r
 
 ≈s↑≈C₂ rfl = rfl
-≈s↑≈C₂ (trs (δ  ¹) r) = {!!} -- ≋s↑≈C₂ δ ∙ ≈s↑≈C₂ r
-≈s↑≈C₂ (trs (δ ⁻¹) r) = {!!} -- sym (≋s↑≈C₂ δ) ∙ ≈s↑≈C₂ r
-
-
--- ≈t↑≈C p = lift-proof IsTm (λ where prf prf refl → refl) (λ where 
---             (x  ¹) prf → ≋t→IsTm₂ x
---             (x ⁻¹) prf → ≋t→IsTm₁ x
---           ) {C = λ _ _ → ctx}
---           (λ where _ (prf {Γ}) → Γ) (λ where prf prf → ≋t↑≈C) prf prf p
-  
+≈s↑≈C₂ (trs (δ  ¹) r) = ⟦ ≋s↑≋C₂ δ ⟧ ∙ ≈s↑≈C₂ r
+≈s↑≈C₂ (trs (δ ⁻¹) r) = ⟦ ≋s↑≋C₂ δ ⟧⁻¹ ∙ ≈s↑≈C₂ r

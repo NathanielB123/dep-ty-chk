@@ -1,6 +1,8 @@
 {-# OPTIONS --without-K #-}
 
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst)
+open import Relation.Binary.PropositionalEquality 
+  using (_≡_; refl; subst; trans)
+  renaming (sym to sym≡)
 open import Relation.Nullary using (¬_)
 open import Data.Empty using (⊥; ⊥-elim)
 open import Data.Unit using (⊤; tt)
@@ -17,22 +19,54 @@ module Equations.Injectivity where
 data Is,C : Pred ctx where
   prf : ∀ {Γ} {A : Ty Γ} → Is,C (Γ , A)
 
-≈C-inj₁ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → Γ₁ ≈C Γ₂
-≈C-inj₁
-  = lift-proofP Is,C (λ where prf prf refl → refl) 
-    (λ where (_ , _ ¹) prf → prf; (_ , _ ⁻¹) prf → prf)
-    (λ where .(Γ , _) (prf {Γ}) → Γ) (λ where prf prf (Γ , _) → Γ) prf prf
+-- These are gonna be trickier to prove now with the index projections...
+-- TODO
+-- ≈C-inj₁ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → Γ₁ ≈C Γ₂
+-- ≈C-inj₁
+--   = lift-proofP Is,C (λ where prf prf refl → refl) 
+--     (λ where (_ , _ ¹) prf → prf; (_ , _ ⁻¹) prf → prf)
+--     (λ where .(Γ , _) (prf {Γ}) → Γ) (λ where prf prf (Γ , _) → Γ) prf prf
 
-≈C-inj₂ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → A₁ ≈T A₂
-≈C-inj₂
-  = lift-proofP Is,C (λ where prf prf refl → refl) 
-    (λ where (_ , _ ¹) prf → prf; (_ , _ ⁻¹) prf → prf) 
-    {C = λ where _ prf → _}
-    (λ where (_ , A) prf → A) (λ where prf prf (_ , A) → A) prf prf
+-- ≈C-inj₂ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → A₁ ≈T A₂
+-- ≈C-inj₂
+--   = lift-proofP Is,C (λ where prf prf refl → refl) 
+--     (λ where (_ , _ ¹) prf → prf; (_ , _ ⁻¹) prf → prf) 
+--     {C = λ where _ prf → _}
+--     (λ where (_ , A) prf → A) (λ where prf prf (_ , A) → A) prf prf
+
+postulate
+  ≈C-inj₁ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → Γ₁ ≈C Γ₂
+  ≈C-inj₂ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → A₁ ≈T A₂
+
+ε-diverge : Ctx → Set
+ε-diverge ε = ⊥
+ε-diverge (_ , _) = ⊤
+
+ε-diverge≈ : ∀ {Γ₁ Γ₂} → Γ₁ ≈C Γ₂ → ε-diverge Γ₁ ≡ ε-diverge Γ₂
+ε-diverge↭ : ∀ {Γ₁ Γ₂} → Γ₁ ↭C Γ₂ → ε-diverge Γ₁ ≡ ε-diverge Γ₂
+ε-diverge≋ : ∀ {Γ₁ Γ₂} → Γ₁ ≋C Γ₂ → ε-diverge Γ₁ ≡ ε-diverge Γ₂
+
+ε-diverge≋ ε = refl
+ε-diverge≋ (_ , _) = refl
+ε-diverge≋ (≋s↑≋C₁ (coh₁ Γ)) = sym≡ (ε-diverge↭ Γ)
+ε-diverge≋ (≋s↑≋C₁ (coh₂ Δ)) = refl
+ε-diverge≋ (≋s↑≋C₁ (wk Γ A)) = refl
+ε-diverge≋ (≋s↑≋C₁ ([ Γ ]< M >)) = ε-diverge≈ Γ
+ε-diverge≋ (≋s↑≋C₁ (δ ↑ A)) = refl
+ε-diverge≋ (≋s↑≋C₂ (coh₁ Γ)) = refl
+ε-diverge≋ (≋s↑≋C₂ (coh₂ Δ)) = sym≡ (ε-diverge↭ Δ)
+ε-diverge≋ (≋s↑≋C₂ (wk Γ A)) = ε-diverge≈  Γ
+ε-diverge≋ (≋s↑≋C₂ ([ Γ ]< M >)) = refl
+ε-diverge≋ (≋s↑≋C₂ (δ ↑ A)) = refl
+
+ε-diverge↭ (p  ¹) = ε-diverge≋ p
+ε-diverge↭ (p ⁻¹) = sym≡ (ε-diverge≋ p)
+
+ε-diverge≈ rfl = refl
+ε-diverge≈ (trs p r) = trans (ε-diverge≈ r) (ε-diverge↭ p)
 
 ,ε-disj : ∀ {Γ A} → ¬ Γ , A ≈C ε
-,ε-disj (trs (ε  ¹) p) = ,ε-disj p
-,ε-disj (trs (ε ⁻¹) p) = ,ε-disj p
+,ε-disj r = subst id (ε-diverge≈ r) tt
 
 U-diverge : ∀ {Γ} → Ty Γ → Set
 U-diverge U = ⊥
@@ -44,15 +78,17 @@ U-diverge (Π A B) = ⊤
 Π-diverge (El _) = ⊤
 Π-diverge (Π _ _) = ⊥
 
+U-diverge≋ : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} 
+           → A₁ ≋T A₂ → U-diverge A₁ ≡ U-diverge A₂
+U-diverge≋ (U _)   = refl
+U-diverge≋ (El _)  = refl
+U-diverge≋ (Π _ _) = refl
+
 U-diverge≈ : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} 
-                  → A₁ ≈T A₂ → U-diverge A₁ ≡ U-diverge A₂
+           → A₁ ≈T A₂ → U-diverge A₁ ≡ U-diverge A₂
 U-diverge≈ rfl = refl
-U-diverge≈ (trs (U _    ¹) r) = U-diverge≈ r
-U-diverge≈ (trs (El _   ¹) r) = U-diverge≈ r
-U-diverge≈ (trs (Π _ _  ¹) r) = U-diverge≈ r
-U-diverge≈ (trs (U _   ⁻¹) r) = U-diverge≈ r
-U-diverge≈ (trs (El _  ⁻¹) r) = U-diverge≈ r
-U-diverge≈ (trs (Π _ _ ⁻¹) r) = U-diverge≈ r
+U-diverge≈ (trs (p  ¹) r) = trans (U-diverge≈ r) (U-diverge≋ p)
+U-diverge≈ (trs (p ⁻¹) r) = trans (U-diverge≈ r) (sym≡ (U-diverge≋ p))
 
 U-El-disj : ∀ {Γ₁ Γ₂} {M : Tm Γ₂ U} → ¬ El M ≈T U {Γ₁}
 U-El-disj p = subst id (U-diverge≈ p) tt

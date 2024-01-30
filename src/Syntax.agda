@@ -234,9 +234,10 @@ data Sub where
   coe₁ : ∀ {Γ₁ Γ₂ Δ} → Γ₁ ↭C Γ₂ → Sub Γ₁ Δ → Sub Γ₂ Δ
   coe₂ : ∀ {Γ Δ₁ Δ₂} → Δ₁ ↭C Δ₂ → Sub Γ Δ₁ → Sub Γ Δ₂
 
-  -- Note that requiring the same Γ here in argumemt and return positions
-  -- prevents implementing coercions recursively. It is unclear to me which 
-  -- approach is nicer.
+  -- Note that requiring exactly the same Γ here in argument and return 
+  -- positions prevents implementing coercions recursively. On the other hand,
+  -- we get some nice equalities when matching, so I'm not sure which approach
+  -- is better.
   wk  : ∀ {Γ A} → Sub (Γ , A) Γ
   <_> : ∀ {Γ A} → Tm Γ A → Sub Γ (Γ , A)
   _↑_ : ∀ {Γ Δ} (δ : Sub Γ Δ) (A : Ty Δ) → Sub (Γ , A [ δ ]T) (Δ , A)
@@ -265,6 +266,11 @@ _↑↑_   : ∀ {Γ Δ} (δ : Sub Δ Γ) (Σ : Tys Γ) → Sub (Δ ++ Σ [ δ ]
 data _≋C_ where
   ε   : Ctx.ε ≋C Ctx.ε
   _,_ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ ≈C Γ₂ → A₁ ≈T A₂ → Γ₁ , A₁ ≋C Γ₂ , A₂
+  
+  ≋s↑≋C₁ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} 
+         → δ₁ ≋s δ₂ → Γ₁ ≋C Γ₂
+  ≋s↑≋C₂ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} 
+         → δ₁ ≋s δ₂ → Δ₁ ≋C Δ₂
 
 data _≋T_ where
   U  : ∀ {Γ₁ Γ₂} → Γ₁ ≈C Γ₂ → U {Γ₁} ≋T U {Γ₂}
@@ -319,10 +325,10 @@ data _≋s_ where
   coh₁ : ∀ {Γ₁ Γ₂ Δ δ} (Γ : Γ₁ ↭C Γ₂) → coe₁ {Δ = Δ} Γ δ ≋s δ
   coh₂ : ∀ {Γ Δ₁ Δ₂ δ} (Δ : Δ₁ ↭C Δ₂) → coe₂ {Γ = Γ} Δ δ ≋s δ
 
-  wk  : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂ 
+  wk  : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → Γ₁ ≈C Γ₂ → A₁ ≈T A₂ 
       → wk {A = A₁} ≋s wk {A = A₂}
-  <_> : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} 
-      → M₁ ≈t M₂ → < M₁ > ≋s < M₂ >
+  [_]<_> : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} 
+       → Γ₁ ≈C Γ₂ → M₁ ≈t M₂ → < M₁ > ≋s < M₂ >
   _↑_ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂} {δ₁ : Sub Γ₁ Δ₁} {δ₂ : Sub Γ₂ Δ₂} {A₁ A₂}
       → δ₁ ≈s δ₂ → A₁ ≈T A₂ → δ₁ ↑ A₁ ≋s δ₂ ↑ A₂
     
