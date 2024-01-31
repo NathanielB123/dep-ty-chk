@@ -71,6 +71,7 @@ app M N [ δ ]newk = coe ⟦ app[] ⟧⁻¹ (app (M [ δ ]newkcoe) (N [ δ ]nfwk
 coe p x [ δ ]vwkcoe 
   = coe-v ⟦ p [ coh-s₂ (sym (≈t↑≈C p)) ]≋ ⟧ 
           (x [ coe-wk-nf₂ (sym (≈t↑≈C p)) δ ]vwk)
+
 x [ coe p wk ]vwk 
   = coe ⟦ rfl [ p ∙ ⟦ wk (sym (≈s↑≈C₂ p)) (coh-T (≈s↑≈C₂ p)) ⟧ ]≋ ⟧ (vs x)
 vz [ coe p (δ ↑ A′) ]vwk 
@@ -87,8 +88,48 @@ vs x [ coe p (δ ↑ A) ]vwk
     (vs x′)
   where ΔΓ≈ = ,-inj₁ (≈s↑≈C₂ p)
 
-_[_]vsub : ∀ {Γ Δ A M δ} → Var Γ A M → NfSubCoe Δ Γ δ 
+_[_]nfsubcoe : ∀ {Γ Δ A M δ} → NfCoe Γ A M → NfSubCoe Δ Γ δ 
          → NfCoe Δ (A [ δ ]T) (M [ δ ])
+_[_]nfsub : ∀ {Γ Δ A M δ} → Nf Γ A M → NfSubCoe Δ Γ δ 
+         → NfCoe Δ (A [ δ ]T) (M [ δ ])
+
+_[_]nesubcoe  : ∀ {Γ Δ A M δ} → NeCoe Γ A M → NfSubCoe Δ Γ δ 
+             → NfCoe Δ (A [ δ ]T) (M [ δ ])
+_[_]nesub  : ∀ {Γ Δ A M δ} → Ne Γ A M → NfSubCoe Δ Γ δ 
+         → NfCoe Δ (A [ δ ]T) (M [ δ ])
+
+_[_]vsubcoe : ∀ {Γ Δ A M δ} → VarCoe Γ A M → NfSub Δ Γ δ 
+         → NfCoe Δ (A [ δ ]T) (M [ δ ])
+_[_]vsub  : ∀ {Γ Δ A M δ} → Var Γ A M → NfSubCoe Δ Γ δ 
+         → NfCoe Δ (A [ δ ]T) (M [ δ ])
+
+coe p M [ δ ]nfsubcoe 
+  = coe-nf ⟦ p [ coh-s₂ _ ]≋ ⟧ (M [ coe-sub₂ (sym (≈t↑≈C p)) δ ]nfsub)
+
+ne  M [ δ ]nfsub with coe p M′ ← M [ δ ]nesub = coe p M′
+lam M [ δ ]nfsub = coe ⟦ lam[] ⟧⁻¹ (lam (M [ δ ↑sub _ ]nfsubcoe))
+
+coe p M [ δ ]nesubcoe 
+  = coe-nf ⟦ p [ coh-s₂ _ ]≋ ⟧ (M [ coe-sub₂ (sym (≈t↑≈C p)) δ ]nesub)
+
+{-# TERMINATING #-}
+-- Unfortunately, termination for substitutions applied to applications is not
+-- obvious, as if applying the substitution produces a lambda, we will need to
+-- reduce
+var x [ δ ]nesub with coe p M ← x [ δ ]vsub = coe p M
+app M N [ δ ]nesub with M [ δ ]nesubcoe | N [ δ ]nfsubcoe
+... | coe p (ne  M) | N 
+  = coe (⟦ app[] ⟧⁻¹ ∙ ⟦ app (p ∙ coh-t (≈t↑≈T p)) rfl ⟧)
+        (ne (app (coe (sym (coh-t (≈t↑≈T p))) M) (nf _)))
+... | coe p (lam M) | (coe q N)   
+  = coe-nf (⟦ app[] ⟧⁻¹ ∙ ⟦ app p (coh-t (sym (Π-inj₁ (≈t↑≈T p)))) ⟧ ∙ ⟦ β ⟧⁻¹) 
+           (M [ coe ⟦ [ sym (≈t↑≈C p) ∙ ≈t↑≈C q 
+  , sym (Π-inj₁ (≈t↑≈T p)) ∙ ≈t↑≈T q ]< sym (coh-t _) ∙ q > ⟧ < N > ]nfsubcoe)
+
+coe p x [ δ ]vsubcoe 
+  = coe-nf ⟦ p [ coh-s₂ (sym (≈t↑≈C p)) ]≋ ⟧ 
+           (x [ coe-sub-nf₂ (sym (≈t↑≈C p)) δ ]vsub)
+
 vz [ coe p < M > ]vsub 
   = coe (⟦ ⟦ vz (,-inj₂ (≈s↑≈C₂ p)) ⟧ [ p ]≋ ⟧ ∙ ⟦ vz<> ⟧⁻¹) M
 vz [ coe p (δ ↑ A) ]vsub 
@@ -108,3 +149,4 @@ vs x [ coe p (δ ↑ A) ]vsub
     [ coh-s₂ ΔΓ≈ ∙ coh-s₁ (sym (≈t↑≈C q)) ]T≈) ⟧ ]≋ ⟧) 
     (M [ coe rfl wk ]nfwk)
   where ΔΓ≈ = ,-inj₁ (≈s↑≈C₂ p)
+ 

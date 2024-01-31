@@ -11,9 +11,9 @@ A WIP (see "Current Progress"), simple, sound dependent type checker.
 - Various proofs of useful properties: Injectivity of type constructors, congruence of type substitutions, equivalence index projections (i.e. equivalence of terms implies the types of those terms are equivalent), equations covering how substitutions commute
 - Definition of normal forms (as predicates on the typed syntax)
 ### WIP:
-- Normalisation (by hereditary substitution)
+- Normalisation
 - A naive algorithm is implemented, but I have had to use a `{-# TERMINATING #-}` pragma.
-- I think showing termination properly will be a bit tricky. A good first step would be to split substitutions into single-term substitutions (`< M >`) and weakenings (`wk`).
+- To ensure normalisation is structurally recursive, I will need do something a bit smarter: perhaps hereditary substitution (though I have struggled to find any literature on applying the technique to dependent types) or normalisation by evaluation.
 ### Future:
 - Decidable equivalence on typed terms
 - Definition of untyped pre-terms
