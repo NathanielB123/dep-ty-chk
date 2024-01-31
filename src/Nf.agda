@@ -53,8 +53,7 @@ data NfWk : ∀ (Γ Δ : Ctx) → Sub Γ Δ → Set where
   _↑_  : ∀ {Γ Δ δ} → NfWk Γ Δ δ → ∀ A → NfWk (Γ , A [ δ ]T) (Δ , A) (δ ↑ A)
 
 data NfWkCoe : ∀ (Γ Δ : Ctx) → Sub Γ Δ → Set where
-  coe₂ : ∀ {Γ Δ₁ Δ₂ δ} (Δ : Δ₁ ≈C Δ₂) → NfWk Γ Δ₁ δ 
-       → NfWkCoe Γ Δ₂ (coe-s₂ Δ δ) 
+  coe : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ δ₁ δ₂} → δ₁ ≈s δ₂ → NfWk Γ₁ Δ₁ δ₁ → NfWkCoe Γ₂ Δ₂ δ₂ 
 
 coe-nf : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} (p : M₁ ≈t M₂) 
        → NfCoe Γ₁ A₁ M₁ → NfCoe Γ₂ A₂ M₂
@@ -68,10 +67,10 @@ coe-v : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂
        → VarCoe Γ₁ A₁ M₁ → VarCoe Γ₂ A₂ M₂
 coe-v p (coe q x) = coe (p ∙ q) x
 
-coe-wk : ∀ {Γ Δ₁ Δ₂ δ} (Δ : Δ₁ ≈C Δ₂) → NfWkCoe Γ Δ₁ δ 
+coe-wk₂ : ∀ {Γ Δ₁ Δ₂ δ} (Δ : Δ₁ ≈C Δ₂) → NfWkCoe Γ Δ₁ δ 
        → NfWkCoe Γ Δ₂ (coe-s₂ Δ δ) 
-coe-wk p (coe₂ q δ) 
-  = subst id (cong (NfWkCoe _ _) (sym≡ (coe-s₂-∙ p q))) (coe₂ (p ∙ q) δ)
+coe-wk₂ p (coe q δ) = coe (sym (coh-s₂ p) ∙ q) δ
 
-_↑nf_ : ∀ {Γ Δ δ} → NfWkCoe Γ Δ δ → ∀ A → NfWkCoe (Γ , A [ δ ]T) (Δ , A) (δ ↑ A)
-_↑nf_ = todo
+coe-wk-nf₂ : ∀ {Γ Δ₁ Δ₂ δ} (Δ : Δ₁ ≈C Δ₂) → NfWk Γ Δ₁ δ 
+           → NfWkCoe Γ Δ₂ (coe-s₂ Δ δ) 
+coe-wk-nf₂ p δ = coe-wk₂ p (coe rfl δ)
