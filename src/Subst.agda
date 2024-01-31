@@ -33,6 +33,20 @@ _[_]vwkcoe : ∀ {Γ Δ A M δ} → VarCoe Γ A M → NfWk Δ Γ δ
 _[_]vwk  : ∀ {Γ Δ A M δ} → Var Γ A M → NfWkCoe Δ Γ δ 
          → VarCoe Δ (A [ δ ]T) (M [ δ ])
 
+-- Eventually we will have an NfSubCoe and ⊤ will be replaced with that
+nf-sub : ∀ {Γ Δ} (δ : Sub Γ Δ) → NfWkCoe Γ Δ δ ⊎ ⊤
+nf-sub (coe₁ Γ δ) with nf-sub δ
+... | inj₁ δ  = inj₁ (coe-wk₁ (trs Γ rfl) δ)
+... | inj₂ tt = inj₂ tt
+nf-sub (coe₂ Δ δ) with nf-sub δ
+... | inj₁ δ  = inj₁ (coe-wk₂ (trs Δ rfl) δ)
+... | inj₂ tt = inj₂ tt
+nf-sub wk = inj₁ (coe rfl wk)
+nf-sub < M > = inj₂ tt
+nf-sub (δ ↑ A) with nf-sub δ
+... | inj₁ δ = inj₁ (δ ↑nf A)
+... | inj₂ tt = inj₂ tt
+
 coe p M [ δ ]nfwkcoe 
   = coe-nf ⟦ p [ coh-s₂ _ ]≋ ⟧ (M [ coe-wk₂ (sym (≈t↑≈C p)) δ ]nfwk)
 

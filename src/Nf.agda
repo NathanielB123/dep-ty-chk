@@ -67,6 +67,10 @@ coe-v : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂
        → VarCoe Γ₁ A₁ M₁ → VarCoe Γ₂ A₂ M₂
 coe-v p (coe q x) = coe (p ∙ q) x
 
+coe-wk₁ : ∀ {Γ₁ Γ₂ Δ δ} (Γ : Γ₁ ≈C Γ₂) → NfWkCoe Γ₁ Δ δ 
+       → NfWkCoe Γ₂ Δ (coe-s₁ Γ δ) 
+coe-wk₁ p (coe q δ) = coe (sym (coh-s₁ p) ∙ q) δ
+
 coe-wk₂ : ∀ {Γ Δ₁ Δ₂ δ} (Δ : Δ₁ ≈C Δ₂) → NfWkCoe Γ Δ₁ δ 
        → NfWkCoe Γ Δ₂ (coe-s₂ Δ δ) 
 coe-wk₂ p (coe q δ) = coe (sym (coh-s₂ p) ∙ q) δ
