@@ -36,7 +36,7 @@ coe p (ne  M) [ δ ]nf
   = coe-nf ⟦ p [ coh-s₂ _ ]≋ ⟧ (coe rfl M [ coe-s₂ (sym (≈t↑≈C p)) δ ]ne)
 coe p (lam M) [ δ ]nf 
   = coe (⟦ p [ coh-s₂ (sym (≈t↑≈C p)) ]≋ ⟧ 
-  ∙ {!!}) (lam (M [ coe-s₂ (sym (≈t↑≈C p)) δ ↑ _ ]nf))
+  ∙ ⟦ lam[] ⟧⁻¹) (lam (M [ coe-s₂ (sym (≈t↑≈C p)) δ ↑ _ ]nf))
 
 -- We do a little coercing
 coe p (var x) [ δ ]ne 
@@ -56,9 +56,9 @@ appnf (coe p (lam M)) N
 x [ coe₁ Γ δ ]v = coe-nf ⟦ rfl [ ⟦ coh₁ Γ ⟧⁻¹ ]≋ ⟧ (x [ δ ]v)
 x [ coe₂ Δ δ ]v = {!!}
 x [ wk ]v = coe rfl (ne (var (vs x)))
-vz [ < M > ]v = coe-nf {!!} (nf M)
+vz [ < M > ]v = coe-nf ⟦ vz<> ⟧⁻¹ (nf M)
 vs x [ < M > ]v = coe ⟦ wk-<>-id _ ⟧⁻¹ (ne (var x))
-vz [ δ ↑ A ]v = coe {!!} (ne (var vz))
+vz [ δ ↑ A ]v = coe ⟦ vz[] ⟧⁻¹ (ne (var vz))
 vs x [ δ ↑ A ]v = coe-nf ⟦ wk-comm _ δ ⟧⁻¹ (x [ δ ]v [ wk ]nf)
  
  

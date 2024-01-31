@@ -309,9 +309,13 @@ data _≋t_ where
   <>-comm  : ∀ {Γ Δ A Σ B N} (M : Tm ((Γ , A) ++ Σ) B) (δ : Sub Δ Γ)
            → M [ (δ ↑ A) ↑↑ Σ ] [ < N [ δ ] > ↑↑ (Σ [ δ ↑ A ]Ts) ] 
           ≋t M [ < N > ↑↑ Σ ] [ δ ↑↑ (Σ [ < N > ]Ts) ]
-  -- ...
 
-  -- We need at least all of these equations:
+  vz<>     : ∀ {Γ A} {M : Tm Γ A} → vz [ < M > ] ≋t M
+  vz[]     : ∀ {Γ Δ A} {δ : Sub Γ Δ} → vz [ δ ↑ A ] ≋t vz {A = A [ δ ]T}
+  lam[]    : ∀ {Γ Δ A B} {M : Tm (Γ , A) B} {δ : Sub Δ Γ}
+           → lam M [ δ ] ≋t lam (M [ δ ↑ A ])
+
+  -- Equations:
   -- M [ wk     ] [ < N >  ] ≡ M                   (wk-<>-id)
   -- M [ wk ↑ B ] [ < vz > ] ≡ M                   (wk-vz-id)
   -- M [ wk     ] [ δ ↑ B  ] ≡ M [ δ     ] [ wk ]  (wk-comm)

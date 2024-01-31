@@ -203,6 +203,9 @@ wk-<>-idT A = wk-<>-idT′ A (wk-<>-idTs _)
 ≋t↑≈C (wk-<>-id {Δ = Δ} _) = rfl ++≈ wk-<>-idTs Δ
 ≋t↑≈C (<>-comm {Σ = Σ} M δ) = rfl ++≈ <>-commTs Σ δ
 ≋t↑≈C (wk-comm {Σ = Σ} M δ) = rfl ++≈ wk-commTs Σ δ
+≋t↑≈C vz<> = rfl
+≋t↑≈C vz[] = rfl
+≋t↑≈C lam[] = rfl
 
 ≈t↑≈C rfl = rfl
 ≈t↑≈C (trs (M ¹) r) = ≋t↑≈C M ∙ ≈t↑≈C r
@@ -220,6 +223,9 @@ wk-<>-idT A = wk-<>-idT′ A (wk-<>-idTs _)
 ≋t↑≈T (wk-<>-id _) = ⟦ wk-<>-idT _ ⟧
 ≋t↑≈T (<>-comm {B = B} M δ) = ⟦ <>-commT B δ ⟧
 ≋t↑≈T (wk-comm {A = A} M δ) = ⟦ wk-commT A δ ⟧
+≋t↑≈T vz<> = ⟦ wk-<>-idT _ ⟧
+≋t↑≈T vz[] = ⟦ wk-commT _ _ ⟧
+≋t↑≈T lam[] = rfl
 
 ≈t↑≈T rfl = rfl
 ≈t↑≈T (trs (M  ¹) r) = ≋t↑≈T M ∙ ≈t↑≈T r
