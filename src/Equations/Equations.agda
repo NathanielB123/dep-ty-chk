@@ -206,6 +206,7 @@ wk-<>-idT A = wk-<>-idT′ A (wk-<>-idTs _)
 ≋t↑≈C vz<> = rfl
 ≋t↑≈C vz[] = rfl
 ≋t↑≈C lam[] = rfl
+≋t↑≈C app[] = rfl
 
 ≈t↑≈C rfl = rfl
 ≈t↑≈C (trs (M ¹) r) = ≋t↑≈C M ∙ ≈t↑≈C r
@@ -226,6 +227,7 @@ wk-<>-idT A = wk-<>-idT′ A (wk-<>-idTs _)
 ≋t↑≈T vz<> = ⟦ wk-<>-idT _ ⟧
 ≋t↑≈T vz[] = ⟦ wk-commT _ _ ⟧
 ≋t↑≈T lam[] = rfl
+≋t↑≈T app[] = ⟦ <>-commT _ _ ⟧⁻¹
 
 ≈t↑≈T rfl = rfl
 ≈t↑≈T (trs (M  ¹) r) = ≋t↑≈T M ∙ ≈t↑≈T r

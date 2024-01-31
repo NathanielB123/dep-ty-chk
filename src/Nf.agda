@@ -4,6 +4,16 @@ open import Syntax
 
 module Nf where
 
+-- data VarCoe : ∀ (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set
+
+-- data Var : ∀ (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set where
+--   vz : ∀ {Γ A} → Var (Γ , A) (A [ wk ]T) vz
+--   vs : ∀ {Γ A B x} → VarCoe Γ A x → Var (Γ , B) (A [ wk ]T) (x [ wk ])
+
+-- data VarCoe where
+--   coe : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} (p : M₁ ≈t M₂) 
+--       → Var Γ₁ A₁ M₁ → VarCoe Γ₂ A₂ M₂
+
 data Var : ∀ (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set where
   vz : ∀ {Γ A} → Var (Γ , A) (A [ wk ]T) vz
   vs : ∀ {Γ A B x} → Var Γ A x → Var (Γ , B) (A [ wk ]T) (x [ wk ])

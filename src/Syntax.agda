@@ -314,6 +314,8 @@ data _≋t_ where
   vz[]     : ∀ {Γ Δ A} {δ : Sub Γ Δ} → vz [ δ ↑ A ] ≋t vz {A = A [ δ ]T}
   lam[]    : ∀ {Γ Δ A B} {M : Tm (Γ , A) B} {δ : Sub Δ Γ}
            → lam M [ δ ] ≋t lam (M [ δ ↑ A ])
+  app[]    : ∀ {Γ Δ A B} {M : Tm Γ (Π A B)} {N} {δ : Sub Δ Γ} 
+           → app M N [ δ ] ≋t app (M [ δ ]) (N [ δ ])
 
   -- Equations:
   -- M [ wk     ] [ < N >  ] ≡ M                   (wk-<>-id)

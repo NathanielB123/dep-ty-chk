@@ -25,7 +25,6 @@ _[_]v  : ∀ {Γ Δ A M} → Var Γ A M → (δ : Sub Δ Γ) → NfCoe Δ (A [ �
 appnf : ∀ {Γ A B M N} → NfCoe Γ (Π A B) M → NfCoe Γ A N 
       → NfCoe Γ (B [ < N > ]T) (app M N)
 
-
 nf (coe A M) = coe-nf ⟦ coh A ⟧⁻¹ (nf M)
 nf (app M N) = appnf (nf M) (nf N)
 nf (lam M) = coe rfl (lam (nf M))
@@ -42,7 +41,7 @@ coe p (lam M) [ δ ]nf
 coe p (var x) [ δ ]ne 
   = coe-nf ⟦ p [ coh-s₂ _ ]≋ ⟧ (x [ coe-s₂ (sym (≈t↑≈C p)) δ ]v)
 coe p (app M N) [ δ ]ne 
-  = coe-nf (⟦ p [ coh-s₂ (sym (≈t↑≈C p)) ]≋ ⟧ ∙ {!!}) 
+  = coe-nf (⟦ p [ coh-s₂ (sym (≈t↑≈C p)) ]≋ ⟧ ∙ ⟦ app[] ⟧⁻¹) 
            (appnf (M [ coe-s₂ (sym (≈t↑≈C p)) δ ]ne) 
                   (N [ coe-s₂ (sym (≈t↑≈C p)) δ ]nf))
 
@@ -54,11 +53,11 @@ appnf (coe p (lam M)) N
            (M [ < coe-t (sym (Π-inj₁ (≈t↑≈T p))) _ > ]nf)
 
 x [ coe₁ Γ δ ]v = coe-nf ⟦ rfl [ ⟦ coh₁ Γ ⟧⁻¹ ]≋ ⟧ (x [ δ ]v)
-x [ coe₂ Δ δ ]v = {!!}
+x [ coe₂ Δ δ ]v 
+  = coe-nf (⟦ ⟦ _≋t_.coh _ ⟧ [ ⟦ coh₂ _ ⟧⁻¹ ]≋ ⟧) 
+           (coe ⟦ coh (coh-1-T (symsym Δ) _ ⁻¹) ⟧⁻¹ (ne (var x)) [ δ ]nf)
 x [ wk ]v = coe rfl (ne (var (vs x)))
 vz [ < M > ]v = coe-nf ⟦ vz<> ⟧⁻¹ (nf M)
 vs x [ < M > ]v = coe ⟦ wk-<>-id _ ⟧⁻¹ (ne (var x))
 vz [ δ ↑ A ]v = coe ⟦ vz[] ⟧⁻¹ (ne (var vz))
 vs x [ δ ↑ A ]v = coe-nf ⟦ wk-comm _ δ ⟧⁻¹ (x [ δ ]v [ wk ]nf)
- 
- 
