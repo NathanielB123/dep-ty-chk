@@ -11,10 +11,6 @@ module Nf where
 
 data VarCoe : ∀ (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set
 
--- data Var : ∀ (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set where
---   vz : ∀ {Γ A} → Var (Γ , A) (A [ wk ]T) vz
---   vs : ∀ {Γ A B x} → VarCoe Γ A x → Var (Γ , B) (A [ wk ]T) (x [ wk ])
-
 data Var : ∀ (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set where
   vz : ∀ {Γ A} → Var (Γ , A) (A [ wk ]T) vz
   vs : ∀ {Γ A B x} → Var Γ A x → Var (Γ , B) (A [ wk ]T) (x [ wk ])
@@ -46,7 +42,12 @@ data NfCoe where
   coe :  ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} (p : M₁ ≈t M₂) 
         → Nf Γ₁ A₁ M₁ → NfCoe Γ₂ A₂ M₂
 
-data NfSub : ∀ {Γ Δ} → Sub Γ Δ → Set where
+data NfSub : ∀ (Γ Δ : Ctx) → Sub Γ Δ → Set where
+  <_> : ∀ {Γ A M} → Nf Γ A M → NfSub Γ (Γ , A) < M >
+  _↑_  : ∀ {Γ Δ δ} → NfSub Γ Δ δ → ∀ A → NfSub (Γ , A [ δ ]T) (Δ , A) (δ ↑ A)
+
+data NfSubCoe : ∀ (Γ Δ : Ctx) → Sub Γ Δ → Set where
+  coe : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ δ₁ δ₂} → δ₁ ≈s δ₂ → NfSub Γ₁ Δ₁ δ₁ → NfSubCoe Γ₂ Δ₂ δ₂ 
 
 data NfWk : ∀ (Γ Δ : Ctx) → Sub Γ Δ → Set where
   wk   : ∀ {Γ A} → NfWk (Γ , A) Γ wk
@@ -78,3 +79,15 @@ coe-wk₂ p (coe q δ) = coe (sym (coh-s₂ p) ∙ q) δ
 coe-wk-nf₂ : ∀ {Γ Δ₁ Δ₂ δ} (Δ : Δ₁ ≈C Δ₂) → NfWk Γ Δ₁ δ 
            → NfWkCoe Γ Δ₂ (coe-s₂ Δ δ) 
 coe-wk-nf₂ p δ = coe-wk₂ p (coe rfl δ)
+
+coe-sub₁ : ∀ {Γ₁ Γ₂ Δ δ} (Γ : Γ₁ ≈C Γ₂) → NfSubCoe Γ₁ Δ δ 
+       → NfSubCoe Γ₂ Δ (coe-s₁ Γ δ) 
+coe-sub₁ p (coe q δ) = coe (sym (coh-s₁ p) ∙ q) δ
+
+coe-sub₂ : ∀ {Γ Δ₁ Δ₂ δ} (Δ : Δ₁ ≈C Δ₂) → NfSubCoe Γ Δ₁ δ 
+       → NfSubCoe Γ Δ₂ (coe-s₂ Δ δ) 
+coe-sub₂ p (coe q δ) = coe (sym (coh-s₂ p) ∙ q) δ
+
+coe-sub-nf₂ : ∀ {Γ Δ₁ Δ₂ δ} (Δ : Δ₁ ≈C Δ₂) → NfSub Γ Δ₁ δ 
+           → NfSubCoe Γ Δ₂ (coe-s₂ Δ δ) 
+coe-sub-nf₂ p δ = coe-sub₂ p (coe rfl δ)
