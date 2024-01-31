@@ -1,5 +1,7 @@
 {-# OPTIONS --without-K #-}
 
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; cong)
+
 open import Syntax
 
 module Equations.Coercions where
@@ -87,3 +89,8 @@ coe-s₂ (trs p r) δ = coe₂ p (coe-s₂ r δ)
 coh-s₂ : ∀ {Γ Δ₁ Δ₂} (Δ : Δ₁ ≈C Δ₂) {δ : Sub Γ Δ₁} → coe-s₂ Δ δ ≈s δ
 coh-s₂ rfl = rfl
 coh-s₂ (trs p r) = coh-s₂ r ∙ ⟦ coh₂ p ⟧
+
+coe-s₂-∙ : ∀ {Γ Δ₁ Δ₂ Δ₃} {δ : Sub Γ Δ₁} (p : Δ₂ ≈C Δ₃) (q : Δ₁ ≈C Δ₂)
+         → coe-s₂ p (coe-s₂ q δ) ≡ coe-s₂ (p ∙ q) δ
+coe-s₂-∙ rfl q = refl
+coe-s₂-∙ (trs Δ p) q = cong (coe₂ Δ) (coe-s₂-∙ p q)

@@ -1,5 +1,9 @@
 {-# OPTIONS --without-K #-}
 
+open import Relation.Binary.PropositionalEquality using (subst; cong)
+  renaming (sym to sym≡)
+open import Function.Base using (id)
+
 open import Syntax
 open import Equations.Coercions
 
@@ -42,14 +46,9 @@ data NfCoe where
   coe :  ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} (p : M₁ ≈t M₂) 
         → Nf Γ₁ A₁ M₁ → NfCoe Γ₂ A₂ M₂
 
-coe-nf : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} (p : M₁ ≈t M₂) 
-       → NfCoe Γ₁ A₁ M₁ → NfCoe Γ₂ A₂ M₂
-coe-nf p (coe q M) = coe (p ∙ q) M
-
 data NfSub : ∀ {Γ Δ} → Sub Γ Δ → Set where
 
 data NfWk : ∀ (Γ Δ : Ctx) → Sub Γ Δ → Set where
-
   wk   : ∀ {Γ A} → NfWk (Γ , A) Γ wk
   _↑_  : ∀ {Γ Δ δ} → NfWk Γ Δ δ → ∀ A → NfWk (Γ , A [ δ ]T) (Δ , A) (δ ↑ A)
 
@@ -57,6 +56,22 @@ data NfWkCoe : ∀ (Γ Δ : Ctx) → Sub Γ Δ → Set where
   coe₂ : ∀ {Γ Δ₁ Δ₂ δ} (Δ : Δ₁ ≈C Δ₂) → NfWk Γ Δ₁ δ 
        → NfWkCoe Γ Δ₂ (coe-s₂ Δ δ) 
 
+coe-nf : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} (p : M₁ ≈t M₂) 
+       → NfCoe Γ₁ A₁ M₁ → NfCoe Γ₂ A₂ M₂
+coe-nf p (coe q M) = coe (p ∙ q) M
+
+coe-ne : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} (p : M₁ ≈t M₂) 
+       → NeCoe Γ₁ A₁ M₁ → NeCoe Γ₂ A₂ M₂
+coe-ne p (coe q M) = coe (p ∙ q) M
+
 coe-v : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} (p : M₁ ≈t M₂) 
        → VarCoe Γ₁ A₁ M₁ → VarCoe Γ₂ A₂ M₂
 coe-v p (coe q x) = coe (p ∙ q) x
+
+coe-wk : ∀ {Γ Δ₁ Δ₂ δ} (Δ : Δ₁ ≈C Δ₂) → NfWkCoe Γ Δ₁ δ 
+       → NfWkCoe Γ Δ₂ (coe-s₂ Δ δ) 
+coe-wk p (coe₂ q δ) 
+  = subst id (cong (NfWkCoe _ _) (sym≡ (coe-s₂-∙ p q))) (coe₂ (p ∙ q) δ)
+
+_↑nf_ : ∀ {Γ Δ δ} → NfWkCoe Γ Δ δ → ∀ A → NfWkCoe (Γ , A [ δ ]T) (Δ , A) (δ ↑ A)
+_↑nf_ = todo

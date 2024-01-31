@@ -19,14 +19,14 @@ module Equations.Injectivity where
 data Is,C : Pred ctx where
   prf : ∀ {Γ} {A : Ty Γ} → Is,C (Γ , A)
 
-≈C-inj₁ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → Γ₁ ≈C Γ₂
-≈C-inj₁
+,-inj₁ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → Γ₁ ≈C Γ₂
+,-inj₁
   = lift-proofP Is,C (λ where prf prf refl → refl) 
     (λ where (_ , _ ¹) prf → prf; (_ , _ ⁻¹) prf → prf)
     (λ where .(Γ , _) (prf {Γ}) → Γ) (λ where prf prf (Γ , _) → Γ) prf prf
 
-≈C-inj₂ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → A₁ ≈T A₂
-≈C-inj₂
+,-inj₂ : ∀ {Γ₁ Γ₂ A₁ A₂} → Γ₁ , A₁ ≈C Γ₂ , A₂ → A₁ ≈T A₂
+,-inj₂
   = lift-proofP Is,C (λ where prf prf refl → refl) 
     (λ where (_ , _ ¹) prf → prf; (_ , _ ⁻¹) prf → prf) 
     {C = λ where _ prf → _}
