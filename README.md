@@ -12,8 +12,8 @@ A WIP (see "Current Progress"), simple, sound dependent type checker.
 - Definition of normal forms (as predicates on the typed syntax)
 ### WIP:
 - Normalisation (by hereditary substitution)
-- We need a few extra properties of substitutions and a way to `coe`rce variables to fill the remaining holes
-- I think showing termination will be a bit tricky. A good first step would be to split substitutions into single-term substitutions (`< M >`) and weakenings (`wk`).
+- A naive algorithm is implemented, but I have had to use a `{-# TERMINATING #-}` pragma.
+- I think showing termination properly will be a bit tricky. A good first step would be to split substitutions into single-term substitutions (`< M >`) and weakenings (`wk`).
 ### Future:
 - Decidable equivalence on typed terms
 - Definition of untyped pre-terms
