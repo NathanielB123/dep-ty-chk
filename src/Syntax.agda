@@ -314,10 +314,12 @@ data _≋t_ where
   vz[]     : ∀ {Γ Δ A} {δ : Sub Γ Δ} → vz [ δ ↑ A ] ≋t vz {A = A [ δ ]T}
   lam[]    : ∀ {Γ Δ A B} {M : Tm (Γ , A) B} {δ : Sub Δ Γ}
            → lam M [ δ ] ≋t lam (M [ δ ↑ A ])
+  -- I think this equation is provable from the others, but only with quite 
+  -- substatial effort
   app[]    : ∀ {Γ Δ A B} {M : Tm Γ (Π A B)} {N} {δ : Sub Δ Γ} 
            → app M N [ δ ] ≋t app (M [ δ ]) (N [ δ ])
 
-  -- Equations:
+  -- Equations (Concisely):
   -- M [ wk     ] [ < N >  ] ≡ M                   (wk-<>-id)
   -- M [ wk ↑ B ] [ < vz > ] ≡ M                   (wk-vz-id)
   -- M [ wk     ] [ δ ↑ B  ] ≡ M [ δ     ] [ wk ]  (wk-comm)

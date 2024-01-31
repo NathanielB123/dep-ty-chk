@@ -11,10 +11,8 @@ open import Nf
 
 module Norm where
 
--- I think we should be able to prove normalisation by hereditary substitution 
--- (what I eventually want to implement here) is terminating.
--- A first step towards this would be to split 'Sub' into weakenings and 
--- single-term substitutions.
+-- Normalisation with no care taken to show termination
+-- For the WIP implementation of terminating substitutions, see Subst.agda
 {-# TERMINATING #-}
 nf : ∀ {Γ A} → (M : Tm Γ A) → NfCoe Γ A M
 _[_]nf : ∀ {Γ Δ A M} → NfCoe Γ A M → (δ : Sub Δ Γ) 

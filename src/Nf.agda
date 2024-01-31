@@ -1,22 +1,23 @@
 {-# OPTIONS --without-K #-}
 
 open import Syntax
+open import Equations.Coercions
 
 module Nf where
 
--- data VarCoe : ∀ (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set
+data VarCoe : ∀ (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set
 
 -- data Var : ∀ (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set where
 --   vz : ∀ {Γ A} → Var (Γ , A) (A [ wk ]T) vz
 --   vs : ∀ {Γ A B x} → VarCoe Γ A x → Var (Γ , B) (A [ wk ]T) (x [ wk ])
 
--- data VarCoe where
---   coe : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} (p : M₁ ≈t M₂) 
---       → Var Γ₁ A₁ M₁ → VarCoe Γ₂ A₂ M₂
-
 data Var : ∀ (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set where
   vz : ∀ {Γ A} → Var (Γ , A) (A [ wk ]T) vz
   vs : ∀ {Γ A B x} → Var Γ A x → Var (Γ , B) (A [ wk ]T) (x [ wk ])
+
+data VarCoe where
+  coe : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} (p : M₁ ≈t M₂) 
+      → Var Γ₁ A₁ M₁ → VarCoe Γ₂ A₂ M₂
 
 data Ne : (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set
 data Nf : (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set
@@ -44,3 +45,18 @@ data NfCoe where
 coe-nf : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} (p : M₁ ≈t M₂) 
        → NfCoe Γ₁ A₁ M₁ → NfCoe Γ₂ A₂ M₂
 coe-nf p (coe q M) = coe (p ∙ q) M
+
+data NfSub : ∀ {Γ Δ} → Sub Γ Δ → Set where
+
+data NfWk : ∀ (Γ Δ : Ctx) → Sub Γ Δ → Set where
+
+  wk   : ∀ {Γ A} → NfWk (Γ , A) Γ wk
+  _↑_  : ∀ {Γ Δ δ} → NfWk Γ Δ δ → ∀ A → NfWk (Γ , A [ δ ]T) (Δ , A) (δ ↑ A)
+
+data NfWkCoe : ∀ (Γ Δ : Ctx) → Sub Γ Δ → Set where
+  coe₂ : ∀ {Γ Δ₁ Δ₂ δ} (Δ : Δ₁ ≈C Δ₂) → NfWk Γ Δ₁ δ 
+       → NfWkCoe Γ Δ₂ (coe-s₂ Δ δ) 
+
+coe-v : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} (p : M₁ ≈t M₂) 
+       → VarCoe Γ₁ A₁ M₁ → VarCoe Γ₂ A₂ M₂
+coe-v p (coe q x) = coe (p ∙ q) x
