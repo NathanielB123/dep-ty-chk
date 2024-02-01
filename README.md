@@ -7,12 +7,13 @@ A WIP (see "Current Progress"), simple, sound dependent type checker.
 
 ## Current Progress
 ### Done: 
-- Definition of typed syntax
-- Various proofs of useful properties: Injectivity of type constructors, congruence of type substitutions, equivalence index projections (i.e. equivalence of terms implies the types of those terms are equivalent), equations covering how substitutions commute
-- Definition of normal forms (as predicates on the typed syntax)
+- Definition of typed syntax - [Syntax.agda](/src/Syntax.agda)
+- Various proofs of useful properties: Injectivity of type constructors, congruence of type substitutions, equivalence index projections (i.e. stuff like equivalence of terms implies the types of those terms are equivalent), equations covering how substitutions commute on types - [Equations/](./src/Equations)
+- Recursive term substitutions - [Subst.agda](./src/Subst.agda)
+- Definition of normal forms (as predicates on the typed syntax) - [Nf.agda](./src/Nf.agda)
 ### WIP:
 - Normalisation
-- A naive algorithm is implemented, but I have had to use a `{-# TERMINATING #-}` pragma.
+- A naive algorithm is implemented, but I have had to use a `{-# TERMINATING #-}` pragma - [Norm.agda](./src/Norm.agda)
 - To ensure normalisation is structurally recursive, I will need do something a bit smarter: perhaps hereditary substitution (though I have struggled to find any literature on applying the technique to dependent types) or normalisation by evaluation.
 ### Future:
 - Decidable equivalence on typed terms
