@@ -10,143 +10,104 @@ open import Syntax
 open import Equations.Coercions
 open import Equations.Equations
 open import Equations.Injectivity
-open import Nf
+open import NoSub
 
+-- Remove all explicit substitutions from terms
 module Subst where
 
--- For now, let's assume we can normalise terms
-postulate
-  nf : ∀ {Γ A} → (M : Tm Γ A) → NfCoe Γ A M
+rm-sub : ∀ {Γ A} (M : Tm Γ A) → NsCoe Γ A M
 
-_↑wk_ : ∀ {Γ Δ δ} → NfWkCoe Γ Δ δ → ∀ A → NfWkCoe (Γ , A [ δ ]T) (Δ , A) (δ ↑ A)
-coe p δ ↑wk A 
-  = coe ⟦ p ↑ coh-T (sym (≈s↑≈C₂ p)) ⟧ (δ ↑ coe-T (sym (≈s↑≈C₂ p)) A)
+_[_]ns : ∀ {Γ Δ A M} → NsCoe Γ A M → (δ : Sub Δ Γ) 
+       → NsCoe Δ (A [ δ ]T) (M [ δ ])
 
-_↑sub_ : ∀ {Γ Δ δ} → NfSubCoe Γ Δ δ → ∀ A 
-       → NfSubCoe (Γ , A [ δ ]T) (Δ , A) (δ ↑ A)
-coe p δ ↑sub A 
-  = coe ⟦ p ↑ coh-T (sym (≈s↑≈C₂ p)) ⟧ (δ ↑ coe-T (sym (≈s↑≈C₂ p)) A)
-
-nf-sub : ∀ {Γ Δ} (δ : Sub Γ Δ) → NfWkCoe Γ Δ δ ⊎ NfSubCoe Γ Δ δ
-nf-sub (coe₁ Γ δ) with nf-sub δ
+sort-sub :  ∀ {Γ Δ} (δ : Sub Γ Δ) → NsWkCoe Γ Δ δ ⊎ NsSubCoe Γ Δ δ
+sort-sub (coe₁ Γ δ) with sort-sub δ
 ... | inj₁ δ  = inj₁ (coe-wk₁ (trs Γ rfl) δ)
 ... | inj₂ δ = inj₂ (coe-sub₁ (trs Γ rfl) δ)
-nf-sub (coe₂ Δ δ) with nf-sub δ
+sort-sub (coe₂ Δ δ) with sort-sub δ
 ... | inj₁ δ  = inj₁ (coe-wk₂ (trs Δ rfl) δ)
 ... | inj₂ δ = inj₂ (coe-sub₂ (trs Δ rfl) δ)
-nf-sub wk = inj₁ (coe rfl wk)
-nf-sub < M > with nf M
-... | coe p M′ = inj₂ (coe ⟦ [ ≈t↑≈C p , ≈t↑≈T p ]< p > ⟧ < M′ >)
-nf-sub (δ ↑ A) with nf-sub δ
+sort-sub wk = inj₁ (coe rfl wk)
+sort-sub < M > = inj₂ < rm-sub M >ns
+sort-sub (δ ↑ A) with sort-sub δ
 ... | inj₁ δ = inj₁ (δ ↑wk A)
 ... | inj₂ δ = inj₂ (δ ↑sub A)
 
-_[_]nfwkcoe : ∀ {Γ Δ A M δ} → NfCoe Γ A M → NfWkCoe Δ Γ δ 
-         → NfCoe Δ (A [ δ ]T) (M [ δ ])
-_[_]nfwk : ∀ {Γ Δ A M δ} → Nf Γ A M → NfWkCoe Δ Γ δ 
-         → NfCoe Δ (A [ δ ]T) (M [ δ ])
+_[_]nswkcoe : ∀ {Γ Δ A M δ} → NsCoe Γ A M → NsWkCoe Δ Γ δ 
+         → NsCoe Δ (A [ δ ]T) (M [ δ ])
+_[_]nswk : ∀ {Γ Δ A M δ} → Ns Γ A M → NsWkCoe Δ Γ δ 
+         → NsCoe Δ (A [ δ ]T) (M [ δ ])
 
-_[_]newkcoe  : ∀ {Γ Δ A M δ} → NeCoe Γ A M → NfWkCoe Δ Γ δ 
-             → NeCoe Δ (A [ δ ]T) (M [ δ ])
-_[_]newk  : ∀ {Γ Δ A M δ} → Ne Γ A M → NfWkCoe Δ Γ δ 
-         → NeCoe Δ (A [ δ ]T) (M [ δ ])
-
-_[_]vwkcoe : ∀ {Γ Δ A M δ} → VarCoe Γ A M → NfWk Δ Γ δ 
+_[_]vwkcoe : ∀ {Γ Δ A M δ} → VarCoe Γ A M → NsWk Δ Γ δ 
          → VarCoe Δ (A [ δ ]T) (M [ δ ])
-_[_]vwk  : ∀ {Γ Δ A M δ} → Var Γ A M → NfWkCoe Δ Γ δ 
+_[_]vwk  : ∀ {Γ Δ A M δ} → Var Γ A M → NsWkCoe Δ Γ δ 
          → VarCoe Δ (A [ δ ]T) (M [ δ ])
 
-coe p M [ δ ]nfwkcoe 
-  = coe-nf ⟦ p [ coh-s₂ _ ]≋ ⟧ (M [ coe-wk₂ (sym (≈t↑≈C p)) δ ]nfwk)
+coe p M [ δ ]nswkcoe 
+  = coe-ns ⟦ p [ coh-s₂ _ ]≋ ⟧ (M [ coe-wk₂ (sym (≈t↑≈C p)) δ ]nswk)
 
-ne  M [ δ ]nfwk with coe p M′ ← M [ δ ]newk = coe p (ne M′)
-lam M [ δ ]nfwk = coe ⟦ lam[] ⟧⁻¹ (lam (M [ δ ↑wk _ ]nfwkcoe))
-
-coe p M [ δ ]newkcoe 
-  = coe-ne ⟦ p [ coh-s₂ _ ]≋ ⟧ (M [ coe-wk₂ (sym (≈t↑≈C p)) δ ]newk)
-
-var x [ δ ]newk with coe p x′ ← x [ δ ]vwk = coe p (var x′)
-app M N [ δ ]newk = coe ⟦ app[] ⟧⁻¹ (app (M [ δ ]newkcoe) (N [ δ ]nfwkcoe))
+var x [ δ ]nswk = var-ns (x [ δ ]vwk)
+app M N [ δ ]nswk = coe-ns ⟦ app[] ⟧⁻¹ (app-ns (M [ δ ]nswkcoe) (N [ δ ]nswk))
+lam M [ δ ]nswk = coe ⟦ lam[] ⟧⁻¹ (lam (M [ δ ↑wk _ ]nswkcoe))
 
 coe p x [ δ ]vwkcoe 
   = coe-v ⟦ p [ coh-s₂ (sym (≈t↑≈C p)) ]≋ ⟧ 
-          (x [ coe-wk-nf₂ (sym (≈t↑≈C p)) δ ]vwk)
+          (x [ coe-wk₂ (sym (≈t↑≈C p)) (coe rfl δ) ]vwk)
 
-x [ coe p wk ]vwk 
-  = coe ⟦ rfl [ p ∙ ⟦ wk (sym (≈s↑≈C₂ p)) (coh-T (≈s↑≈C₂ p)) ⟧ ]≋ ⟧ (vs x)
-vz [ coe p (δ ↑ A′) ]vwk 
+x [ coe p wk ]vwk = coe ⟦ rfl [ p ∙ ⟦ wk≈ (coh-T (≈s↑≈C₂ p)) ⟧ ]≋ ⟧ (vs x)
+vz [ coe p (δ ↑ A) ]vwk 
   = coe (⟦ ⟦ vz (,-inj₂ (≈s↑≈C₂ p)) ⟧ [ p ]≋ ⟧ ∙ ⟦ vz[] ⟧⁻¹) vz
 vs x [ coe p (δ ↑ A) ]vwk 
-  with coe q x′ ← x [ coe-wk-nf₂ (,-inj₁ (≈s↑≈C₂ p)) δ ]vwk 
-  = coe (⟦ ⟦ coh-t _ [ ⟦ wk ΔΓ≈ (coh-T (sym ΔΓ≈)) ⟧ ]≋ ⟧ 
-    [ p ∙ ⟦ coh-s₂ _ ↑ sym (,-inj₂ (≈s↑≈C₂ p)) ⟧ 
-  ∙ ⟦ sym (coh-s₂ ΔΓ≈) ↑ coh-T (sym ΔΓ≈) ⟧ ]≋ ⟧ 
-  ∙ ⟦ wk-comm (coe-t (sym (coh-T (sym ΔΓ≈))) _) _ ⟧⁻¹ 
-  ∙ ⟦ ⟦ sym (coh-t _) [ coh-s₂ ΔΓ≈ ]≋ ⟧ [ rfl ]≋ ⟧ 
-  ∙ ⟦ q [ ⟦ wk (≈t↑≈C q) ((sym (coh-T (sym ΔΓ≈))) 
-    [ coh-s₂ ΔΓ≈ ∙ coh-s₁ (sym (≈t↑≈C q)) ]T≈) ⟧ ]≋ ⟧) 
-    (vs x′)
+  = coe-v (⟦ ⟦ coh-t _ [ ⟦ wk≈ AB≈ ⟧ ]≋ ⟧ [ p ]≋ ⟧ ∙ ⟦ wk-comm _ _ ⟧⁻¹ 
+  ∙ ⟦ ⟦ sym (coh-t (sym (coh-T (sym ΔΓ≈)))) [ coh-s₂ ΔΓ≈ ]≋ ⟧ [ rfl ]≋ ⟧)
+    (vs-ns (x [ coe-wk₂ (,-inj₁ (≈s↑≈C₂ p)) (coe rfl δ) ]vwk))
   where ΔΓ≈ = ,-inj₁ (≈s↑≈C₂ p)
+        AB≈ = ,-inj₂ (≈s↑≈C₂ p)
 
-_[_]nfsubcoe : ∀ {Γ Δ A M δ} → NfCoe Γ A M → NfSubCoe Δ Γ δ 
-         → NfCoe Δ (A [ δ ]T) (M [ δ ])
-_[_]nfsub : ∀ {Γ Δ A M δ} → Nf Γ A M → NfSubCoe Δ Γ δ 
-         → NfCoe Δ (A [ δ ]T) (M [ δ ])
+_[_]nssubcoe : ∀ {Γ Δ A M δ} → NsCoe Γ A M → NsSubCoe Δ Γ δ 
+         → NsCoe Δ (A [ δ ]T) (M [ δ ])
+_[_]nssub : ∀ {Γ Δ A M δ} → Ns Γ A M → NsSubCoe Δ Γ δ 
+         → NsCoe Δ (A [ δ ]T) (M [ δ ])
 
-_[_]nesubcoe  : ∀ {Γ Δ A M δ} → NeCoe Γ A M → NfSubCoe Δ Γ δ 
-             → NfCoe Δ (A [ δ ]T) (M [ δ ])
-_[_]nesub  : ∀ {Γ Δ A M δ} → Ne Γ A M → NfSubCoe Δ Γ δ 
-         → NfCoe Δ (A [ δ ]T) (M [ δ ])
+_[_]vsubcoe : ∀ {Γ Δ A M δ} → VarCoe Γ A M → NsSub Δ Γ δ 
+         → NsCoe Δ (A [ δ ]T) (M [ δ ])
+_[_]vsub  : ∀ {Γ Δ A M δ} → Var Γ A M → NsSubCoe Δ Γ δ 
+         → NsCoe Δ (A [ δ ]T) (M [ δ ])
 
-_[_]vsubcoe : ∀ {Γ Δ A M δ} → VarCoe Γ A M → NfSub Δ Γ δ 
-         → NfCoe Δ (A [ δ ]T) (M [ δ ])
-_[_]vsub  : ∀ {Γ Δ A M δ} → Var Γ A M → NfSubCoe Δ Γ δ 
-         → NfCoe Δ (A [ δ ]T) (M [ δ ])
+coe p M [ δ ]nssubcoe 
+  = coe-ns ⟦ p [ coh-s₂ _ ]≋ ⟧ (M [ coe-sub₂ (sym (≈t↑≈C p)) δ ]nssub)
 
-coe p M [ δ ]nfsubcoe 
-  = coe-nf ⟦ p [ coh-s₂ _ ]≋ ⟧ (M [ coe-sub₂ (sym (≈t↑≈C p)) δ ]nfsub)
-
-ne  M [ δ ]nfsub with coe p M′ ← M [ δ ]nesub = coe p M′
-lam M [ δ ]nfsub = coe ⟦ lam[] ⟧⁻¹ (lam (M [ δ ↑sub _ ]nfsubcoe))
-
-coe p M [ δ ]nesubcoe 
-  = coe-nf ⟦ p [ coh-s₂ _ ]≋ ⟧ (M [ coe-sub₂ (sym (≈t↑≈C p)) δ ]nesub)
-
-{-# TERMINATING #-}
--- Unfortunately, termination for substitutions applied to applications is not
--- obvious, as if applying the substitution produces a lambda, we will need to
--- reduce
-var x [ δ ]nesub with coe p M ← x [ δ ]vsub = coe p M
-app M N [ δ ]nesub with M [ δ ]nesubcoe | N [ δ ]nfsubcoe
-... | coe p (ne  M) | N 
-  = coe (⟦ app[] ⟧⁻¹ ∙ ⟦ app (p ∙ coh-t (≈t↑≈T p)) rfl ⟧)
-        (ne (app (coe (sym (coh-t (≈t↑≈T p))) M) (nf _)))
-... | coe p (lam M) | (coe q N)   
-  = coe-nf (⟦ app[] ⟧⁻¹ ∙ ⟦ app p (coh-t (sym (Π-inj₁ (≈t↑≈T p)))) ⟧ ∙ ⟦ β ⟧⁻¹) 
-           (M [ coe ⟦ [ sym (≈t↑≈C p) ∙ ≈t↑≈C q 
-  , sym (Π-inj₁ (≈t↑≈T p)) ∙ ≈t↑≈T q ]< sym (coh-t _) ∙ q > ⟧ < N > ]nfsubcoe)
+var x [ δ ]nssub = x [ δ ]vsub
+app M N [ δ ]nssub 
+  = coe-ns ⟦ app[] ⟧⁻¹ (app-ns (M [ δ ]nssubcoe) (N [ δ ]nssub))
+lam M [ δ ]nssub = coe ⟦ lam[] ⟧⁻¹ (lam (M [ δ ↑sub _ ]nssubcoe))
 
 coe p x [ δ ]vsubcoe 
-  = coe-nf ⟦ p [ coh-s₂ (sym (≈t↑≈C p)) ]≋ ⟧ 
-           (x [ coe-sub-nf₂ (sym (≈t↑≈C p)) δ ]vsub)
+  = coe-ns ⟦ p [ coh-s₂ (sym (≈t↑≈C p)) ]≋ ⟧ 
+          (x [ coe-sub₂ (sym (≈t↑≈C p)) (coe rfl δ) ]vsub)
 
 vz [ coe p < M > ]vsub 
   = coe (⟦ ⟦ vz (,-inj₂ (≈s↑≈C₂ p)) ⟧ [ p ]≋ ⟧ ∙ ⟦ vz<> ⟧⁻¹) M
 vz [ coe p (δ ↑ A) ]vsub 
-  = coe (⟦ ⟦ vz (,-inj₂ (≈s↑≈C₂ p)) ⟧ [ p ]≋ ⟧ ∙ ⟦ vz[] ⟧⁻¹) (ne (var vz))
+  = coe (⟦ ⟦ vz (,-inj₂ (≈s↑≈C₂ p)) ⟧ [ p ]≋ ⟧ ∙ ⟦ vz[] ⟧⁻¹) (var vz)
 vs x [ coe p < M > ]vsub 
   = coe (⟦ ⟦ coh-t (sym (coh-T (sym (,-inj₁ (≈s↑≈C₂ p))))) 
-         [ ⟦ wk (,-inj₁ (≈s↑≈C₂ p)) (,-inj₂ (≈s↑≈C₂ p)) ⟧ ]≋ ⟧ [ p ]≋ ⟧ 
-  ∙ ⟦ wk-<>-id _ ⟧⁻¹ ∙ sym (coh-t _)) (ne (var x))
-vs x [ coe p (δ ↑ A) ]vsub 
-  with coe q M ← x [ coe-sub-nf₂ (,-inj₁ (≈s↑≈C₂ p)) δ ]vsub
-    = coe-nf (⟦ ⟦ coh-t _ [ ⟦ wk ΔΓ≈ (coh-T (sym ΔΓ≈)) ⟧ ]≋ ⟧ 
-    [ p ∙ ⟦ coh-s₂ _ ↑ sym (,-inj₂ (≈s↑≈C₂ p)) ⟧ 
-  ∙ ⟦ sym (coh-s₂ ΔΓ≈) ↑ coh-T (sym ΔΓ≈) ⟧ ]≋ ⟧ 
-  ∙ ⟦ wk-comm (coe-t (sym (coh-T (sym ΔΓ≈))) _) _ ⟧⁻¹ 
-  ∙ ⟦ ⟦ sym (coh-t _) [ coh-s₂ ΔΓ≈ ]≋ ⟧ [ rfl ]≋ ⟧ 
-  ∙ ⟦ q [ ⟦ wk (≈t↑≈C q) ((sym (coh-T (sym ΔΓ≈))) 
-    [ coh-s₂ ΔΓ≈ ∙ coh-s₁ (sym (≈t↑≈C q)) ]T≈) ⟧ ]≋ ⟧) 
-    (M [ coe rfl wk ]nfwk)
-  where ΔΓ≈ = ,-inj₁ (≈s↑≈C₂ p)
- 
+         [ ⟦ wk≈ (,-inj₂ (≈s↑≈C₂ p)) ⟧ ]≋ ⟧ [ p ]≋ ⟧ 
+  ∙ ⟦ wk-<>-id _ ⟧⁻¹ ∙ sym (coh-t _)) (var x)
+vs x [ coe p (δ ↑ A) ]vsub
+  = coe-ns (⟦ ⟦ coh-t _ [ ⟦ wk≈ AB≈ ⟧ ]≋ ⟧ [ p ]≋ ⟧ ∙ ⟦ wk-comm _ _ ⟧⁻¹ 
+    ∙ ⟦ ⟦ sym (coh-t (sym (coh-T (sym ΔΓ≈)))) [ coh-s₂ ΔΓ≈ ]≋ ⟧ [ rfl ]≋ ⟧)
+      ((x [ coe-sub₂ (,-inj₁ (≈s↑≈C₂ p)) (coe rfl δ) ]vsub) 
+      [ coe rfl wk ]nswkcoe)
+    where ΔΓ≈ = ,-inj₁ (≈s↑≈C₂ p)
+          AB≈ = ,-inj₂ (≈s↑≈C₂ p)
+
+M [ δ ]ns with sort-sub δ 
+... | inj₁ δ = M [ δ ]nswkcoe
+... | inj₂ δ = M [ δ ]nssubcoe
+
+rm-sub (coe p M) = coe-ns ⟦ coh p ⟧⁻¹ (rm-sub M)
+rm-sub (app M N) = app-ns (rm-sub M) (rm-sub N)
+rm-sub (lam M) = coe rfl (lam (rm-sub M))
+rm-sub (M [ δ ]) = rm-sub M [ δ ]ns
+rm-sub vz = coe rfl (var vz)

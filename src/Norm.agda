@@ -9,10 +9,9 @@ open import Equations.Equations
 open import Equations.Injectivity
 open import Nf
 
+-- Normalisation with no care taken to show termination
 module Norm where
 
--- Normalisation with no care taken to show termination
--- For the WIP implementation of terminating substitutions, see Subst.agda
 {-# TERMINATING #-}
 nf : ∀ {Γ A} → (M : Tm Γ A) → NfCoe Γ A M
 _[_]nf : ∀ {Γ Δ A M} → NfCoe Γ A M → (δ : Sub Δ Γ) 

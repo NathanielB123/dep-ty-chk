@@ -257,3 +257,11 @@ wk-<>-idT A = wk-<>-idT′ A (wk-<>-idTs _)
 ≈s↑≈C₂ rfl = rfl
 ≈s↑≈C₂ (trs (δ  ¹) r) = ≋s↑≈C₂ δ ∙ ≈s↑≈C₂ r
 ≈s↑≈C₂ (trs (δ ⁻¹) r) = sym (≋s↑≈C₂ δ) ∙ ≈s↑≈C₂ r
+
+<_>≈ : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} 
+     → M₁ ≈t M₂ → < M₁ > ≋s < M₂ >
+< M >≈ = [ ≈t↑≈C M , ≈t↑≈T M ]< M >
+
+wk≈ : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂ 
+      → wk {A = A₁} ≋s wk {A = A₂}
+wk≈ A = wk (≈T↑≈C A) A
