@@ -19,11 +19,11 @@ _[_]nf : ∀ {Γ Δ A M} → NfCoe Γ A M → (δ : Sub Δ Γ)
 _[_]ne : ∀ {Γ Δ A M} → NeCoe Γ A M → (δ : Sub Δ Γ) 
        → NfCoe Δ (A [ δ ]T) (M [ δ ])
 _[_]v  : ∀ {Γ Δ A M} → Var Γ A M → (δ : Sub Δ Γ) → NfCoe Δ (A [ δ ]T) (M [ δ ])
-appnf : ∀ {Γ A B M N} → NfCoe Γ (Π A B) M → NfCoe Γ A N 
+appnf : ∀ {Γ A B M} → NfCoe Γ (Π A B) M → ∀ N
       → NfCoe Γ (B [ < N > ]T) (app M N)
 
 nf (coe A M) = coe-nf ⟦ coh A ⟧⁻¹ (nf M)
-nf (app M N) = appnf (nf M) (nf N)
+nf (app M N) = appnf (nf M) N
 nf (lam M) = coe rfl (lam (nf M))
 nf (M [ δ ]) = nf M [ δ ]nf
 nf vz = coe rfl (ne (var vz))
@@ -40,14 +40,14 @@ coe p (var x) [ δ ]ne
 coe p (app M N) [ δ ]ne 
   = coe-nf (⟦ p [ coh-s₂ (sym (≈t↑≈C p)) ]≋ ⟧ ∙ ⟦ app[] ⟧⁻¹) 
            (appnf (M [ coe-s₂ (sym (≈t↑≈C p)) δ ]ne) 
-                  (N [ coe-s₂ (sym (≈t↑≈C p)) δ ]nf))
+                  (_ [ coe-s₂ (sym (≈t↑≈C p)) δ ]))
 
 appnf (coe p (ne  M)) N 
-  = coe ⟦ app (p ∙ coh-t (≈t↑≈T p)) rfl ⟧ 
-        (ne (app (coe (sym (coh-t (≈t↑≈T p))) M) (nf _)))
+  = coe-nf ⟦ app (p ∙ coh-t (≈t↑≈T p)) rfl ⟧ 
+           (ne-coe (app-coe (coe (sym (coh-t (≈t↑≈T p))) M) (nf N)))
 appnf (coe p (lam M)) N 
   = coe-nf (⟦ app p (coh-t _) ⟧ ∙ ⟦ β ⟧⁻¹) 
-           (M [ < coe-t (sym (Π-inj₁ (≈t↑≈T p))) _ > ]nf)
+           (M [ < coe-t (sym (Π-inj₁ (≈t↑≈T p))) N > ]nf)
 
 x [ coe₁ Γ δ ]v = coe-nf ⟦ rfl [ ⟦ coh₁ Γ ⟧⁻¹ ]≋ ⟧ (x [ δ ]v)
 x [ coe₂ Δ δ ]v 
