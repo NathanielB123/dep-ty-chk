@@ -7,7 +7,7 @@ open import Function.Base using (id)
 open import Data.Maybe using (Maybe; map; just; nothing)
 open import Data.Unit using (⊤)
 
-module Syntax where
+module Setoid.Syntax where
 
 postulate todo : ∀ {A : Set} → A
 

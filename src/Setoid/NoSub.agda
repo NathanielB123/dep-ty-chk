@@ -1,10 +1,10 @@
 {-# OPTIONS --without-K #-}
 
-open import Syntax
-open import Equations.Equations
-open import Equations.Coercions
+open import Setoid.Syntax
+open import Setoid.Equations.Equations
+open import Setoid.Equations.Coercions
 
-module NoSub where
+module Setoid.NoSub where
 
 data NsCoe : (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set
 data Ns    : (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set

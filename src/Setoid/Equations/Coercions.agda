@@ -2,9 +2,9 @@
 
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; trans; cong)
 
-open import Syntax
+open import Setoid.Syntax
 
-module Equations.Coercions where
+module Setoid.Equations.Coercions where
 
 ≈Ts↑≈C : ∀ {Γ₁ Γ₂} {Δ₁ : Tys Γ₁} {Δ₂ : Tys Γ₂} → Δ₁ ≈Ts Δ₂ → Γ₁ ≈C Γ₂
 

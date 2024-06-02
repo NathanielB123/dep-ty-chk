@@ -3,14 +3,14 @@
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst)
 open import Function.Base using (id)
 
-open import Syntax
-open import Equations.Coercions
-open import Equations.Equations
-open import Equations.Injectivity
-open import Nf
+open import Setoid.Syntax
+open import Setoid.Equations.Coercions
+open import Setoid.Equations.Equations
+open import Setoid.Equations.Injectivity
+open import Setoid.Nf
 
 -- Normalisation with no care taken to show termination
-module Norm where
+module Setoid.Norm where
 
 {-# TERMINATING #-}
 nf : ∀ {Γ A} → (M : Tm Γ A) → NfCoe Γ A M

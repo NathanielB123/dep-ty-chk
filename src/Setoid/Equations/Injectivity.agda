@@ -11,10 +11,10 @@ open import Data.Maybe using (Maybe; just; nothing)
 open import Data.Product using (∃)
   renaming (_,_ to infixl 6 _,_)
 
-open import Syntax
-open import Equations.EqUtils
+open import Setoid.Syntax
+open import Setoid.Equations.EqUtils
 
-module Equations.Injectivity where
+module Setoid.Equations.Injectivity where
 
 data Is,C : Pred ctx where
   prf : ∀ {Γ} {A : Ty Γ} → Is,C (Γ , A)

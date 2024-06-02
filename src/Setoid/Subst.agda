@@ -6,14 +6,14 @@ open import Function.Base using (id)
 open import Data.Unit using (⊤; tt)
 open import Data.Empty using (⊥-elim)
 
-open import Syntax
-open import Equations.Coercions
-open import Equations.Equations
-open import Equations.Injectivity
-open import NoSub
+open import Setoid.Syntax
+open import Setoid.Equations.Coercions
+open import Setoid.Equations.Equations
+open import Setoid.Equations.Injectivity
+open import Setoid.NoSub
 
 -- Remove all explicit substitutions from terms
-module Subst where
+module Setoid.Subst where
 
 rm-sub : ∀ {Γ A} (M : Tm Γ A) → NsCoe Γ A M
 

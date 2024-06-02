@@ -6,9 +6,9 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import Data.Maybe using (Maybe; just; nothing; map)
 open import Data.Product using () renaming (_,_ to infixl 6 _,_)
 
-open import Syntax
+open import Setoid.Syntax
 
-module Equations.EqUtils where
+module Setoid.Equations.EqUtils where
 
 infix 4 _≈Maybe[_]_
 infix 4 _≋Σ[_]_ 

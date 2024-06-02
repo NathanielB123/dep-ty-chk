@@ -1,32 +1,38 @@
 # DepTyChk
 
-A WIP (see "Current Progress"), simple, sound dependent type checker.
+**The Goal:** A simple, sound dependent type checker.
 - **Simple:** No type inference, naive typechecking algorithm (all types evaluated to normal form and compared syntactically).
 - **Sound:** The main point of interest of this development. I aim for the typechecker aims to produce programs in an intrinsically-typed syntax (so accepted programs are verified to be typeable).
-- **Dependent:** The type theory contains pi-types and an eliminator from terms to types.
+- **Dependent:** The object type theory contains pi-types and large elimination.
 
 ## Current Progress
-### Done: 
-- Definition of typed syntax - [Syntax.agda](/src/Syntax.agda)
-- Various proofs of useful properties: Injectivity of type constructors, congruence of type substitutions, equivalence index projections (i.e. stuff like equivalence of terms implies the types of those terms are equivalent), equations covering how substitutions commute on types - [Equations/](./src/Equations)
-- Recursive term substitutions - [Subst.agda](./src/Subst.agda)
-- Definition of normal forms (as predicates on the typed syntax) - [Nf.agda](./src/Nf.agda)
-### WIP:
-- Normalisation
-- A naive algorithm is implemented, but I have had to use a `{-# TERMINATING #-}` pragma - [Norm.agda](./src/Norm.agda)
-- To ensure normalisation is structurally recursive, I will need do something a bit smarter: perhaps hereditary substitution (though I have struggled to find any literature on applying the technique to dependent types) or normalisation by evaluation.
-### Future:
-- Decidable equivalence on typed terms
+
+### Challenges
+
+As it turns out, meta-theory of type theory inside type theory is *quite hard*. Some high-level intuition on why:
+- Godel's second incompleteness theorem tells us a sound formal system cannot prove it's own correctness, so formalising a system as powerful as Agda's is literally impossible.
+- Intrinsically typed syntax (fusing syntax and typing rules into one inductive datatype) is a really powerful way of modelling type systems in TT (and IMO is the only acceptable approach in Agda, with its limited automation/tactics capabilities). However, a direct consequence of this approach is that operations on syntax must (by definition) preserve types. In TTs with any form of large-elimination, terms can appear inside types, which often leads to circularity (to prove type preservation of a syntax transformation, we must implement that syntax transformation, but to implement the transformation, we must prove type preservation).
+- TTs of the intensional variety require a notion of definitional equality. In practice, this means a ton of non-trivial computation must occur at the type-level to check if types are equal. We can attempt to deal with this by trying to always keep types in normal form, but in practice, proving termination with this approach seems extremely challenging; note that substitutions on normal forms are obviously not structurally recursive. Therefore, we usually end up forced to define our own equivalence relation on terms (i.e. beta/eta-rules) and then are obligated to prove all our syntax operations respect this relation, which gets tiresome, fast.
+
+
+### Organisation
+
+This repo is currently split into two distinct developments, which investigate two distinct approaches to formalising TT with intensionally typed terms. The former is further along but progress has slowed due to some extreme and mostly unavoidable clunkyness, while the latter is more experimental but is IMO very promising:
+
+- [Setoid/](./src/Setoid) 
+  - Heavily inspired by [A Formalisation of a Dependently Typed Language as an Inductive-Recursive Family](https://www.cse.chalmers.se/~nad/publications/danielsson-types2006.pdf), [Type Theory in Type Theory using Quotient Inductive Types](https://akaposi.github.io/tt-in-tt.pdf) and Andras Kovacs' [gist](https://gist.github.com/AndrasKovacs/1417f92a411b53798c880fd0a6b44169)
+  - The main achievements here are the provably terminating, type-preserving substitutions ([Subst.agda](./src/Setoid/Subst.agda)) and all the lemmas about how substitutions commute ([Equations.agda](./src/Setoid/Equations/Equations.agda)).
+  - I have also implemented a very simple normalisation function but asserted termination ([Norm.agda](./src/Setoid/Norm.agda)). I think NbE should definitely be applicable here, but working with the explicit equivalence relations is very painful.
+  - There are several large improvements that could made to clean up this development. A big one is placing the equivalence relations in `Prop` so there is no need to worry about making distinct derivations of equality coincide. I also believe the explicit coercions in the syntax could be dealt with in a much more unified way, and there are a few very obvious applications for instance arguments in cleaning up the equivalence relation machinery. See [New.agda](https://github.com/NathanielB123/dep-ty-chk/blob/f435004f5b7c733df6639616c142b2aacc9a8a22/src/New/New.agda) in the `wip-setoid` branch for some WIP code that experiments with some of these ideas. 
+  - A huge reduction in the clunkyness of this approach could be obtained by *quotient*-ing the term syntax (ideally as a *QIT* to get congruence of constructors for free), but afaik there currently exists no theorem prover which implements QITs AND indexed families while retaining canonicity (hopefully this will change in the nearish future given [Higher Inductive Types in Cubical Computational Type Theory](https://dl.acm.org/doi/pdf/10.1145/3290314) and [Observational Equality Meets CIC](https://pujet.fr/pdf/obs_inductives.pdf]), but for now I must work with what I have).
+
+- [Coincidences/](./src/Coincidences/)
+  - Heavily inspired by [Outrageous but Meaningful Coincidences](https://dl.acm.org/doi/abs/10.1145/1863495.1863497)
+  - Similar limitations as described in that paper (equality is constrained in power to that of the meta-theory - i.e. no formalising OTT), but I'm still very excited about this approach; the core syntax is just 100 lines!
+  - I am making liberal use of rewrite rules. These are not essential to the technique, but if we can piggy-back of Agda's propositional equality, we might as well take full advantage!
+
+### To Do:
+- Terminating Normalisation (NbE)
+- Decidable equality of types/terms
 - Definition of untyped pre-terms
 - A monadic typechecker (pre-term -> maybe typed term) which takes advantage of all this machinery
-
-## Design Decisions
-The current developments in this repo use a term syntax with explicit substitutions and an inductive equivalence relation on terms (so terms and this relation together form a setoid). 
-
-This is inconvenient, but some sort of explicit substitutions/setoid relation unfortunately appears to be necessary to avoid getting stuck in dependency hell (recursive term substitutions must take advantage of properties about how substitutions commute on types, but types contain terms, so proving those equations requires implementing term substitutions!) 
-
-Another approach would be to quotient the term syntax, but afaik there currently exists no theorem prover which implements quotient inductive types AND indexed families while retaining canonicity (hopefully this will change in the nearish future given [Higher Inductive Types in Cubical Computational Type Theory](https://dl.acm.org/doi/pdf/10.1145/3290314) and [Observational Equality Meets CIC](https://pujet.fr/pdf/obs_inductives.pdf]), but for now I must work with what I have).
-
-Even following the setoid-based approach though, there is quite a bit of flexibility on the design-side. Compared to András Kovács' "John Major" presentation of TT in TT from this [gist](https://gist.github.com/AndrasKovacs/1417f92a411b53798c880fd0a6b44169) (which this development was largely inspired by) the presentation in this repo defines coercions and substitutions on types recursively, and I include quite a bit of machinery for generically working with symmetric and reflexive-transitive closures over the relations (I still think the design in this area is a bit messy though).
-
-If I were to restart now (or commit to a large refactor on this existing repo), I would like to try out combining recursive term substitutions and explicit type substitutions. I really have no idea if such an approach would actually be workable, but it seems at least somewhat reasonable to me (recursive term substitutions were blocked on needing to know equations about how substitutions commute on types - but if substitution on types were explicit, then these equations could be made constructors of the type's equivalence relation). My hope is such an approach would allow defining terms directly as normal forms, which would simplify the state of things massively (of course, such an approach would be inconvenient if the aim was to make an actually efficient typechecker - i.e. based on reducing to WHNFs - but in any case getting rid of explicit term substitutions while keeping the syntax intrinsically-typed is a very attractive prospect to me).

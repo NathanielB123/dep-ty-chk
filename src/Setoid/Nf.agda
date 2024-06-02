@@ -4,11 +4,11 @@ open import Relation.Binary.PropositionalEquality using (subst; cong)
   renaming (sym to sym≡)
 open import Function.Base using (id)
 
-open import Syntax
-open import Equations.Equations
-open import Equations.Coercions
+open import Setoid.Syntax
+open import Setoid.Equations.Equations
+open import Setoid.Equations.Coercions
 
-module Nf where
+module Setoid.Nf where
 
 data VarCoe : ∀ (Γ : Ctx) (A : Ty Γ) → Tm Γ A → Set
 

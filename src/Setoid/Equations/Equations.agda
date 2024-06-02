@@ -10,12 +10,12 @@ open import Function.Base using (id; _∘_; _∋_)
 open import Data.Unit using (⊤; tt)
 open import Data.Maybe using (Maybe; just; nothing; map) 
 
-open import Syntax
-open import Equations.EqUtils
-open import Equations.Coercions
-open import Equations.Injectivity
+open import Setoid.Syntax
+open import Setoid.Equations.EqUtils
+open import Setoid.Equations.Coercions
+open import Setoid.Equations.Injectivity
 
-module Equations.Equations where
+module Setoid.Equations.Equations where
 
 ≈T↑≈C : ∀ {Γ₁ Γ₂} {A₁ : Ty Γ₁} {A₂ : Ty Γ₂} → A₁ ≈T A₂ → Γ₁ ≈C Γ₂
 ≈t↑≈C : ∀ {Γ₁ Γ₂ A₁ A₂} {M₁ : Tm Γ₁ A₁} {M₂ : Tm Γ₂ A₂} → M₁ ≈t M₂ → Γ₁ ≈C Γ₂
