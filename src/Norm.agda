@@ -19,8 +19,8 @@ _[_]nf : ∀ {Γ Δ A M} → NfCoe Γ A M → (δ : Sub Δ Γ)
 _[_]ne : ∀ {Γ Δ A M} → NeCoe Γ A M → (δ : Sub Δ Γ) 
        → NfCoe Δ (A [ δ ]T) (M [ δ ])
 _[_]v  : ∀ {Γ Δ A M} → Var Γ A M → (δ : Sub Δ Γ) → NfCoe Δ (A [ δ ]T) (M [ δ ])
-appnf : ∀ {Γ A B M} → NfCoe Γ (Π A B) M → ∀ N
-      → NfCoe Γ (B [ < N > ]T) (app M N)
+appnf  : ∀ {Γ A B M} → NfCoe Γ (Π A B) M → ∀ N
+       → NfCoe Γ (B [ < N > ]T) (app M N)
 
 nf (coe A M) = coe-nf ⟦ coh A ⟧⁻¹ (nf M)
 nf (app M N) = appnf (nf M) N
