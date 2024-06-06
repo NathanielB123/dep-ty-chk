@@ -1,5 +1,5 @@
 {-# OPTIONS --rewriting #-}
--- --local-confluence-check
+--local-confluence-check
 
 import Agda.Builtin.Equality.Rewrite
 
@@ -13,6 +13,8 @@ open import Coincidences.Utils
 open import Coincidences.Syntax
 
 module Coincidences.Sub where
+
+infixl 100 _[_]w _[_]s _[_]wv _[_]wtm _[_]sv _[_]stm _[_] _[_]tm
 
 data Wk  : Ctx → Ctx → Set
 data Sub : Ctx → Ctx → Set
@@ -155,3 +157,71 @@ _↑m_ : ∀ δ A → MSub (Δ , A [ δ ]) (Γ , A)
 idₛ ↑m A = idₛ
 (δ ◂w σ) ↑m A = (δ ↑m A) ◂w (σ ↑ (A [ δ ]))
 (δ ◂s σ) ↑m A = (δ ↑m A) ◂s (σ ↑ (A [ δ ]))
+
+⟦_⟧ms : MSub Δ Γ → ⟦ Δ ⟧c → ⟦ Γ ⟧c
+⟦ idₛ ⟧ms = id
+⟦ δ ◂w σ ⟧ms = ⟦ δ ⟧ms ∘ ⟦ σ ⟧w 
+⟦ δ ◂s σ ⟧ms = ⟦ δ ⟧ms ∘ ⟦ σ ⟧s
+
+_[_]tm : ∀ {A} → Tm Γ A → ∀ δ → Tm Δ (A ∘ ⟦ δ ⟧ms)
+M [ idₛ ]tm = M
+M [ δ ◂w σ ]tm = M [ δ ]tm [ σ ]wtm
+M [ δ ◂s σ ]tm = M [ δ ]tm [ σ ]stm
+
+-- All the below proofs are pretty-much identical. Surely we can abstract over
+-- this repetition?
+
+_[_]≡ : ∀ A (δ : MSub Δ Γ) → ⟦ A [ δ ] ⟧T ≡ ⟦ A ⟧T ∘ ⟦ δ ⟧ms 
+A [ idₛ ]≡ = refl
+A [ δ ◂w σ ]≡ = cong (_∘ ⟦ σ ⟧w) (A [ δ ]≡)  
+A [ δ ◂s σ ]≡ = cong (_∘ ⟦ σ ⟧s) (A [ δ ]≡)
+
+_[_]tm≡ : ∀ {A} (M : Tm Γ A) (δ : MSub Δ Γ) → ⟦ M [ δ ]tm ⟧tm ≡ ⟦ M ⟧tm ∘ ⟦ δ ⟧ms 
+M [ idₛ ]tm≡ = refl
+M [ δ ◂w σ ]tm≡ = cong (_∘ ⟦ σ ⟧w) (M [ δ ]tm≡)  
+M [ δ ◂s σ ]tm≡ = cong (_∘ ⟦ σ ⟧s) (M [ δ ]tm≡) 
+
+{-# REWRITE _[_]≡ _[_]tm≡ #-}
+
+⊥[] : ∀ (δ : MSub Δ Γ) → ⊥' [ δ ] ≡ ⊥'
+⊥[] idₛ = refl
+⊥[] (δ ◂w σ) = cong (_[ σ ]w) (⊥[] δ)
+⊥[] (δ ◂s σ) = cong (_[ σ ]s) (⊥[] δ)
+
+Π[] : ∀ (δ : MSub Δ Γ) → Π' A B [ δ ] ≡ Π' (A [ δ ]) (B [ δ ↑m A ])
+Π[] idₛ = refl
+Π[] (δ ◂w σ) = cong (_[ σ ]w) (Π[] δ)
+Π[] (δ ◂s σ) = cong (_[ σ ]s) (Π[] δ)
+
+El[] : ∀ {M} (δ : MSub Δ Γ) → El' M [ δ ] ≡ El' (M [ δ ]tm)
+El[] idₛ = refl
+El[] (δ ◂w σ) = cong (_[ σ ]w) (El[] δ)
+El[] (δ ◂s σ) = cong (_[ σ ]s) (El[] δ)
+
+{-# REWRITE ⊥[] Π[] El[] #-}
+
+⟦⟧↑m : (δ : MSub Δ Γ) → ⟦ δ ↑m A ⟧ms ≡ λ where (⟦Γ⟧ , ⟦A⟧) → ⟦ δ ⟧ms ⟦Γ⟧ , ⟦A⟧
+⟦⟧↑m idₛ = refl
+⟦⟧↑m {A = A} (δ ◂w σ) = cong (_∘ ⟦ σ ↑ A [ δ ] ⟧w) (⟦⟧↑m δ)
+⟦⟧↑m {A = A} (δ ◂s σ) = cong (_∘ ⟦ σ ↑ A [ δ ] ⟧s) (⟦⟧↑m δ)
+
+{-# REWRITE ⟦⟧↑m #-}
+
+app[] : ∀ {A B} {M : Tm Γ (Πsem A B)} {N : Tm Γ A} (δ : MSub Δ Γ) 
+      → app M N [ δ ]tm ≡ app (M [ δ ]tm) (N [ δ ]tm)
+app[] idₛ = refl
+app[] (δ ◂w σ) = cong (_[ σ ]wtm) (app[] δ)
+app[] (δ ◂s σ) = cong (_[ σ ]stm) (app[] δ)
+
+lam[] : ∀ {A B} {M : Tm (Γ , A) B} (δ : MSub Δ Γ) 
+      → lam M [ δ ]tm ≡ lam (M [ δ ↑m _ ]tm)
+lam[] idₛ = refl
+lam[] (δ ◂w σ) = cong (_[ σ ]wtm) (lam[] δ)
+lam[] (δ ◂s σ) = cong (_[ σ ]stm) (lam[] δ)
+
+{-# REWRITE app[] lam[] #-}
+
+variable
+  δ : MSub Δ Γ
+  σ : MSub θ Δ
+ 
