@@ -14,7 +14,7 @@ open import Coincidences.Syntax
 
 module Coincidences.Sub where
 
-infixl 100 _[_]w _[_]s _[_]wv _[_]wtm _[_]sv _[_]stm _[_] _[_]tm
+infixl 100 _[_]w _[_]s _[_]wv _[_]wtm _[_]sv _[_]stm _[_] _[_]tm _[_]v
 
 data Wk  : Ctx → Ctx → Set
 data Sub : Ctx → Ctx → Set
@@ -42,8 +42,8 @@ data Sub where
 ⟦ < M > ⟧s ρ       = ρ , ⟦ M ⟧tm ρ
 ⟦ δ ↑ A ⟧s (ρ , M) = ⟦ δ ⟧s ρ , subst (λ AB → El (AB ρ)) (A [ δ ]s≡) M
 
-_[_]wtm  : ∀ {A} → Tm Γ A → (δ : Wk Δ Γ)  → Tm Δ (A ∘ ⟦ δ ⟧w)
-_[_]stm  : ∀ {A} → Tm Γ A → (δ : Sub Δ Γ) → Tm Δ (A ∘ ⟦ δ ⟧s)
+_[_]wtm  : ∀ {Γ A} → Tm Γ A → (δ : Wk Δ Γ)  → Tm Δ (A ∘ ⟦ δ ⟧w)
+_[_]stm  : ∀ {Γ A} → Tm Γ A → (δ : Sub Δ Γ) → Tm Δ (A ∘ ⟦ δ ⟧s)
 
 ⊥' [ δ ]w = ⊥'
 (Π' A B) [ δ ]w = Π' (A [ δ ]w) (B [ δ ↑ A ]w)
@@ -168,6 +168,11 @@ M [ idₛ ]tm = M
 M [ δ ◂w σ ]tm = M [ δ ]tm [ σ ]wtm
 M [ δ ◂s σ ]tm = M [ δ ]tm [ σ ]stm
 
+_[_]v : ∀ {A} → Var Γ A → ∀ δ → Tm Δ (A ∘ ⟦ δ ⟧ms)
+x [ idₛ ]v = var x
+x [ δ ◂w σ ]v = (x [ δ ]v) [ σ ]wtm 
+x [ δ ◂s σ ]v = (x [ δ ]v) [ σ ]stm
+
 -- All the below proofs are pretty-much identical. Surely we can abstract over
 -- this repetition?
 
@@ -181,7 +186,12 @@ M [ idₛ ]tm≡ = refl
 M [ δ ◂w σ ]tm≡ = cong (_∘ ⟦ σ ⟧w) (M [ δ ]tm≡)  
 M [ δ ◂s σ ]tm≡ = cong (_∘ ⟦ σ ⟧s) (M [ δ ]tm≡) 
 
-{-# REWRITE _[_]≡ _[_]tm≡ #-}
+_[_]v≡ : ∀ {A} (x : Var Γ A) (δ : MSub Δ Γ) → ⟦ x [ δ ]v ⟧tm ≡ ⟦ x ⟧v ∘ ⟦ δ ⟧ms 
+x [ idₛ ]v≡ = refl
+x [ δ ◂w σ ]v≡ = cong (_∘ ⟦ σ ⟧w) (x [ δ ]v≡)  
+x [ δ ◂s σ ]v≡ = cong (_∘ ⟦ σ ⟧s) (x [ δ ]v≡) 
+
+{-# REWRITE _[_]≡ _[_]tm≡ _[_]v≡ #-}
 
 ⊥[] : ∀ (δ : MSub Δ Γ) → ⊥' [ δ ] ≡ ⊥'
 ⊥[] idₛ = refl
@@ -221,7 +231,10 @@ lam[] (δ ◂s σ) = cong (_[ σ ]stm) (lam[] δ)
 
 {-# REWRITE app[] lam[] #-}
 
+_[_]sem : SemTy ⟦ Γ ⟧c → MSub Δ Γ → SemTy ⟦ Δ ⟧c
+A [ δ ]sem = A ∘ ⟦ δ ⟧ms
+
 variable
   δ : MSub Δ Γ
   σ : MSub θ Δ
- 
+  

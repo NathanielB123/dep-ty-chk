@@ -12,7 +12,6 @@ open import Relation.Binary.PropositionalEquality
   ; subst-application′)
   renaming (trans to _∙_)
 open import Data.Nat using (ℕ; suc; zero)
-
 open import Coincidences.Utils
 
 module Coincidences.Syntax where
@@ -39,63 +38,70 @@ El (Π' A B) = ∀ x → El (B x)
 
 ⟦_⟧c : Ctx → Set
 
-SemTy : Ctx → Set
-SemTy Γ = ⟦ Γ ⟧c → U
+SemCtx : Set₁
+SemCtx = Set
+
+SemTy : Set → Set
+SemTy Γ = Γ → U
 
 data Ctx where
   ε   : Ctx
   _,_ : ∀ Γ → Ty Γ → Ctx
 
-data Tm  : ∀ Γ → SemTy Γ → Set
+data Tm  : ∀ Γ → SemTy ⟦ Γ ⟧c → Set
 
 data Ty where
   ⊥'  : Ty Γ
   Π'  : ∀ A → Ty (Γ , A) → Ty Γ
   El' : Tm Γ (λ _ → ⊥') → Ty Γ
 
-⟦_⟧T : Ty Γ → SemTy Γ
+⟦_⟧T : Ty Γ → SemTy ⟦ Γ ⟧c
 
-⟦ ε ⟧c = ⊤
-⟦ Γ , A ⟧c = Σ ⟦ Γ ⟧c (El ∘ ⟦ A ⟧T)
+εs : SemCtx
+εs = ⊤
 
--- Todo: Tidy this up (semantic contexts??)
--- I wonder if in general contexts holding syntactic types is more trouble than
--- it is worth...
-Πsem : (A : SemTy Γ) → (Σ ⟦ Γ ⟧c (El ∘ A) → U) → SemTy Γ
+_,s_ : ∀ Γ → SemTy Γ → SemCtx
+Γ ,s A = Σ Γ (El ∘ A)
+
+⟦ ε ⟧c = εs
+⟦ Γ , A ⟧c = ⟦ Γ ⟧c ,s ⟦ A ⟧T
+
+Πsem : ∀ {Γ} A → SemTy (Γ ,s A) → SemTy Γ
 Πsem A B ρ = Π' (A ρ) (B ∘ (ρ ,_))
 
 SemVal : ∀ Γ → SemTy Γ → Set
 SemVal _ A = ∀ ρ → El (A ρ)
 
-⟦_⟧tm : ∀ {A} → Tm Γ A → SemVal Γ A
+⟦_⟧tm : ∀ {Γ A} → Tm Γ A → SemVal ⟦ Γ ⟧c A
 
 ⟦ ⊥'     ⟧T _ = ⊥'
-⟦ Π' A B ⟧T ρ = Π' (⟦ A ⟧T ρ) (⟦ B ⟧T ∘ (ρ ,_))
+⟦ Π' A B ⟧T   = Πsem ⟦ A ⟧T ⟦ B ⟧T
 ⟦ El' M  ⟧T   = ⊥-elim ∘ ⟦ M ⟧tm
 
-semwk : ∀ A → SemTy Γ → SemTy (Γ , A)
+semwk : ∀ {Γ} A → SemTy Γ → SemTy (Γ ,s A)
 semwk _ = _∘ proj₁
 
-sem<_> : ∀ {A} (M : SemVal Γ A) → (Σ ⟦ Γ ⟧c (El ∘ A) → U) → SemTy Γ
+sem<_> : ∀ {Γ A} (M : SemVal Γ A) → SemTy (Γ ,s A) → SemTy Γ
 sem< M > A ρ = A (ρ , M ρ)
 
-data Var : ∀ Γ → SemTy Γ → Set where
-  vz : Var (Γ , A) (semwk A ⟦ A ⟧T)
-  vs : ∀ {B} → Var Γ B → Var (Γ , A) (semwk A B)
+data Var : ∀ Γ → SemTy ⟦ Γ ⟧c → Set where
+  vz : ∀ {Γ A} → Var (Γ , A) (semwk ⟦ A ⟧T ⟦ A ⟧T)
+  vs : ∀ {Γ A B} → Var Γ B → Var (Γ , A) (semwk ⟦ A ⟧T B)
 
-⟦_⟧v : ∀ {A} → Var Γ A → SemVal Γ A
+⟦_⟧v : ∀ {Γ A} → Var Γ A → SemVal ⟦ Γ ⟧c A
 ⟦ vz ⟧v (ρ , M) = M
 ⟦ vs x ⟧v (ρ , M) = ⟦ x ⟧v ρ
 
 data Tm where
-  var : ∀ {A} → Var Γ A → Tm Γ A
-  app : ∀ {A B} → Tm Γ (Πsem A B) → (N : Tm Γ A) → Tm Γ (sem< ⟦ N ⟧tm > B)
-  lam : ∀ {A B} → Tm (Γ , A) B → Tm Γ (Πsem ⟦ A ⟧T B)
+  var : ∀ {Γ A} → Var Γ A → Tm Γ A
+  app : ∀ {Γ A B} → Tm Γ (Πsem A B) → (N : Tm Γ A) → Tm Γ (sem< ⟦ N ⟧tm > B)
+  lam : ∀ {Γ A B} → Tm (Γ , A) B → Tm Γ (Πsem ⟦ A ⟧T B)
 
-appsem : ∀ {A B} → SemVal Γ (Πsem A B) → (N : SemVal Γ A) 
+appsem : ∀ {Γ A B} → SemVal Γ (Πsem A B) → (N : SemVal Γ A) 
        → SemVal Γ (sem< N > B)
 appsem M N ρ = (M ρ) (N ρ)
 
 ⟦ var x   ⟧tm     = ⟦ x ⟧v
 ⟦ app M N ⟧tm     = appsem ⟦ M ⟧tm ⟦ N ⟧tm
 ⟦ lam M   ⟧tm ρ N = ⟦ M ⟧tm (ρ , N)
+  
