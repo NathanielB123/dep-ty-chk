@@ -45,13 +45,19 @@ _↑↑_ : ∀ (δ : MSub Δ Γ) Γ′ → MSub (Δ ++ Γ′ [ δ ]tys) (Γ ++ �
 δ ↑↑ ε = δ     
 δ ↑↑ (Γ′ , A) = (δ ↑↑ Γ′) ↑m A 
 
-Ty≡ = cong Ty
-Tys≡ = cong Tys
-
-SemTy≡ = cong SemTy
-⟦_⟧c≡ = cong ⟦_⟧c 
+mwk : ∀ Γ′ → MSub (Γ ++ Γ′) Γ
+mwk ε = idₛ
+mwk (Γ′ , A) = mwk Γ′ ◂w wk
 
 module Congruence where
+  Ty≡ = cong Ty
+  Tys≡ = cong Tys
+
+  SemTy≡ = cong SemTy
+  ⟦_⟧c≡ = cong ⟦_⟧c 
+
+  SemSub≡ = cong₂ SemSub
+
   Tm≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂) 
       → Tm Γ₁ A₁ ≡ Tm Γ₂ A₂
   Tm≡ refl refl = refl
@@ -76,9 +82,21 @@ module Congruence where
 
   {-# REWRITE ++≡β #-}
 
+  ⟦⟧T≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) → A₁ ≡[ Ty≡ Γ≡ ]≡ A₂ 
+       → ⟦ A₁ ⟧T ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ ⟦ A₂ ⟧T
+  ⟦⟧T≡ refl refl = refl
+
+  ⊥≡ : ∀ {Γ₁ Γ₂} (Γ≡ : Γ₁ ≡ Γ₂) → ⊥' ≡[ Ty≡ Γ≡ ]≡ ⊥'
+  ⊥≡ refl = refl
+
   Π≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂) 
     → B₁ ≡[ Ty≡ (Γ≡ ,≡ A≡) ]≡ B₂ → Π' A₁ B₁ ≡[ Ty≡ Γ≡ ]≡ Π' A₂ B₂
   Π≡ refl refl refl = refl
+
+  El≡ : ∀ {Γ₁ Γ₂ M₁ M₂} (Γ≡ : Γ₁ ≡ Γ₂)
+      → M₁ ≡[ Tm≡ Γ≡ (⟦⟧T≡ Γ≡ (⊥≡ Γ≡)) ]≡ M₂
+      → El' M₁ ≡[ Ty≡ Γ≡ ]≡ El' M₂
+  El≡ refl refl = refl
 
   _,s≡_ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) → A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂ 
         → Γ₁ ,s A₁ ≡ Γ₂ ,s A₂
@@ -88,10 +106,6 @@ module Congruence where
         → B₁ ≡[ SemTy≡ (Γ≡ ,s≡ A≡) ]≡ B₂ 
         → Πsem A₁ B₁ ≡[ SemTy≡ Γ≡ ]≡ Πsem A₂ B₂
   Πsem≡ refl refl refl = refl
-
-  ⟦⟧T≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) → A₁ ≡[ Ty≡ Γ≡ ]≡ A₂ 
-      → ⟦ A₁ ⟧T ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ ⟦ A₂ ⟧T
-  ⟦⟧T≡ refl refl = refl
 
   ⟦⟧c≡β : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
         → cong ⟦_⟧c (Γ≡ ,≡ A≡) ≡ ⟦ Γ≡ ⟧c≡ ,s≡ ⟦⟧T≡ Γ≡ A≡
@@ -104,6 +118,21 @@ module Congruence where
           (M≡ : M₁ ≡[ Tm≡ (Γ≡ ,≡ A≡) B≡ ]≡ M₂) 
       → lam M₁ ≡[ Tm≡ Γ≡ (Πsem≡ ⟦ Γ≡ ⟧c≡ (⟦⟧T≡ Γ≡ A≡) B≡) ]≡ lam M₂
   lam≡ refl refl refl refl = refl
+
+  ,proj≡₁ : ∀ {Γ Γ₁′ Γ₂′} {A₁ : Ty (Γ ++ Γ₁′)} {A₂ : Ty (Γ ++ Γ₂′)} 
+          → Tys._,_ Γ₁′ A₁ ≡ Tys._,_ Γ₂′ A₂ → Γ₁′ ≡ Γ₂′
+  ,proj≡₁ refl = refl
+
+  []sem≡ : ∀ {Γ₁ Γ₂ Δ δ₁ δ₂} (A : SemTy Δ) (Γ≡ : Γ₁ ≡ Γ₂) 
+      → δ₁ ≡[ SemSub≡ Γ≡ refl ]≡ δ₂ 
+      → A ∘ δ₁ ≡[ cong (λ Γ → Γ → U) Γ≡ ]≡ A ∘ δ₂
+  []sem≡ _ refl refl = refl
+
+  ↑sem≡ : ∀ {Γ₁ Γ₂ Δ δ₁ δ₂} {A : SemTy Δ} (Γ≡ : Γ₁ ≡ Γ₂)
+            (δ≡ : δ₁ ≡[ SemSub≡ Γ≡ refl ]≡ δ₂) 
+        → δ₁ ↑sem A ≡[ SemSub≡ (Γ≡ ,s≡ ([]sem≡ A Γ≡ δ≡)) refl ]≡ δ₂ ↑sem A
+  ↑sem≡ refl refl = refl
+
 open Congruence public
 
 <>-commutes-tys : ∀ {N} Γ′ 
@@ -115,40 +144,13 @@ open Congruence public
               → B [ ⟨ < N > ⟩s ↑↑ Γ′ ] [ δ ↑↑ Γ′ [ idₛ ◂s < N > ]tys ] 
              ≡[ Ty≡ (refl ++≡ p)
              ]≡ B [ (δ ↑m A) ↑↑ Γ′ ] [ ⟨ < N [ δ ]tm > ⟩s ↑↑ Γ′ [ δ ↑m A ]tys ]
-
-<>-commutes-tys ε = refl
-<>-commutes-tys (Γ′ , B) = ,tys≡ refl Γ≡′ (<>-commutes↑↑ Γ′ B Γ≡′)
-  where Γ≡′ = <>-commutes-tys Γ′
-
-<>-commutes↑↑ Γ′ ⊥' p = {!!}
-<>-commutes↑↑ Γ′ (Π' B₁ B₂) p 
-  = Π≡ (refl ++≡ p) B₁≡ B₂≡
-  where B₁≡ = <>-commutes↑↑ Γ′ B₁ p
-        B₂≡ = <>-commutes↑↑ (Γ′ , B₁) B₂ (,tys≡ refl p B₁≡)
-<>-commutes↑↑ Γ′ (El' B) p = {!!}
-
-<>-commutes-sem : ∀ {Γ Δ} {δ : MSub Δ Γ} {A} {N : Tm Γ ⟦ A ⟧T} 
-                    (B : SemTy (⟦ Γ ⟧c ,s ⟦ A ⟧T))
-              → B [ ⟨ <_> {A = A} N ⟩s ]sem [ δ ]sem 
-              ≡ B [ δ ↑m A ]sem [ ⟨ <_> {A = A [ δ ]} (N [ δ ]tm) ⟩s ]sem
-<>-commutes-sem {δ = δ} B = refl
-
--- This is really frustrating - every concrete case of this proof (for finite
--- Γ′s) is trivial, but I can't seem to prove it inductively?
 <>-commutes↑↑-sem : ∀ {Γ Δ} {δ : MSub Δ Γ} {A} Γ′ {N} B 
                       (p : Γ′ [ ⟨ < N > ⟩s ]tys [ δ ]tys 
                          ≡ Γ′ [ δ ↑m A ]tys [ ⟨ < N [ δ ]tm > ⟩s ]tys)
-                  → B [ ⟨ < N > ⟩s ↑↑ Γ′ ]sem [ δ ↑↑ Γ′ [ idₛ ◂s < N > ]tys ]sem 
+                  → B [ ⟨ < N > ⟩s ↑↑ Γ′ ]sem [ δ ↑↑ Γ′ [ ⟨ < N > ⟩s ]tys ]sem 
                  ≡[ SemTy≡ ⟦ refl ++≡ p ⟧c≡
                  ]≡ B [ (δ ↑m A) ↑↑ Γ′ ]sem
                       [ ⟨ < N [ δ ]tm > ⟩s ↑↑ Γ′ [ δ ↑m A ]tys ]sem
-<>-commutes↑↑-sem ε B refl = refl
-<>-commutes↑↑-sem (ε , A) B p = drefl _
-<>-commutes↑↑-sem ((ε , A) , C) B p = drefl _
-<>-commutes↑↑-sem (((ε , A) , C) , D) B p = drefl _
-<>-commutes↑↑-sem (Γ′ , A) B p = {!   !}
-  where ind = <>-commutes↑↑-sem Γ′ (λ x → B (x , {!!})) {!!}
-
 <>-commutes↑↑-tm :  ∀ {Γ Δ} {δ : MSub Δ Γ} {A} Γ′ {N B} (M : Tm _ B) 
                       (p : Γ′ [ idₛ ◂s < N > ]tys [ δ ]tys 
                          ≡ Γ′ [ δ ↑m A ]tys [ idₛ ◂s < N [ δ ]tm > ]tys)
@@ -156,6 +158,35 @@ open Congruence public
                 ≡[ Tm≡ (refl ++≡ p) (<>-commutes↑↑-sem Γ′ B p)
                 ]≡ M [ (δ ↑m A) ↑↑ Γ′ ]tm
                      [ ⟨ < N [ δ ]tm > ⟩s ↑↑ Γ′ [ δ ↑m A ]tys ]tm
+
+<>-commutes-tys ε = refl
+<>-commutes-tys (Γ′ , B) = ,tys≡ refl Γ≡′ (<>-commutes↑↑ Γ′ B Γ≡′)
+  where Γ≡′ = <>-commutes-tys Γ′
+
+<>-commutes↑↑ Γ′ ⊥' p = ⊥≡ (refl ++≡ p)
+<>-commutes↑↑ Γ′ (Π' B₁ B₂) p 
+  = Π≡ (refl ++≡ p) B₁≡ B₂≡
+  where B₁≡ = <>-commutes↑↑ Γ′ B₁ p
+        B₂≡ = <>-commutes↑↑ (Γ′ , B₁) B₂ (,tys≡ refl p B₁≡)
+<>-commutes↑↑ Γ′ (El' B) p 
+  = El≡ (refl ++≡ p) (≡[]≡-irrev (<>-commutes↑↑-tm Γ′ B p))
+
+<>-commutes↑↑-sem-sub : ∀ {Γ Δ} {δ : MSub Δ Γ} {A} Γ′ {N} 
+                          (p : Γ′ [ ⟨ < N > ⟩s ]tys [ δ ]tys 
+                             ≡ Γ′ [ δ ↑m A ]tys [ ⟨ < N [ δ ]tm > ⟩s ]tys)
+                      → ⟦ ⟨ < N > ⟩s ↑↑ Γ′ ⟧ms ∘ ⟦ δ ↑↑ Γ′ [ ⟨ < N > ⟩s ]tys ⟧ms
+                     ≡[ SemSub≡ ⟦ refl ++≡ p ⟧c≡ refl
+                     ]≡ ⟦ (δ ↑m A) ↑↑ Γ′ ⟧ms
+                      ∘ ⟦ ⟨ < N [ δ ]tm > ⟩s ↑↑ Γ′ [ δ ↑m A ]tys ⟧ms
+<>-commutes↑↑-sem-sub ε refl = refl
+<>-commutes↑↑-sem-sub (Γ′ , B) p 
+  = ≡[]≡-irrev (↑sem≡ {A = ⟦ B ⟧T} ⟦ refl ++≡ p′ ⟧c≡ 
+               (<>-commutes↑↑-sem-sub Γ′ p′))
+  where p′ = ,proj≡₁ p
+
+<>-commutes↑↑-sem Γ′ B p 
+  = []sem≡ B ⟦ refl ++≡ p ⟧c≡ (<>-commutes↑↑-sem-sub Γ′ p) 
+
 <>-commutes↑↑-tm Γ′ (var x) p = {!   !}
 <>-commutes↑↑-tm Γ′ (app M N) p = {!   !}
 -- Interesting - the substitutions are not reducing in the goal type here
@@ -196,3 +227,4 @@ open Congruence public
 -- <>-commutes-v :  ∀ {Γ Δ} (δ : MSub Δ Γ) {A} {N B} (x : Var _ B) 
 --               → x [ ⟨ < N > ⟩s ]v [ δ ]tm 
 --               ≡ x [ δ ↑m A ]v [ ⟨ < N [ δ ]tm > ⟩s ]tm
+ 

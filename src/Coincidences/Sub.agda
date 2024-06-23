@@ -16,10 +16,13 @@ module Coincidences.Sub where
 
 infixl 100 _[_]w _[_]s _[_]wv _[_]wtm _[_]sv _[_]stm _[_] _[_]tm _[_]v
 
+SemSub : SemCtx → SemCtx → Set
+SemSub Δ Γ = Δ → Γ
+
 data Wk  : Ctx → Ctx → Set
 data Sub : Ctx → Ctx → Set
-⟦_⟧w : Wk Δ Γ  → ⟦ Δ ⟧c → ⟦ Γ ⟧c 
-⟦_⟧s : Sub Δ Γ → ⟦ Δ ⟧c → ⟦ Γ ⟧c
+⟦_⟧w : Wk Δ Γ  → SemSub ⟦ Δ ⟧c ⟦ Γ ⟧c
+⟦_⟧s : Sub Δ Γ → SemSub ⟦ Δ ⟧c ⟦ Γ ⟧c
 _[_]w  : Ty Γ → Wk Δ Γ  → Ty Δ
 _[_]s  : Ty Γ → Sub Δ Γ → Ty Δ
 _[_]w≡ : ∀ A (δ : Wk Δ Γ)  → ⟦ A [ δ ]w ⟧T ≡ ⟦ A ⟧T ∘ ⟦ δ ⟧w
@@ -158,7 +161,7 @@ idₛ ↑m A = idₛ
 (δ ◂w σ) ↑m A = (δ ↑m A) ◂w (σ ↑ (A [ δ ]))
 (δ ◂s σ) ↑m A = (δ ↑m A) ◂s (σ ↑ (A [ δ ]))
 
-⟦_⟧ms : MSub Δ Γ → ⟦ Δ ⟧c → ⟦ Γ ⟧c
+⟦_⟧ms : MSub Δ Γ → SemSub ⟦ Δ ⟧c ⟦ Γ ⟧c
 ⟦ idₛ ⟧ms = id
 ⟦ δ ◂w σ ⟧ms = ⟦ δ ⟧ms ∘ ⟦ σ ⟧w 
 ⟦ δ ◂s σ ⟧ms = ⟦ δ ⟧ms ∘ ⟦ σ ⟧s
@@ -247,6 +250,8 @@ agda-is-broke : ∀ {N B} (M : Tm (Γ , (A [ ⟨ < N > ⟩s ])) B) (δ : MSub Δ
 agda-is-broke M δ = lam[] {M = M} δ
 {-# REWRITE agda-is-broke #-}
 
+_↑sem_ : ∀ {Γ Δ} (δ : SemSub Δ Γ) A → SemSub (Δ ,s (A ∘ δ)) (Γ ,s A)
+(δ ↑sem A) (x , y) = δ x , y
 
 variable
   δ : MSub Δ Γ
