@@ -49,7 +49,7 @@ mwk : ∀ Γ′ → MSub (Γ ++ Γ′) Γ
 mwk ε = idₛ
 mwk (Γ′ , A) = mwk Γ′ ◂w wk
 
-module Congruence where
+module Congruences where
   Ty≡ = cong Ty
   Tys≡ = cong Tys
 
@@ -66,12 +66,12 @@ module Congruence where
       → (Ctx._,_ Γ₁ A₁) ≡ (Ctx._,_ Γ₂ A₂)
   refl ,≡ refl = refl
 
-  _++≡_ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′} (Γ≡ : Γ₁ ≡ Γ₂) → Γ₁′ ≡[ cong Tys Γ≡ ]≡ Γ₂′
+  _++≡_ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′} (Γ≡ : Γ₁ ≡ Γ₂) → Γ₁′ ≡[ Tys≡ Γ≡ ]≡ Γ₂′
         → Γ₁ ++ Γ₁′ ≡ Γ₂ ++ Γ₂′
   refl ++≡ refl = refl
 
   ,tys≡ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) 
-            (Γ≡′ : Γ₁′ ≡[ cong Tys Γ≡ ]≡ Γ₂′)
+            (Γ≡′ : Γ₁′ ≡[ Tys≡ Γ≡ ]≡ Γ₂′)
         → A₁ ≡[ Ty≡ (Γ≡ ++≡ Γ≡′) ]≡ A₂ → Γ₁′ , A₁ ≡[ Tys≡ Γ≡ ]≡ Γ₂′ , A₂ 
   ,tys≡ refl refl refl = refl
 
@@ -133,7 +133,7 @@ module Congruence where
         → δ₁ ↑sem A ≡[ SemSub≡ (Γ≡ ,s≡ ([]sem≡ A Γ≡ δ≡)) refl ]≡ δ₂ ↑sem A
   ↑sem≡ refl refl = refl
 
-open Congruence public
+open Congruences public
 
 <>-commutes-tys : ∀ {N} Γ′ 
                 → Γ′ [ idₛ ◂s < N > ]tys [ δ ]tys 
@@ -181,31 +181,42 @@ open Congruence public
 <>-commutes↑↑-sem-sub ε refl = refl
 <>-commutes↑↑-sem-sub (Γ′ , B) p 
   = ≡[]≡-irrev (↑sem≡ {A = ⟦ B ⟧T} ⟦ refl ++≡ p′ ⟧c≡ 
-               (<>-commutes↑↑-sem-sub Γ′ p′))
+                      (<>-commutes↑↑-sem-sub Γ′ p′))
   where p′ = ,proj≡₁ p
 
 <>-commutes↑↑-sem Γ′ B p 
   = []sem≡ B ⟦ refl ++≡ p ⟧c≡ (<>-commutes↑↑-sem-sub Γ′ p) 
 
+-- I would expect both of these rewrites to apply automatically given lam[]
+-- is a rewrite rule but for some reason they don't.
+lam[]-spec1 : ∀ {N : Tm Γ ⟦ B ⟧T} Γ′ {A C} (M : Tm _ C) 
+            → lam (M [ (⟨ <_> {A = B} N ⟩s ↑↑ Γ′) ↑m A ]tm) 
+                     [ δ ↑↑ Γ′ [ ⟨ <_> {A = B} N ⟩s ]tys ]tm
+            ≡ lam (M [ (⟨ <_> {A = B} N ⟩s ↑↑ Γ′) ↑m A ]tm 
+                     [ (δ ↑↑ (Γ′ [ ⟨ <_> {A = B} N ⟩s ]tys)) 
+                          ↑m A [ ⟨ <_> {A = B} N ⟩s ↑↑ Γ′ ] ]tm)
+lam[]-spec1 Γ′ M
+  = lam[] {M = (M [ (⟨ _ ⟩s ↑↑ Γ′) ↑m _ ]tm)} (_ ↑↑ Γ′ [ ⟨ _ ⟩s ]tys)
+
+lam[]-spec2 : ∀ {N : Tm Γ ⟦ B ⟧T} Γ′ {A C} (M : Tm _ C)
+            → lam (M [ ((δ ↑m B) ↑↑ Γ′) ↑m A ]tm) 
+                     [ ⟨ < N [ δ ]tm > ⟩s ↑↑ Γ′ [ δ ↑m B ]tys ]tm 
+            ≡ lam (M [ ((δ ↑m B) ↑↑ Γ′) ↑m A ]tm 
+                     [ (⟨ < N [ δ ]tm > ⟩s ↑↑ Γ′ [ δ ↑m B ]tys) 
+                                           ↑m A  [ (δ ↑m B) ↑↑ Γ′ ] ]tm) 
+lam[]-spec2 Γ′ M
+  = lam[] {M = M [ ((_ ↑m _) ↑↑ Γ′) ↑m _ ]tm} 
+          (⟨ < _ > ⟩s ↑↑ Γ′ [ _ ↑m _ ]tys)
+{-# REWRITE lam[]-spec1 lam[]-spec2 #-}
+
 <>-commutes↑↑-tm Γ′ (var x) p = {!   !}
 <>-commutes↑↑-tm Γ′ (app M N) p = {!   !}
--- Interesting - the substitutions are not reducing in the goal type here
--- I'm not sure why... feels like a bug with Agda?
-<>-commutes↑↑-tm {δ = δ} Γ′ {N = N} (lam {A = A} {B = B} M) p 
-  = {!≡[]≡-irrev foo!} 
+<>-commutes↑↑-tm Γ′ (lam {A = A} {B = B} M) p 
+  = ≡[]≡-irrev (lam≡ (_ ++≡ p) A≡ B≡ M≡)
   where
     A≡ = <>-commutes↑↑ Γ′ A p 
     B≡ = <>-commutes↑↑-sem (Γ′ , A) B (,tys≡ refl p A≡)
     M≡ = <>-commutes↑↑-tm (Γ′ , A) M (,tys≡ refl p A≡)
-    foo = lam≡ (_ ++≡ p) A≡ B≡ M≡
-    -- Surely this *should* be provable with refl - lam[] is a rewrite rule!
-    why-no-β : lam (M [ ((idₛ ◂s < N >) ↑↑ Γ′) ↑m A ]tm) 
-                      [ δ ↑↑ (Γ′ [ idₛ ◂s < N > ]tys) ]tm
-             ≡ lam (M [ ((idₛ ◂s < N >) ↑↑ Γ′) ↑m A ]tm 
-                      [ (δ ↑↑ (Γ′ [ idₛ ◂s < N > ]tys)) 
-                           ↑m A [ ((idₛ ◂s < N >) ↑↑ Γ′) ] ]tm)  
-    why-no-β = lam[] {M = M [ ((idₛ ◂s < N >) ↑↑ Γ′) ↑m A ]tm} 
-                     (δ ↑↑ (Γ′ [ idₛ ◂s < N > ]tys))
             
 -- <>-commutes↑↑-tm :  ∀ {Γ Δ} {δ : MSub Δ Γ} {A} Γ′ {N B} (M : Tm _ B) 
 --               → Γ′ [ idₛ ◂s < N > ]tys [ δ ]tys 
@@ -227,4 +238,4 @@ open Congruence public
 -- <>-commutes-v :  ∀ {Γ Δ} (δ : MSub Δ Γ) {A} {N B} (x : Var _ B) 
 --               → x [ ⟨ < N > ⟩s ]v [ δ ]tm 
 --               ≡ x [ δ ↑m A ]v [ ⟨ < N [ δ ]tm > ⟩s ]tm
- 
+  
