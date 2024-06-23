@@ -234,6 +234,20 @@ lam[] (δ ◂s σ) = cong (_[ σ ]stm) (lam[] δ)
 _[_]sem : SemTy ⟦ Γ ⟧c → MSub Δ Γ → SemTy ⟦ Δ ⟧c
 A [ δ ]sem = A ∘ ⟦ δ ⟧ms
 
+⟨_⟩w : Wk Δ Γ → MSub Δ Γ
+⟨ δ ⟩w = idₛ ◂w δ
+
+⟨_⟩s : Sub Δ Γ → MSub Δ Γ
+⟨ δ ⟩s = idₛ ◂s δ
+
+-- The lam[] rewrite rule sometimes doesn't apply. I am not sure why - is this
+-- an Agda typechecker bug?
+agda-is-broke : ∀ {N B} (M : Tm (Γ , (A [ ⟨ < N > ⟩s ])) B) (δ : MSub Δ Γ)
+              → lam M [ δ ]tm ≡ lam (M [ δ ↑m _ ]tm)
+agda-is-broke M δ = lam[] {M = M} δ
+{-# REWRITE agda-is-broke #-}
+
+
 variable
   δ : MSub Δ Γ
   σ : MSub θ Δ
