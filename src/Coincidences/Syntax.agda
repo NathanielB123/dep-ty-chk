@@ -78,15 +78,18 @@ SemVal _ A = ∀ ρ → El (A ρ)
 ⟦ Π' A B ⟧T   = Πsem ⟦ A ⟧T ⟦ B ⟧T
 ⟦ El' M  ⟧T   = ⊥-elim ∘ ⟦ M ⟧tm
 
-semwk : ∀ {Γ} A → SemTy Γ → SemTy (Γ ,s A)
-semwk _ = _∘ proj₁
+SemSub : SemCtx → SemCtx → Set
+SemSub Γ Δ = Γ → Δ
 
-sem<_> : ∀ {Γ A} (M : SemVal Γ A) → SemTy (Γ ,s A) → SemTy Γ
-sem< M > A ρ = A (ρ , M ρ)
+semwk :  ∀ {Γ} A → SemSub (Γ ,s A) Γ
+semwk _ = proj₁
+
+sem<_> : ∀ {Γ A} (M : SemVal Γ A) → SemSub Γ (Γ ,s A)
+sem< M > Γ = Γ , M Γ
 
 data Var : ∀ Γ → SemTy ⟦ Γ ⟧c → Set where
-  vz : ∀ {Γ A} → Var (Γ , A) (semwk ⟦ A ⟧T ⟦ A ⟧T)
-  vs : ∀ {Γ A B} → Var Γ B → Var (Γ , A) (semwk ⟦ A ⟧T B)
+  vz : ∀ {Γ A} → Var (Γ , A) (⟦ A ⟧T ∘ semwk ⟦ A ⟧T)
+  vs : ∀ {Γ A B} → Var Γ B → Var (Γ , A) (B ∘ semwk ⟦ A ⟧T)
 
 ⟦_⟧v : ∀ {Γ A} → Var Γ A → SemVal ⟦ Γ ⟧c A
 ⟦ vz ⟧v (ρ , M) = M
@@ -94,11 +97,11 @@ data Var : ∀ Γ → SemTy ⟦ Γ ⟧c → Set where
 
 data Tm where
   var : ∀ {Γ A} → Var Γ A → Tm Γ A
-  app : ∀ {Γ A B} → Tm Γ (Πsem A B) → (N : Tm Γ A) → Tm Γ (sem< ⟦ N ⟧tm > B)
+  app : ∀ {Γ A B} → Tm Γ (Πsem A B) → (N : Tm Γ A) → Tm Γ (B ∘ sem< ⟦ N ⟧tm >)
   lam : ∀ {Γ A B} → Tm (Γ , A) B → Tm Γ (Πsem ⟦ A ⟧T B)
 
 appsem : ∀ {Γ A B} → SemVal Γ (Πsem A B) → (N : SemVal Γ A) 
-       → SemVal Γ (sem< N > B)
+       → SemVal Γ (B ∘ sem< N >)
 appsem M N ρ = (M ρ) (N ρ)
 
 ⟦ var x   ⟧tm     = ⟦ x ⟧v

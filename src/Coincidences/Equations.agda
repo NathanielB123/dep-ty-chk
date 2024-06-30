@@ -25,6 +25,7 @@ drefl refl = refl
 ≡[]≡-irrev {p = refl} {q = refl} = id
 
 infixl 100 _[_]tys
+infixl 100 _[_]semtys
 
 data Tys : Ctx → Set
 _++_ : ∀ Γ → Tys Γ → Ctx
@@ -49,18 +50,46 @@ mwk : ∀ Γ′ → MSub (Γ ++ Γ′) Γ
 mwk ε = idₛ
 mwk (Γ′ , A) = mwk Γ′ ◂w wk
 
+data SemTys : SemCtx → Set₁
+
+_++s_ : ∀ Γ → SemTys Γ → SemCtx
+
+data SemTys where
+  ε   : ∀ {Γ} → SemTys Γ
+  _,_ : ∀ {Γ} Γ′ → SemTy (Γ ++s Γ′) → SemTys Γ
+
+Γ ++s ε = Γ
+Γ ++s (Γ′ , A) = (Γ ++s Γ′) ,s A
+
+_[_]semtys : ∀ {Γ Δ} → SemTys Γ → SemSub Δ Γ → SemTys Δ
+_↑↑s_ : ∀ {Γ Δ} (δ : SemSub Δ Γ) Γ′ → SemSub (Δ ++s Γ′ [ δ ]semtys) (Γ ++s Γ′)
+
+ε [ δ ]semtys = ε
+(Γ′ , A) [ δ ]semtys = Γ′ [ δ ]semtys , A ∘ (δ ↑↑s Γ′)
+
+δ ↑↑s ε = δ
+δ ↑↑s (Γ′ , A) = (δ ↑↑s Γ′) ↑s A
+ 
 module Congruences where
   Ty≡ = cong Ty
   Tys≡ = cong Tys
 
   SemTy≡ = cong SemTy
-  ⟦_⟧c≡ = cong ⟦_⟧c 
-
+  SemTys≡ = cong SemTys
   SemSub≡ = cong₂ SemSub
+  ⟦_⟧c≡ = cong ⟦_⟧c 
 
   Tm≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂) 
       → Tm Γ₁ A₁ ≡ Tm Γ₂ A₂
   Tm≡ refl refl = refl
+
+  SemVal≡ :  ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂) 
+         → SemVal Γ₁ A₁ ≡ SemVal Γ₂ A₂
+  SemVal≡ refl refl = refl
+
+  ⟦⟧tm≡ : ∀ {Γ₁ Γ₂ A₁ A₂ M₁ M₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂)
+        → M₁ ≡[ Tm≡ Γ≡ A≡ ]≡ M₂ → ⟦ M₁ ⟧tm ≡[ SemVal≡ ⟦ Γ≡ ⟧c≡ A≡ ]≡ ⟦ M₂ ⟧tm
+  ⟦⟧tm≡ refl refl refl = refl
 
   _,≡_ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
       → (Ctx._,_ Γ₁ A₁) ≡ (Ctx._,_ Γ₂ A₂)
@@ -102,6 +131,15 @@ module Congruences where
         → Γ₁ ,s A₁ ≡ Γ₂ ,s A₂
   refl ,s≡ refl = refl 
 
+  _++s≡_ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′} (Γ≡ : Γ₁ ≡ Γ₂) → Γ₁′ ≡[ SemTys≡ Γ≡ ]≡ Γ₂′
+        → Γ₁ ++s Γ₁′ ≡ Γ₂ ++s Γ₂′
+  refl ++s≡ refl = refl
+
+  ,semtys≡ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) 
+            (Γ≡′ : Γ₁′ ≡[ SemTys≡ Γ≡ ]≡ Γ₂′)
+        → A₁ ≡[ SemTy≡ (Γ≡ ++s≡ Γ≡′) ]≡ A₂ → Γ₁′ , A₁ ≡[ SemTys≡ Γ≡ ]≡ Γ₂′ , A₂ 
+  ,semtys≡ refl refl refl = refl
+
   Πsem≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂) 
         → B₁ ≡[ SemTy≡ (Γ≡ ,s≡ A≡) ]≡ B₂ 
         → Πsem A₁ B₁ ≡[ SemTy≡ Γ≡ ]≡ Πsem A₂ B₂
@@ -114,26 +152,71 @@ module Congruences where
   {-# REWRITE ⟦⟧c≡β #-}
 
   lam≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ M₁ M₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
-          (B≡ : B₁ ≡[ SemTy≡ ⟦ Γ≡ ,≡ A≡ ⟧c≡ ]≡ B₂) 
-          (M≡ : M₁ ≡[ Tm≡ (Γ≡ ,≡ A≡) B≡ ]≡ M₂) 
-      → lam M₁ ≡[ Tm≡ Γ≡ (Πsem≡ ⟦ Γ≡ ⟧c≡ (⟦⟧T≡ Γ≡ A≡) B≡) ]≡ lam M₂
+           (B≡ : B₁ ≡[ SemTy≡ ⟦ Γ≡ ,≡ A≡ ⟧c≡ ]≡ B₂) 
+           (M≡ : M₁ ≡[ Tm≡ (Γ≡ ,≡ A≡) B≡ ]≡ M₂) 
+       → lam M₁ ≡[ Tm≡ Γ≡ (Πsem≡ ⟦ Γ≡ ⟧c≡ (⟦⟧T≡ Γ≡ A≡) B≡) ]≡ lam M₂
   lam≡ refl refl refl refl = refl
+
+--   sem<_> : ∀ {Γ A} (M : SemVal Γ A) → SemTy (Γ ,s A) → SemTy Γ
+-- sem< M > A ρ = A (ρ , M ρ)
+
+  sem<>≡ : ∀ {Γ₁ Γ₂ A₁ A₂ M₁ M₂ B₁ B₂} (Γ≡ : Γ₁ ≡ Γ₂) 
+             (A≡ : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂)
+             (M≡ : M₁ ≡[ SemVal≡ Γ≡ A≡ ]≡ M₂) 
+             (B≡ : B₁ ≡[ SemTy≡ (Γ≡ ,s≡ A≡) ]≡ B₂)
+         → B₁ ∘ sem< M₁ > ≡[ SemTy≡ Γ≡ ]≡ B₂ ∘ sem< M₂ >
+  sem<>≡ refl refl refl refl = refl
+
+  -- app : ∀ {Γ A B} → Tm Γ (Πsem A B) → (N : Tm Γ A) → Tm Γ (sem< ⟦ N ⟧tm > B)
+  -- lam : ∀ {Γ A B} → Tm (Γ , A) B → Tm Γ (Πsem ⟦ A ⟧T B)
+  app≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ M₁ M₂ N₁ N₂} (Γ≡ : Γ₁ ≡ Γ₂) 
+           (A≡ : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂) 
+           (B≡ : B₁ ≡[ SemTy≡ (⟦ Γ≡ ⟧c≡ ,s≡ A≡) ]≡ B₂) 
+       → M₁ ≡[ Tm≡ Γ≡ (Πsem≡ ⟦ Γ≡ ⟧c≡ A≡ B≡) ]≡ M₂
+       → (N≡ : N₁ ≡[ Tm≡ Γ≡ A≡ ]≡ N₂)
+       → app M₁ N₁ ≡[ Tm≡ Γ≡ (sem<>≡ ⟦ Γ≡ ⟧c≡ A≡ (⟦⟧tm≡ Γ≡ A≡ N≡) B≡) 
+      ]≡ app M₂ N₂
+  app≡ refl refl refl refl refl = refl
 
   ,proj≡₁ : ∀ {Γ Γ₁′ Γ₂′} {A₁ : Ty (Γ ++ Γ₁′)} {A₂ : Ty (Γ ++ Γ₂′)} 
           → Tys._,_ Γ₁′ A₁ ≡ Tys._,_ Γ₂′ A₂ → Γ₁′ ≡ Γ₂′
   ,proj≡₁ refl = refl
 
+  ,proj≡s₁ : ∀ {Γ Γ₁′ Γ₂′} {A₁ : SemTy (Γ ++s Γ₁′)} {A₂ : SemTy (Γ ++s Γ₂′)} 
+          → SemTys._,_ Γ₁′ A₁ ≡ SemTys._,_ Γ₂′ A₂ → Γ₁′ ≡ Γ₂′
+  ,proj≡s₁ refl = refl
+
   []sem≡ : ∀ {Γ₁ Γ₂ Δ δ₁ δ₂} (A : SemTy Δ) (Γ≡ : Γ₁ ≡ Γ₂) 
-      → δ₁ ≡[ SemSub≡ Γ≡ refl ]≡ δ₂ 
-      → A ∘ δ₁ ≡[ cong (λ Γ → Γ → U) Γ≡ ]≡ A ∘ δ₂
+         → δ₁ ≡[ SemSub≡ Γ≡ refl ]≡ δ₂ 
+         → A ∘ δ₁ ≡[ cong (λ Γ → Γ → U) Γ≡ ]≡ A ∘ δ₂
   []sem≡ _ refl refl = refl
 
-  ↑sem≡ : ∀ {Γ₁ Γ₂ Δ δ₁ δ₂} {A : SemTy Δ} (Γ≡ : Γ₁ ≡ Γ₂)
+  ↑s≡ : ∀ {Γ₁ Γ₂ Δ δ₁ δ₂} {A : SemTy Δ} (Γ≡ : Γ₁ ≡ Γ₂)
             (δ≡ : δ₁ ≡[ SemSub≡ Γ≡ refl ]≡ δ₂) 
-        → δ₁ ↑sem A ≡[ SemSub≡ (Γ≡ ,s≡ ([]sem≡ A Γ≡ δ≡)) refl ]≡ δ₂ ↑sem A
-  ↑sem≡ refl refl = refl
+        → δ₁ ↑s A ≡[ SemSub≡ (Γ≡ ,s≡ ([]sem≡ A Γ≡ δ≡)) refl ]≡ δ₂ ↑s A
+  ↑s≡ refl refl = refl
 
 open Congruences public
+
+⟦_⟧tys : Tys Γ → SemTys ⟦ Γ ⟧c
+
+⟦_⟧tys≡ : ∀ Γ′ → ⟦ Γ ++ Γ′ ⟧c ≡ ⟦ Γ ⟧c ++s ⟦ Γ′ ⟧tys
+
+⟦ ε ⟧tys = ε
+⟦ Γ′ , A ⟧tys = ⟦ Γ′ ⟧tys , (subst SemTy ⟦ Γ′ ⟧tys≡ ⟦ A ⟧T)
+
+⟦⟧tys≡-lemma : ∀ {Γ₁ Γ₂} {A : SemTy Γ₁} (Γ≡ : Γ₁ ≡ Γ₂) 
+             → A ≡[ SemTy≡ Γ≡ ]≡ (subst SemTy Γ≡ A)
+⟦⟧tys≡-lemma refl = refl
+
+⟦ ε ⟧tys≡ = refl
+⟦ Γ′ , A ⟧tys≡ = Γ≡′ ,s≡ ⟦⟧tys≡-lemma Γ≡′
+  where Γ≡′ = ⟦ Γ′ ⟧tys≡
+
+
+⟦⟧tys≡ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′} (Γ≡ : Γ₁ ≡ Γ₂) → Γ₁′ ≡[ Tys≡ Γ≡ ]≡ Γ₂′ 
+       → ⟦ Γ₁′ ⟧tys ≡[ SemTys≡ ⟦ Γ≡ ⟧c≡ ]≡ ⟦ Γ₂′ ⟧tys
+⟦⟧tys≡ refl refl = refl
 
 <>-commutes-tys : ∀ {N} Γ′ 
                 → Γ′ [ idₛ ◂s < N > ]tys [ δ ]tys 
@@ -180,9 +263,44 @@ open Congruences public
                       ∘ ⟦ ⟨ < N [ δ ]tm > ⟩s ↑↑ Γ′ [ δ ↑m A ]tys ⟧ms
 <>-commutes↑↑-sem-sub ε refl = refl
 <>-commutes↑↑-sem-sub (Γ′ , B) p 
-  = ≡[]≡-irrev (↑sem≡ {A = ⟦ B ⟧T} ⟦ refl ++≡ p′ ⟧c≡ 
-                      (<>-commutes↑↑-sem-sub Γ′ p′))
+  = ≡[]≡-irrev (↑s≡ {A = ⟦ B ⟧T} ⟦ refl ++≡ p′ ⟧c≡ 
+                    (<>-commutes↑↑-sem-sub Γ′ p′))
   where p′ = ,proj≡₁ p
+
+
+{-# REWRITE ⟦_⟧tys≡ #-}
+
+⟦[]⟧tys≡ : ∀ Γ′ (δ : MSub Δ Γ) 
+         → ⟦ Γ′ [ δ ]tys ⟧tys ≡ ⟦ Γ′ ⟧tys [ ⟦ δ ⟧ms ]semtys
+
+⟦↑↑⟧≡ : ∀ Γ′ (δ : MSub Δ Γ) 
+      → ⟦ δ ↑↑ Γ′ ⟧ms ≡[ SemSub≡ (refl ++s≡ (⟦[]⟧tys≡ Γ′ δ)) refl 
+     ]≡ ⟦ δ ⟧ms ↑↑s ⟦ Γ′ ⟧tys
+
+⟦[]⟧tys≡ ε δ = refl
+⟦[]⟧tys≡ (Γ′ , A) δ = ,semtys≡ _ (⟦[]⟧tys≡ Γ′ δ) ([]sem≡ ⟦ A ⟧T _ (⟦↑↑⟧≡  Γ′ δ))
+
+⟦↑↑⟧≡ ε δ = refl
+⟦↑↑⟧≡ (Γ′ , A) δ = ≡[]≡-irrev (↑s≡ (refl ++s≡ ⟦[]⟧tys≡ Γ′ δ) (⟦↑↑⟧≡ Γ′ δ))
+
+{-# REWRITE ⟦[]⟧tys≡ #-}
+⟦↑↑⟧≡-rw :  ∀ Γ′ (δ : MSub Δ Γ) 
+         → ⟦ δ ↑↑ Γ′ ⟧ms ≡ ⟦ δ ⟧ms ↑↑s ⟦ Γ′ ⟧tys
+⟦↑↑⟧≡-rw Γ′ δ with ⟦[]⟧tys≡ Γ′ δ  | ⟦↑↑⟧≡ Γ′ δ 
+... | refl | p = p
+{-# REWRITE ⟦↑↑⟧≡-rw  #-}
+
+<>-commutes↑↑-sem-sub′ : ∀ {Γ Δ} {δ : SemSub Δ Γ} {A} Γ′ {N} 
+                          (p : Γ′ [ sem< N > ]semtys [ δ ]semtys 
+                             ≡ Γ′ [ δ ↑s A ]semtys [ sem< N ∘ δ > ]semtys)
+                       → (sem< N > ↑↑s Γ′) ∘ (δ ↑↑s Γ′ [ sem< N > ]semtys)
+                      ≡[ SemSub≡ (refl ++s≡ p) refl
+                      ]≡ ((δ ↑s A) ↑↑s Γ′)
+                       ∘ (sem< N ∘ δ > ↑↑s Γ′ [ δ ↑s A ]semtys)
+<>-commutes↑↑-sem-sub′ ε refl = refl
+<>-commutes↑↑-sem-sub′ (Γ′ , B) p 
+  = ≡[]≡-irrev (↑s≡ (refl ++s≡ p′) (<>-commutes↑↑-sem-sub′ Γ′ p′))
+  where p′ = ,proj≡s₁ p
 
 <>-commutes↑↑-sem Γ′ B p 
   = []sem≡ B ⟦ refl ++≡ p ⟧c≡ (<>-commutes↑↑-sem-sub Γ′ p) 
@@ -210,7 +328,16 @@ lam[]-spec2 Γ′ M
 {-# REWRITE lam[]-spec1 lam[]-spec2 #-}
 
 <>-commutes↑↑-tm Γ′ (var x) p = {!   !}
-<>-commutes↑↑-tm Γ′ (app M N) p = {!   !}
+<>-commutes↑↑-tm Γ′ (app {A = A} {B = B} M N) p 
+  = ≡[]≡-irrev 
+    (app≡ (refl ++≡ p) A≡ (≡[]≡-irrev B≡) (≡[]≡-irrev M≡) (≡[]≡-irrev N≡))
+  where
+    A≡ = <>-commutes↑↑-sem Γ′ A p 
+    pA≡ = ,semtys≡ refl (⟦⟧tys≡ refl p) (≡[]≡-irrev A≡)
+    B≡ = []sem≡ B (refl ++s≡ pA≡) 
+                   (<>-commutes↑↑-sem-sub′ (⟦ Γ′ ⟧tys , A) pA≡)
+    M≡ = <>-commutes↑↑-tm Γ′ M p
+    N≡ = <>-commutes↑↑-tm Γ′ N p
 <>-commutes↑↑-tm Γ′ (lam {A = A} {B = B} M) p 
   = ≡[]≡-irrev (lam≡ (_ ++≡ p) A≡ B≡ M≡)
   where
