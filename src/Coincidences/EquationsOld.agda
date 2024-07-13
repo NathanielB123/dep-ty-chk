@@ -45,7 +45,7 @@ module Coincidences.EquationsOld where
                          ≡ Γ′ [ δ ↑m A ]tys [ ⟨ < N [ δ ]tm > ⟩s ]tys)
                  → M [ ⟨ < N > ⟩s ↑↑ Γ′ ]tm [ δ ↑↑ Γ′ [ ⟨ < N > ⟩s ]tys ]tm 
                 ≡[ Tm≡ (refl ++≡ p) 
-                       (≡[]≡-uip (<>-commutes↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ _ p)))
+                       (≡[]≡-uip (<>-commutes↑↑-sem ⟦ Γ′ ⟧tys B ⟦ p ⟧tys≡))
                 ]≡ M [ (δ ↑m A) ↑↑ Γ′ ]tm
                      [ ⟨ < N [ δ ]tm > ⟩s ↑↑ Γ′ [ δ ↑m A ]tys ]tm
 
@@ -54,7 +54,7 @@ module Coincidences.EquationsOld where
                        ≡ Γ′ [ δ ↑m A ]tys [ ⟨ < N [ δ ]tm > ⟩s ]tys)
                 → M [ ⟨ < N > ⟩s ↑↑ Γ′ ]v [ δ ↑↑ Γ′ [ ⟨ < N > ⟩s ]tys ]tm 
                ≡[ Tm≡ (refl ++≡ p) 
-                      (≡[]≡-uip (<>-commutes↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ _ p)))
+                      (≡[]≡-uip (<>-commutes↑↑-sem ⟦ Γ′ ⟧tys B ⟦ p ⟧tys≡))
                ]≡ M [ (δ ↑m A) ↑↑ Γ′ ]v 
                     [ ⟨ < N [ δ ]tm > ⟩s ↑↑ Γ′ [ δ ↑m A ]tys ]tm
 
@@ -64,11 +64,11 @@ module Coincidences.EquationsOld where
 
 <>-commutes↑↑ Γ′ ⊥' p = ⊥≡ (refl ++≡ p)
 <>-commutes↑↑ Γ′ (Π' B₁ B₂) p 
-  = Π≡ (refl ++≡ p) B₁≡ B₂≡
+  = Π≡ B₁≡ B₂≡
   where B₁≡ = <>-commutes↑↑ Γ′ B₁ p
         B₂≡ = <>-commutes↑↑ (Γ′ , B₁) B₂ (,tys≡ refl p B₁≡)
 <>-commutes↑↑ Γ′ (El' B) p 
-  = El≡ (refl ++≡ p) (≡[]≡-uip (<>-commutes↑↑-tm Γ′ B p))
+  = El≡ (≡[]≡-uip (<>-commutes↑↑-tm Γ′ B p))
 
 <>-commutes↑↑-sem-sub : ∀ {Γ Δ} {δ : SemSub Δ Γ} {A} Γ′ {N} 
                           (p : Γ′ [ sem< N > ]semtys [ δ ]semtys 
@@ -123,16 +123,16 @@ lam[]-spec2 Γ′ M
   = ≡[]≡-uip (app≡ (refl ++≡ p) (≡[]≡-uip A≡) (≡[]≡-uip B≡) 
                                   (≡[]≡-uip M≡) (≡[]≡-uip N≡))
   where
-    A≡ = <>-commutes↑↑-sem ⟦ Γ′ ⟧tys A (⟦⟧tys≡ _ p) 
+    A≡ = <>-commutes↑↑-sem ⟦ Γ′ ⟧tys A ⟦ p ⟧tys≡
     B≡ = <>-commutes↑↑-sem (⟦ Γ′ ⟧tys , A) B 
-                           (,semtys≡ refl (⟦⟧tys≡ refl p) (≡[]≡-uip A≡))
+                           (,semtys≡ refl ⟦ p ⟧tys≡ (≡[]≡-uip A≡))
     M≡ = <>-commutes↑↑-tm Γ′ M p
     N≡ = <>-commutes↑↑-tm Γ′ N p
 <>-commutes↑↑-tm Γ′ (lam {A = A} {B = B} M) p 
   = ≡[]≡-uip (lam≡ (_ ++≡ p) A≡ (≡[]≡-uip B≡) (≡[]≡-uip M≡))
   where
     A≡ = <>-commutes↑↑ Γ′ A p 
-    B≡ = <>-commutes↑↑-sem ⟦ Γ′ , A ⟧tys B (⟦⟧tys≡ _ (,tys≡ _ p A≡))
+    B≡ = <>-commutes↑↑-sem ⟦ Γ′ , A ⟧tys B ⟦ ,tys≡ _ p A≡ ⟧tys≡
     M≡ = <>-commutes↑↑-tm (Γ′ , A) M (,tys≡ refl p A≡)
             
 -- <>-commutes↑↑-tm :  ∀ {Γ Δ} {δ : MSub Δ Γ} {A} Γ′ {N B} (M : Tm _ B) 

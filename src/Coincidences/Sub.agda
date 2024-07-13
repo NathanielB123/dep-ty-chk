@@ -1,4 +1,4 @@
-{-# OPTIONS --rewriting #-}
+{-# OPTIONS --rewriting --local-confluence-check #-}
 --local-confluence-check
 
 import Agda.Builtin.Equality.Rewrite
@@ -216,7 +216,7 @@ private module Congruences where
       → refl ++≡ ,tys≡ refl p q ≡ (refl ++≡ p) ,≡ q
   ++≡β refl refl = refl
 
-  {-# REWRITE ++≡β #-}
+  -- {-# REWRITE ++≡β #-}
 
   _++s≡_ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′} (Γ≡ : Γ₁ ≡ Γ₂) → Γ₁′ ≡[ SemTys≡ Γ≡ ]≡ Γ₂′
         → Γ₁ ++s Γ₁′ ≡ Γ₂ ++s Γ₂′
@@ -288,58 +288,25 @@ open Congruences public
 
 ⟦_⟧tys : Tys Γ → SemTys ⟦ Γ ⟧c
 
-⟦_⟧tys≡ : ∀ Γ′ → ⟦ Γ ++ Γ′ ⟧c ≡ ⟦ Γ ⟧c ++s ⟦ Γ′ ⟧tys
+⟦++⟧tys≡ : ∀ (Γ′ : Tys Γ) → ⟦ Γ ++ Γ′ ⟧c ≡ ⟦ Γ ⟧c ++s ⟦ Γ′ ⟧tys
 
 ⟦ ε ⟧tys = ε
-⟦ Γ′ , A ⟧tys = ⟦ Γ′ ⟧tys , (subst SemTy ⟦ Γ′ ⟧tys≡ ⟦ A ⟧T)
+⟦ Γ′ , A ⟧tys = ⟦ Γ′ ⟧tys , (subst SemTy (⟦++⟧tys≡ Γ′) ⟦ A ⟧T)
+
+-- Note this is a congruence as well! I just couldn't put it in the above
+-- module because we need ⟦_⟧tys to be defined
+⟦_⟧tys≡ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′} {Γ≡ : Γ₁ ≡ Γ₂} → Γ₁′ ≡[ Tys≡ Γ≡ ]≡ Γ₂′ 
+        → ⟦ Γ₁′ ⟧tys ≡[ SemTys≡ ⟦ Γ≡ ⟧c≡ ]≡ ⟦ Γ₂′ ⟧tys
+⟦_⟧tys≡ {Γ≡ = refl} refl = refl
+
+
 
 ⟦⟧tys≡-lemma : ∀ {Γ₁ Γ₂} {A : SemTy Γ₁} (Γ≡ : Γ₁ ≡ Γ₂) 
              → A ≡[ SemTy≡ Γ≡ ]≡ (subst SemTy Γ≡ A)
 ⟦⟧tys≡-lemma refl = refl
 
-⟦ ε ⟧tys≡ = refl
-⟦ Γ′ , A ⟧tys≡ = Γ≡′ ,s≡ ⟦⟧tys≡-lemma Γ≡′
-  where Γ≡′ = ⟦ Γ′ ⟧tys≡
-
-⟦⟧tys≡ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′} (Γ≡ : Γ₁ ≡ Γ₂) → Γ₁′ ≡[ Tys≡ Γ≡ ]≡ Γ₂′ 
-       → ⟦ Γ₁′ ⟧tys ≡[ SemTys≡ ⟦ Γ≡ ⟧c≡ ]≡ ⟦ Γ₂′ ⟧tys
-⟦⟧tys≡ refl refl = refl
-
-{-# REWRITE ⟦_⟧tys≡ #-}
-
-⟦[]⟧wtys≡ : ∀ Γ′ (δ : Wk Δ Γ) 
-          → ⟦ Γ′ [ δ ]wtys ⟧tys ≡ ⟦ Γ′ ⟧tys [ ⟦ δ ⟧w ]semtys
-⟦[]⟧stys≡ : ∀ Γ′ (δ : Sub Δ Γ) 
-          → ⟦ Γ′ [ δ ]stys ⟧tys ≡ ⟦ Γ′ ⟧tys [ ⟦ δ ⟧s ]semtys
-
-⟦↑↑w⟧≡ : ∀ Γ′ (δ : Wk Δ Γ) 
-      → ⟦ δ ↑↑w Γ′ ⟧w ≡[ SemSub≡ (refl ++s≡ (⟦[]⟧wtys≡ Γ′ δ)) refl 
-     ]≡ ⟦ δ ⟧w ↑↑sem ⟦ Γ′ ⟧tys
-⟦↑↑s⟧≡ : ∀ Γ′ (δ : Sub Δ Γ) 
-      → ⟦ δ ↑↑s Γ′ ⟧s ≡[ SemSub≡ (refl ++s≡ (⟦[]⟧stys≡ Γ′ δ)) refl 
-     ]≡ ⟦ δ ⟧s ↑↑sem ⟦ Γ′ ⟧tys
-
-⟦[]⟧wtys≡ ε δ = refl
-⟦[]⟧wtys≡ (Γ′ , A) δ 
-  = ,semtys≡ _ (⟦[]⟧wtys≡ Γ′ δ) ([]sem≡ (erefl ⟦ A ⟧T) (⟦↑↑w⟧≡ Γ′ δ))
-⟦[]⟧stys≡ ε δ = refl
-⟦[]⟧stys≡ (Γ′ , A) δ 
-  = ,semtys≡ _ (⟦[]⟧stys≡ Γ′ δ) ([]sem≡ (erefl ⟦ A ⟧T) (⟦↑↑s⟧≡ Γ′ δ))
-
-⟦↑↑w⟧≡ ε δ = refl
-⟦↑↑w⟧≡ (Γ′ , A) δ = ↑s≡ (refl ++s≡ ⟦[]⟧wtys≡ Γ′ δ) (⟦↑↑w⟧≡ Γ′ δ)
-⟦↑↑s⟧≡ ε δ = refl
-⟦↑↑s⟧≡ (Γ′ , A) δ = ↑s≡ (refl ++s≡ ⟦[]⟧stys≡ Γ′ δ) (⟦↑↑s⟧≡ Γ′ δ)
-
-{-# REWRITE ⟦[]⟧wtys≡ ⟦[]⟧stys≡ #-}
-
-⟦↑↑w⟧≡-rw : ∀ Γ′ (δ : Wk Δ Γ) 
-          → ⟦ δ ↑↑w Γ′ ⟧w ≡ ⟦ δ ⟧w ↑↑sem ⟦ Γ′ ⟧tys
-⟦↑↑w⟧≡-rw Γ′ δ = ≡[]≡-uip (⟦↑↑w⟧≡ Γ′ δ)
-
-⟦↑↑s⟧≡-rw : ∀ Γ′ (δ : Sub Δ Γ) 
-          → ⟦ δ ↑↑s Γ′ ⟧s ≡ ⟦ δ ⟧s ↑↑sem ⟦ Γ′ ⟧tys
-⟦↑↑s⟧≡-rw Γ′ δ = ≡[]≡-uip (⟦↑↑s⟧≡ Γ′ δ)
-
-
-{-# REWRITE ⟦↑↑w⟧≡-rw ⟦↑↑s⟧≡-rw #-}
+⟦++⟧tys≡ ε = refl
+⟦++⟧tys≡ (Γ′ , A) = Γ≡′ ,s≡ ⟦⟧tys≡-lemma Γ≡′
+  where Γ≡′ = ⟦++⟧tys≡ Γ′
+  
+{-# REWRITE ⟦++⟧tys≡ #-}

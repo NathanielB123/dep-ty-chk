@@ -8,7 +8,7 @@ open import Data.Product using (Σ; _,_; proj₁; proj₂)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Function using (_∘_; id)
 open import Relation.Binary.PropositionalEquality 
-  using (_≡_; refl; cong; cong₂; cong-app; subst; sym; dcong; dcong₂
+  using (_≡_; refl; erefl; cong; cong₂; cong-app; subst; sym; dcong; dcong₂
   ; subst-application′)
   renaming (trans to _∙_)
 open import Data.Nat using (ℕ; suc; zero)
@@ -135,21 +135,21 @@ private module Congruences where
       → (Ctx._,_ Γ₁ A₁) ≡ (Ctx._,_ Γ₂ A₂)
   refl ,≡ refl = refl
 
-  ⟦⟧T≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) → A₁ ≡[ Ty≡ Γ≡ ]≡ A₂ 
+  ⟦_⟧T≡ : ∀ {Γ₁ Γ₂ A₁ A₂} {Γ≡ : Γ₁ ≡ Γ₂} → A₁ ≡[ Ty≡ Γ≡ ]≡ A₂ 
         → ⟦ A₁ ⟧T ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ ⟦ A₂ ⟧T
-  ⟦⟧T≡ refl refl = refl
+  ⟦_⟧T≡ {Γ≡ = refl} refl = refl
 
   ⊥≡ : ∀ {Γ₁ Γ₂} (Γ≡ : Γ₁ ≡ Γ₂) → ⊥' ≡[ Ty≡ Γ≡ ]≡ ⊥'
   ⊥≡ refl = refl
 
-  Π≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂) 
+  Π≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂} {Γ≡ : Γ₁ ≡ Γ₂} (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂) 
     → B₁ ≡[ Ty≡ (Γ≡ ,≡ A≡) ]≡ B₂ → Π' A₁ B₁ ≡[ Ty≡ Γ≡ ]≡ Π' A₂ B₂
-  Π≡ refl refl refl = refl
+  Π≡ {Γ≡ = refl} refl refl = refl
 
-  El≡ : ∀ {Γ₁ Γ₂ M₁ M₂} (Γ≡ : Γ₁ ≡ Γ₂)
-      → M₁ ≡[ Tm≡ Γ≡ (⟦⟧T≡ Γ≡ (⊥≡ Γ≡)) ]≡ M₂
+  El≡ : ∀ {Γ₁ Γ₂ M₁ M₂} {Γ≡ : Γ₁ ≡ Γ₂}
+      → M₁ ≡[ Tm≡ Γ≡ (⟦ ⊥≡ Γ≡ ⟧T≡) ]≡ M₂
       → El' M₁ ≡[ Ty≡ Γ≡ ]≡ El' M₂
-  El≡ refl refl = refl
+  El≡ {Γ≡ = refl} refl = refl
 
   _,s≡_ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) → A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂ 
         → Γ₁ ,s A₁ ≡ Γ₂ ,s A₂
@@ -161,7 +161,7 @@ private module Congruences where
   Πsem≡ refl refl refl = refl
 
   ⟦⟧c≡β : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
-        → cong ⟦_⟧c (Γ≡ ,≡ A≡) ≡ ⟦ Γ≡ ⟧c≡ ,s≡ ⟦⟧T≡ Γ≡ A≡
+        → cong ⟦_⟧c (Γ≡ ,≡ A≡) ≡ ⟦ Γ≡ ⟧c≡ ,s≡ ⟦ A≡ ⟧T≡
   ⟦⟧c≡β refl refl = refl
 
   {-# REWRITE ⟦⟧c≡β #-}
@@ -173,7 +173,7 @@ private module Congruences where
   lam≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ M₁ M₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
             (B≡ : B₁ ≡[ SemTy≡ ⟦ Γ≡ ,≡ A≡ ⟧c≡ ]≡ B₂) 
             (M≡ : M₁ ≡[ Tm≡ (Γ≡ ,≡ A≡) B≡ ]≡ M₂) 
-        → lam M₁ ≡[ Tm≡ Γ≡ (Πsem≡ ⟦ Γ≡ ⟧c≡ (⟦⟧T≡ Γ≡ A≡) B≡) ]≡ lam M₂
+        → lam M₁ ≡[ Tm≡ Γ≡ (Πsem≡ ⟦ Γ≡ ⟧c≡ ⟦ A≡ ⟧T≡ B≡) ]≡ lam M₂
   lam≡ refl refl refl refl = refl
 
   semwk≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂} (Γ≡ : Γ₁ ≡ Γ₂) 
@@ -203,7 +203,8 @@ private module Congruences where
   []sem≡ {Γ≡ = refl} {Δ≡ = refl} refl refl = refl
 
   vz≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
-      → vz ≡[ Var≡ (Γ≡ ,≡ A≡) (semwk≡ _ _ (⟦⟧T≡ _ A≡)) ]≡ vz
+      → vz ≡[ Var≡ (Γ≡ ,≡ A≡) (semwk≡ _ _ ⟦ A≡ ⟧T≡) ]≡ vz
   vz≡ refl refl = refl
 
 open Congruences public
+  
