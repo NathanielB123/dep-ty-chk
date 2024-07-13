@@ -107,4 +107,103 @@ appsem M N ρ = (M ρ) (N ρ)
 ⟦ var x   ⟧tm     = ⟦ x ⟧v
 ⟦ app M N ⟧tm     = appsem ⟦ M ⟧tm ⟦ N ⟧tm
 ⟦ lam M   ⟧tm ρ N = ⟦ M ⟧tm (ρ , N)
-  
+
+private module Congruences where
+  Ty≡ = cong Ty
+  SemTy≡ = cong SemTy
+  SemSub≡ = cong₂ SemSub
+  ⟦_⟧c≡ = cong ⟦_⟧c 
+
+  Var≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂) 
+        → Var Γ₁ A₁ ≡ Var Γ₂ A₂
+  Var≡ refl refl = refl
+
+  Tm≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂) 
+      → Tm Γ₁ A₁ ≡ Tm Γ₂ A₂
+  Tm≡ refl refl = refl
+
+  SemVal≡ :  ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂) 
+          → SemVal Γ₁ A₁ ≡ SemVal Γ₂ A₂
+  SemVal≡ refl refl = refl
+
+  ⟦⟧tm≡ : ∀ {Γ₁ Γ₂ A₁ A₂ M₁ M₂} (Γ≡ : Γ₁ ≡ Γ₂) 
+            (A≡ : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂)
+        → M₁ ≡[ Tm≡ Γ≡ A≡ ]≡ M₂ → ⟦ M₁ ⟧tm ≡[ SemVal≡ ⟦ Γ≡ ⟧c≡ A≡ ]≡ ⟦ M₂ ⟧tm
+  ⟦⟧tm≡ refl refl refl = refl
+
+  _,≡_ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
+      → (Ctx._,_ Γ₁ A₁) ≡ (Ctx._,_ Γ₂ A₂)
+  refl ,≡ refl = refl
+
+  ⟦⟧T≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) → A₁ ≡[ Ty≡ Γ≡ ]≡ A₂ 
+        → ⟦ A₁ ⟧T ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ ⟦ A₂ ⟧T
+  ⟦⟧T≡ refl refl = refl
+
+  ⊥≡ : ∀ {Γ₁ Γ₂} (Γ≡ : Γ₁ ≡ Γ₂) → ⊥' ≡[ Ty≡ Γ≡ ]≡ ⊥'
+  ⊥≡ refl = refl
+
+  Π≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂) 
+    → B₁ ≡[ Ty≡ (Γ≡ ,≡ A≡) ]≡ B₂ → Π' A₁ B₁ ≡[ Ty≡ Γ≡ ]≡ Π' A₂ B₂
+  Π≡ refl refl refl = refl
+
+  El≡ : ∀ {Γ₁ Γ₂ M₁ M₂} (Γ≡ : Γ₁ ≡ Γ₂)
+      → M₁ ≡[ Tm≡ Γ≡ (⟦⟧T≡ Γ≡ (⊥≡ Γ≡)) ]≡ M₂
+      → El' M₁ ≡[ Ty≡ Γ≡ ]≡ El' M₂
+  El≡ refl refl = refl
+
+  _,s≡_ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) → A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂ 
+        → Γ₁ ,s A₁ ≡ Γ₂ ,s A₂
+  refl ,s≡ refl = refl 
+
+  Πsem≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂) 
+        → B₁ ≡[ SemTy≡ (Γ≡ ,s≡ A≡) ]≡ B₂ 
+        → Πsem A₁ B₁ ≡[ SemTy≡ Γ≡ ]≡ Πsem A₂ B₂
+  Πsem≡ refl refl refl = refl
+
+  ⟦⟧c≡β : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
+        → cong ⟦_⟧c (Γ≡ ,≡ A≡) ≡ ⟦ Γ≡ ⟧c≡ ,s≡ ⟦⟧T≡ Γ≡ A≡
+  ⟦⟧c≡β refl refl = refl
+
+  {-# REWRITE ⟦⟧c≡β #-}
+
+  var≡ : ∀ {Γ₁ Γ₂ A₁ A₂ x₁ x₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂)
+        → (x₁ ≡[ Var≡ Γ≡ A≡ ]≡ x₂) → var x₁ ≡[ Tm≡ Γ≡ A≡ ]≡ var x₂
+  var≡ refl refl refl = refl
+
+  lam≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ M₁ M₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
+            (B≡ : B₁ ≡[ SemTy≡ ⟦ Γ≡ ,≡ A≡ ⟧c≡ ]≡ B₂) 
+            (M≡ : M₁ ≡[ Tm≡ (Γ≡ ,≡ A≡) B≡ ]≡ M₂) 
+        → lam M₁ ≡[ Tm≡ Γ≡ (Πsem≡ ⟦ Γ≡ ⟧c≡ (⟦⟧T≡ Γ≡ A≡) B≡) ]≡ lam M₂
+  lam≡ refl refl refl refl = refl
+
+  semwk≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂} (Γ≡ : Γ₁ ≡ Γ₂) 
+             (A≡ : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂) (B≡ : B₁ ≡[ SemTy≡ Γ≡ ]≡ B₂) 
+         → B₁ ∘ semwk A₁ ≡[ SemTy≡ (Γ≡ ,s≡ A≡) ]≡ B₂ ∘ semwk A₂ 
+  semwk≡ refl refl  refl = refl
+
+  sem<>≡ : ∀ {Γ₁ Γ₂ A₁ A₂ M₁ M₂ B₁ B₂} (Γ≡ : Γ₁ ≡ Γ₂) 
+             (A≡ : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂)
+             (M≡ : M₁ ≡[ SemVal≡ Γ≡ A≡ ]≡ M₂) 
+             (B≡ : B₁ ≡[ SemTy≡ (Γ≡ ,s≡ A≡) ]≡ B₂)
+          → B₁ ∘ sem< M₁ > ≡[ SemTy≡ Γ≡ ]≡ B₂ ∘ sem< M₂ >
+  sem<>≡ refl refl refl refl = refl
+
+  app≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ M₁ M₂ N₁ N₂} (Γ≡ : Γ₁ ≡ Γ₂) 
+            (A≡ : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂) 
+            (B≡ : B₁ ≡[ SemTy≡ (⟦ Γ≡ ⟧c≡ ,s≡ A≡) ]≡ B₂) 
+        → M₁ ≡[ Tm≡ Γ≡ (Πsem≡ ⟦ Γ≡ ⟧c≡ A≡ B≡) ]≡ M₂
+        → (N≡ : N₁ ≡[ Tm≡ Γ≡ A≡ ]≡ N₂)
+        → app M₁ N₁ ≡[ Tm≡ Γ≡ (sem<>≡ ⟦ Γ≡ ⟧c≡ A≡ (⟦⟧tm≡ Γ≡ A≡ N≡) B≡) 
+      ]≡ app M₂ N₂
+  app≡ refl refl refl refl refl = refl
+
+  []sem≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂ δ₁ δ₂} {Γ≡ : Γ₁ ≡ Γ₂} {Δ≡ : Δ₁ ≡ Δ₂}
+         → A₁ ≡[ SemTy≡ Δ≡ ]≡ A₂ → δ₁ ≡[ SemSub≡ Γ≡ Δ≡ ]≡ δ₂ 
+         → A₁ ∘ δ₁ ≡[ SemTy≡ Γ≡ ]≡ A₂ ∘ δ₂
+  []sem≡ {Γ≡ = refl} {Δ≡ = refl} refl refl = refl
+
+  vz≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
+      → vz ≡[ Var≡ (Γ≡ ,≡ A≡) (semwk≡ _ _ (⟦⟧T≡ _ A≡)) ]≡ vz
+  vz≡ refl refl = refl
+
+open Congruences public

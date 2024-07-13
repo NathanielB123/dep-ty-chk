@@ -4,7 +4,7 @@
 import Agda.Builtin.Equality.Rewrite
 
 open import Relation.Binary.PropositionalEquality 
-  using (_≡_; refl; subst; sym; cong; dcong₂; subst-application′)
+  using (_≡_; refl; subst; sym; cong; dcong₂; subst-application′; cong₂; erefl)
   renaming (trans to _∙_)
 open import Function using (_∘_; id)
 open import Data.Product using (Σ; _,_; proj₁; proj₂)
@@ -14,7 +14,9 @@ open import Coincidences.Syntax
 
 module Coincidences.Sub where
 
-infixl 100 _[_]w _[_]s _[_]wv _[_]wtm _[_]sv _[_]stm _[_] _[_]tm _[_]v
+infixl 100 _[_]w _[_]s _[_]wv _[_]wtm _[_]sv _[_]stm 
+infixl 100 _[_]stys _[_]wtys
+infixl 100 _[_]semtys
 
 data Wk  : Ctx → Ctx → Set
 data Sub : Ctx → Ctx → Set
@@ -22,8 +24,8 @@ data Sub : Ctx → Ctx → Set
 ⟦_⟧s : Sub Δ Γ → SemSub ⟦ Δ ⟧c ⟦ Γ ⟧c
 _[_]w  : Ty Γ → Wk Δ Γ  → Ty Δ
 _[_]s  : Ty Γ → Sub Δ Γ → Ty Δ
-_[_]w≡ : ∀ A (δ : Wk Δ Γ)  → ⟦ A [ δ ]w ⟧T ≡ ⟦ A ⟧T ∘ ⟦ δ ⟧w
-_[_]s≡ : ∀ A (δ : Sub Δ Γ) → ⟦ A [ δ ]s ⟧T ≡ ⟦ A ⟧T ∘ ⟦ δ ⟧s
+_[_]wβ : ∀ A (δ : Wk Δ Γ)  → ⟦ A [ δ ]w ⟧T ≡ ⟦ A ⟧T ∘ ⟦ δ ⟧w
+_[_]sβ : ∀ A (δ : Sub Δ Γ) → ⟦ A [ δ ]s ⟧T ≡ ⟦ A ⟧T ∘ ⟦ δ ⟧s
 
 -- Prepare for a lot of duplication between weakenings/substitutions. 
 -- I don't know how to get rid of this without Agda's termination checker
@@ -37,10 +39,10 @@ data Sub where
   _↑_ : ∀ (δ : Sub Γ Δ) A → Sub (Γ , A [ δ ]s) (Δ , A)
 
 ⟦ wk ⟧w            = proj₁
-⟦ δ ↑ A ⟧w (ρ , M) = ⟦ δ ⟧w ρ , subst (λ AB → El (AB ρ)) (A [ δ ]w≡) M
+⟦ δ ↑ A ⟧w (ρ , M) = ⟦ δ ⟧w ρ , subst (λ AB → El (AB ρ)) (A [ δ ]wβ) M
 
 ⟦ < M > ⟧s ρ       = ρ , ⟦ M ⟧tm ρ
-⟦ δ ↑ A ⟧s (ρ , M) = ⟦ δ ⟧s ρ , subst (λ AB → El (AB ρ)) (A [ δ ]s≡) M
+⟦ δ ↑ A ⟧s (ρ , M) = ⟦ δ ⟧s ρ , subst (λ AB → El (AB ρ)) (A [ δ ]sβ) M
 
 _[_]wtm  : ∀ {Γ A} → Tm Γ A → (δ : Wk Δ Γ)  → Tm Δ (A ∘ ⟦ δ ⟧w)
 _[_]stm  : ∀ {Γ A} → Tm Γ A → (δ : Sub Δ Γ) → Tm Δ (A ∘ ⟦ δ ⟧s)
@@ -68,21 +70,21 @@ El' A [ δ ]s = El' (A [ δ ]stm)
         ≡ (λ where (ρ , x) → ⟦ B ⟧T (⟦ δ ⟧s ρ , subst (λ AB → El (AB ρ)) p x))
 []s-helper B δ refl = refl
 
-⊥' [ δ ]w≡ = refl
-Π' A B [ δ ]w≡ 
-  = cong (Πsem ⟦ A [ δ ]w ⟧T) (B [ δ ↑ A ]w≡)
+⊥' [ δ ]wβ = refl
+Π' A B [ δ ]wβ 
+  = cong (Πsem ⟦ A [ δ ]w ⟧T) (B [ δ ↑ A ]wβ)
   ∙ sym (dcong₂ Πsem (sym A≡) ([]w-helper B δ A≡))
-  where A≡ = A [ δ ]w≡
-El' A [ δ ]w≡ = refl
+  where A≡ = A [ δ ]wβ
+El' A [ δ ]wβ = refl
 
-⊥' [ δ ]s≡ = refl
-Π' A B [ δ ]s≡ 
-  = cong (Πsem ⟦ A [ δ ]s ⟧T) (B [ δ ↑ A ]s≡)
+⊥' [ δ ]sβ = refl
+Π' A B [ δ ]sβ 
+  = cong (Πsem ⟦ A [ δ ]s ⟧T) (B [ δ ↑ A ]sβ)
   ∙ sym (dcong₂ Πsem (sym A≡) ([]s-helper B δ A≡))
-  where A≡ = A [ δ ]s≡
-El' A [ δ ]s≡ = refl
+  where A≡ = A [ δ ]sβ
+El' A [ δ ]sβ = refl
 
-{-# REWRITE _[_]w≡ _[_]s≡ #-}
+{-# REWRITE _[_]wβ _[_]sβ #-}
 
 _[_]wtm≡ : ∀ {A} (M : Tm Γ A) (δ : Wk Δ Γ) 
          → ⟦ M [ δ ]wtm ⟧tm ≡ ⟦ M ⟧tm ∘ ⟦ δ ⟧w
@@ -143,114 +145,201 @@ vs x [ δ ↑ A ]sv≡ = cong (_∘ proj₁) (x [ δ ]sv≡)
  
 {-# REWRITE _[_]sv≡ _[_]stm≡ #-}
 
-data MSub : Ctx → Ctx → Set where
-  idₛ  : MSub Γ Γ
-  _◂w_ : MSub Δ Γ → Wk θ Δ  → MSub θ Γ
-  _◂s_ : MSub Δ Γ → Sub θ Δ → MSub θ Γ
-
-_[_] : Ty Γ → MSub Δ Γ → Ty Δ
-A [ idₛ ] = A
-A [ δ ◂w σ ] = A [ δ ] [ σ ]w
-A [ δ ◂s σ ] = A [ δ ] [ σ ]s
-
-_↑m_ : ∀ δ A → MSub (Δ , A [ δ ]) (Γ , A)
-idₛ ↑m A = idₛ
-(δ ◂w σ) ↑m A = (δ ↑m A) ◂w (σ ↑ (A [ δ ]))
-(δ ◂s σ) ↑m A = (δ ↑m A) ◂s (σ ↑ (A [ δ ]))
-
-⟦_⟧ms : MSub Δ Γ → SemSub ⟦ Δ ⟧c ⟦ Γ ⟧c
-⟦ idₛ ⟧ms = id
-⟦ δ ◂w σ ⟧ms = ⟦ δ ⟧ms ∘ ⟦ σ ⟧w 
-⟦ δ ◂s σ ⟧ms = ⟦ δ ⟧ms ∘ ⟦ σ ⟧s
-
-_[_]tm : ∀ {A} → Tm Γ A → ∀ δ → Tm Δ (A ∘ ⟦ δ ⟧ms)
-M [ idₛ ]tm = M
-M [ δ ◂w σ ]tm = M [ δ ]tm [ σ ]wtm
-M [ δ ◂s σ ]tm = M [ δ ]tm [ σ ]stm
-
-_[_]v : ∀ {A} → Var Γ A → ∀ δ → Tm Δ (A ∘ ⟦ δ ⟧ms)
-x [ idₛ ]v = var x
-x [ δ ◂w σ ]v = (x [ δ ]v) [ σ ]wtm 
-x [ δ ◂s σ ]v = (x [ δ ]v) [ σ ]stm
-
--- All the below proofs are pretty-much identical. Surely we can abstract over
--- this repetition?
-
-_[_]≡ : ∀ A (δ : MSub Δ Γ) → ⟦ A [ δ ] ⟧T ≡ ⟦ A ⟧T ∘ ⟦ δ ⟧ms 
-A [ idₛ ]≡ = refl
-A [ δ ◂w σ ]≡ = cong (_∘ ⟦ σ ⟧w) (A [ δ ]≡)  
-A [ δ ◂s σ ]≡ = cong (_∘ ⟦ σ ⟧s) (A [ δ ]≡)
-
-_[_]tm≡ : ∀ {A} (M : Tm Γ A) (δ : MSub Δ Γ) → ⟦ M [ δ ]tm ⟧tm ≡ ⟦ M ⟧tm ∘ ⟦ δ ⟧ms 
-M [ idₛ ]tm≡ = refl
-M [ δ ◂w σ ]tm≡ = cong (_∘ ⟦ σ ⟧w) (M [ δ ]tm≡)  
-M [ δ ◂s σ ]tm≡ = cong (_∘ ⟦ σ ⟧s) (M [ δ ]tm≡) 
-
-_[_]v≡ : ∀ {A} (x : Var Γ A) (δ : MSub Δ Γ) → ⟦ x [ δ ]v ⟧tm ≡ ⟦ x ⟧v ∘ ⟦ δ ⟧ms 
-x [ idₛ ]v≡ = refl
-x [ δ ◂w σ ]v≡ = cong (_∘ ⟦ σ ⟧w) (x [ δ ]v≡)  
-x [ δ ◂s σ ]v≡ = cong (_∘ ⟦ σ ⟧s) (x [ δ ]v≡) 
-
-{-# REWRITE _[_]≡ _[_]tm≡ _[_]v≡ #-}
-
-⊥[] : ∀ (δ : MSub Δ Γ) → ⊥' [ δ ] ≡ ⊥'
-⊥[] idₛ = refl
-⊥[] (δ ◂w σ) = cong (_[ σ ]w) (⊥[] δ)
-⊥[] (δ ◂s σ) = cong (_[ σ ]s) (⊥[] δ)
-
-Π[] : ∀ (δ : MSub Δ Γ) → Π' A B [ δ ] ≡ Π' (A [ δ ]) (B [ δ ↑m A ])
-Π[] idₛ = refl
-Π[] (δ ◂w σ) = cong (_[ σ ]w) (Π[] δ)
-Π[] (δ ◂s σ) = cong (_[ σ ]s) (Π[] δ)
-
-El[] : ∀ {M} (δ : MSub Δ Γ) → El' M [ δ ] ≡ El' (M [ δ ]tm)
-El[] idₛ = refl
-El[] (δ ◂w σ) = cong (_[ σ ]w) (El[] δ)
-El[] (δ ◂s σ) = cong (_[ σ ]s) (El[] δ)
-
-{-# REWRITE ⊥[] Π[] El[] #-}
-
-⟦⟧↑m : (δ : MSub Δ Γ) → ⟦ δ ↑m A ⟧ms ≡ λ where (⟦Γ⟧ , ⟦A⟧) → ⟦ δ ⟧ms ⟦Γ⟧ , ⟦A⟧
-⟦⟧↑m idₛ = refl
-⟦⟧↑m {A = A} (δ ◂w σ) = cong (_∘ ⟦ σ ↑ A [ δ ] ⟧w) (⟦⟧↑m δ)
-⟦⟧↑m {A = A} (δ ◂s σ) = cong (_∘ ⟦ σ ↑ A [ δ ] ⟧s) (⟦⟧↑m δ)
-
-{-# REWRITE ⟦⟧↑m #-}
-
-app[] : ∀ {A B} {M : Tm Γ (Πsem A B)} {N : Tm Γ A} (δ : MSub Δ Γ) 
-      → app M N [ δ ]tm ≡ app (M [ δ ]tm) (N [ δ ]tm)
-app[] idₛ = refl
-app[] (δ ◂w σ) = cong (_[ σ ]wtm) (app[] δ)
-app[] (δ ◂s σ) = cong (_[ σ ]stm) (app[] δ)
-
-lam[] : ∀ {A B} {M : Tm (Γ , A) B} (δ : MSub Δ Γ) 
-      → lam M [ δ ]tm ≡ lam (M [ δ ↑m _ ]tm)
-lam[] idₛ = refl
-lam[] (δ ◂w σ) = cong (_[ σ ]wtm) (lam[] δ)
-lam[] (δ ◂s σ) = cong (_[ σ ]stm) (lam[] δ)
-
-{-# REWRITE app[] lam[] #-}
-
-_[_]sem : SemTy ⟦ Γ ⟧c → MSub Δ Γ → SemTy ⟦ Δ ⟧c
-A [ δ ]sem = A ∘ ⟦ δ ⟧ms
-
-⟨_⟩w : Wk Δ Γ → MSub Δ Γ
-⟨ δ ⟩w = idₛ ◂w δ
-
-⟨_⟩s : Sub Δ Γ → MSub Δ Γ
-⟨ δ ⟩s = idₛ ◂s δ
-
--- The lam[] rewrite rule sometimes doesn't apply. I am not sure why - is this
--- an Agda typechecker bug?
-agda-is-broke : ∀ {N B} (M : Tm (Γ , (A [ ⟨ < N > ⟩s ])) B) (δ : MSub Δ Γ)
-              → lam M [ δ ]tm ≡ lam (M [ δ ↑m _ ]tm)
-agda-is-broke M δ = lam[] {M = M} δ
-{-# REWRITE agda-is-broke #-}
-
 _↑s_ : ∀ {Γ Δ} (δ : SemSub Δ Γ) A → SemSub (Δ ,s (A ∘ δ)) (Γ ,s A)
 (δ ↑s A) (ρ , x) = δ ρ , x
 
-variable
-  δ : MSub Δ Γ
-  σ : MSub θ Δ
-  
+data Tys : Ctx → Set
+_++_ : ∀ Γ → Tys Γ → Ctx
+
+data Tys where
+  ε   : Tys Γ
+  _,_ : ∀ Δ → Ty (Γ ++ Δ) → Tys Γ
+
+Γ ++ ε       = Γ
+Γ ++ (Δ , A) = (Γ ++ Δ) , A
+
+_[_]wtys : Tys Γ → Wk Δ Γ → Tys Δ
+_[_]stys : Tys Γ → Sub Δ Γ → Tys Δ
+
+_↑↑w_ : ∀ (δ : Wk Δ Γ) Γ′ → Wk (Δ ++ Γ′ [ δ ]wtys) (Γ ++ Γ′)
+_↑↑s_ : ∀ (δ : Sub Δ Γ) Γ′ → Sub (Δ ++ Γ′ [ δ ]stys) (Γ ++ Γ′)
+
+ε [ δ ]wtys = ε
+(Γ′ , A) [ δ ]wtys = Γ′ [ δ ]wtys , A [ δ ↑↑w Γ′ ]w
+
+ε [ δ ]stys = ε
+(Γ′ , A) [ δ ]stys = Γ′ [ δ ]stys , A [ δ ↑↑s Γ′ ]s
+
+δ ↑↑w ε = δ     
+δ ↑↑w (Γ′ , A) = (δ ↑↑w Γ′) ↑ A 
+
+δ ↑↑s ε = δ     
+δ ↑↑s (Γ′ , A) = (δ ↑↑s Γ′) ↑ A
+
+data SemTys : SemCtx → Set₁
+
+_++s_ : ∀ Γ → SemTys Γ → SemCtx
+
+data SemTys where
+  ε   : ∀ {Γ} → SemTys Γ
+  _,_ : ∀ {Γ} Γ′ → SemTy (Γ ++s Γ′) → SemTys Γ
+
+Γ ++s ε = Γ
+Γ ++s (Γ′ , A) = (Γ ++s Γ′) ,s A
+
+_[_]semtys : ∀ {Γ Δ} → SemTys Γ → SemSub Δ Γ → SemTys Δ
+_↑↑sem_ : ∀ {Γ Δ} (δ : SemSub Δ Γ) Γ′ → SemSub (Δ ++s Γ′ [ δ ]semtys) (Γ ++s Γ′)
+
+ε [ δ ]semtys = ε
+(Γ′ , A) [ δ ]semtys = Γ′ [ δ ]semtys , A ∘ (δ ↑↑sem Γ′)
+
+δ ↑↑sem ε = δ
+δ ↑↑sem (Γ′ , A) = (δ ↑↑sem Γ′) ↑s A
+
+private module Congruences where
+  Tys≡ = cong Tys
+  SemTys≡ = cong SemTys
+  Wk≡ = cong₂ Wk
+  Sub≡ = cong₂ Sub
+
+  _++≡_ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′} (Γ≡ : Γ₁ ≡ Γ₂) → Γ₁′ ≡[ Tys≡ Γ≡ ]≡ Γ₂′
+        → Γ₁ ++ Γ₁′ ≡ Γ₂ ++ Γ₂′
+  refl ++≡ refl = refl
+
+  ,tys≡ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) 
+            (Γ≡′ : Γ₁′ ≡[ Tys≡ Γ≡ ]≡ Γ₂′)
+        → A₁ ≡[ Ty≡ (Γ≡ ++≡ Γ≡′) ]≡ A₂ → Γ₁′ , A₁ ≡[ Tys≡ Γ≡ ]≡ Γ₂′ , A₂ 
+  ,tys≡ refl refl refl = refl
+
+  ++≡β : ∀ {Γ} {Γ₁′ Γ₂′ : Tys Γ} {A₁ A₂} 
+          (p : Γ₁′ ≡ Γ₂′) (q : A₁ ≡[ Ty≡ (refl ++≡ p) ]≡ A₂) 
+      → refl ++≡ ,tys≡ refl p q ≡ (refl ++≡ p) ,≡ q
+  ++≡β refl refl = refl
+
+  {-# REWRITE ++≡β #-}
+
+  _++s≡_ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′} (Γ≡ : Γ₁ ≡ Γ₂) → Γ₁′ ≡[ SemTys≡ Γ≡ ]≡ Γ₂′
+        → Γ₁ ++s Γ₁′ ≡ Γ₂ ++s Γ₂′
+  refl ++s≡ refl = refl
+
+  ,semtys≡ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) 
+            (Γ≡′ : Γ₁′ ≡[ SemTys≡ Γ≡ ]≡ Γ₂′)
+        → A₁ ≡[ SemTy≡ (Γ≡ ++s≡ Γ≡′) ]≡ A₂ → Γ₁′ , A₁ ≡[ SemTys≡ Γ≡ ]≡ Γ₂′ , A₂ 
+  ,semtys≡ refl refl refl = refl
+
+  ++s≡β : ∀ {Γ} {Γ₁′ Γ₂′ : SemTys Γ} {A₁ A₂} 
+            (p : Γ₁′ ≡ Γ₂′) (q : A₁ ≡[ SemTy≡ (refl ++s≡ p) ]≡ A₂) 
+        → refl ++s≡ ,semtys≡ refl p q ≡ (refl ++s≡ p) ,s≡ q
+  ++s≡β refl refl = refl
+
+  {-# REWRITE ++s≡β #-}
+
+  ,proj≡₁ : ∀ {Γ Γ₁′ Γ₂′} {A₁ : Ty (Γ ++ Γ₁′)} {A₂ : Ty (Γ ++ Γ₂′)} 
+          → Tys._,_ Γ₁′ A₁ ≡ Tys._,_ Γ₂′ A₂ → Γ₁′ ≡ Γ₂′
+  ,proj≡₁ refl = refl
+
+  ,proj≡s₁ : ∀ {Γ Γ₁′ Γ₂′} {A₁ : SemTy (Γ ++s Γ₁′)} {A₂ : SemTy (Γ ++s Γ₂′)} 
+          → SemTys._,_ Γ₁′ A₁ ≡ SemTys._,_ Γ₂′ A₂ → Γ₁′ ≡ Γ₂′
+  ,proj≡s₁ refl = refl
+
+  ↑s≡ : ∀ {Γ₁ Γ₂ Δ δ₁ δ₂} {A : SemTy Δ} (Γ≡ : Γ₁ ≡ Γ₂)
+            (δ≡ : δ₁ ≡[ SemSub≡ Γ≡ refl ]≡ δ₂) 
+        → δ₁ ↑s A ≡[ SemSub≡ (Γ≡ ,s≡ ([]sem≡ (erefl A) δ≡)) refl 
+       ]≡ δ₂ ↑s A
+  ↑s≡ refl refl = refl 
+
+  []w≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂ δ₁ δ₂} (Γ≡ : Γ₁ ≡ Γ₂) (Δ≡ : Δ₁ ≡ Δ₂)
+       → A₁ ≡[ Ty≡ Γ≡ ]≡ A₂ → δ₁ ≡[ Wk≡ Δ≡ Γ≡ ]≡ δ₂
+       → A₁ [ δ₁ ]w ≡[ Ty≡ Δ≡ ]≡ A₂ [ δ₂ ]w
+  []w≡ refl refl refl refl = refl
+
+  []s≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂ δ₁ δ₂} (Γ≡ : Γ₁ ≡ Γ₂) (Δ≡ : Δ₁ ≡ Δ₂)
+       → A₁ ≡[ Ty≡ Γ≡ ]≡ A₂ → δ₁ ≡[ Sub≡ Δ≡ Γ≡ ]≡ δ₂
+       → A₁ [ δ₁ ]s ≡[ Ty≡ Δ≡ ]≡ A₂ [ δ₂ ]s
+  []s≡ refl refl refl refl = refl
+
+  ⟦⟧w≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ δ₁ δ₂} {Γ≡ : Γ₁ ≡ Γ₂} {Δ≡ : Δ₁ ≡ Δ₂}
+       → δ₁ ≡[ Wk≡ Γ≡ Δ≡ ]≡ δ₂ 
+       → ⟦ δ₁ ⟧w ≡[ SemSub≡ ⟦ Γ≡ ⟧c≡ ⟦ Δ≡ ⟧c≡ ]≡ ⟦ δ₂ ⟧w
+  ⟦⟧w≡ {Γ≡ = refl} {Δ≡ = refl} refl = refl
+
+  ⟦⟧s≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ δ₁ δ₂} {Γ≡ : Γ₁ ≡ Γ₂} {Δ≡ : Δ₁ ≡ Δ₂}
+       → δ₁ ≡[ Sub≡ Γ≡ Δ≡ ]≡ δ₂ 
+       → ⟦ δ₁ ⟧s ≡[ SemSub≡ ⟦ Γ≡ ⟧c≡ ⟦ Δ≡ ⟧c≡ ]≡ ⟦ δ₂ ⟧s
+  ⟦⟧s≡ {Γ≡ = refl} {Δ≡ = refl} refl = refl
+
+  []wtm≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂ M₁ M₂ δ₁ δ₂} {Γ≡ : Γ₁ ≡ Γ₂} {Δ≡ : Δ₁ ≡ Δ₂}
+             (A≡ : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂) (δ≡ : δ₁ ≡[ Wk≡ Δ≡ Γ≡ ]≡ δ₂)
+         → M₁ ≡[ Tm≡ Γ≡ A≡ ]≡ M₂
+         → M₁ [ δ₁ ]wtm ≡[ Tm≡ Δ≡ ([]sem≡ A≡ (⟦⟧w≡ δ≡)) ]≡ M₂ [ δ₂ ]wtm
+  []wtm≡ {Γ≡ = refl} {Δ≡ = refl} refl refl refl = refl
+
+  []stm≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂ M₁ M₂ δ₁ δ₂} {Γ≡ : Γ₁ ≡ Γ₂} {Δ≡ : Δ₁ ≡ Δ₂}
+             (A≡ : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂) (δ≡ : δ₁ ≡[ Sub≡ Δ≡ Γ≡ ]≡ δ₂)
+         → M₁ ≡[ Tm≡ Γ≡ A≡ ]≡ M₂
+         → M₁ [ δ₁ ]stm ≡[ Tm≡ Δ≡ ([]sem≡ A≡ (⟦⟧s≡ δ≡)) ]≡ M₂ [ δ₂ ]stm
+  []stm≡ {Γ≡ = refl} {Δ≡ = refl} refl refl refl = refl
+
+  wk≡ : ∀ {Γ₁ Γ₂ A₁ A₂} {Γ≡ : Γ₁ ≡ Γ₂} (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂) 
+      → wk ≡[ Wk≡ (Γ≡ ,≡ A≡) Γ≡ ]≡ wk 
+  wk≡ {Γ≡ = refl} refl = refl
+
+open Congruences public
+
+⟦_⟧tys : Tys Γ → SemTys ⟦ Γ ⟧c
+
+⟦_⟧tys≡ : ∀ Γ′ → ⟦ Γ ++ Γ′ ⟧c ≡ ⟦ Γ ⟧c ++s ⟦ Γ′ ⟧tys
+
+⟦ ε ⟧tys = ε
+⟦ Γ′ , A ⟧tys = ⟦ Γ′ ⟧tys , (subst SemTy ⟦ Γ′ ⟧tys≡ ⟦ A ⟧T)
+
+⟦⟧tys≡-lemma : ∀ {Γ₁ Γ₂} {A : SemTy Γ₁} (Γ≡ : Γ₁ ≡ Γ₂) 
+             → A ≡[ SemTy≡ Γ≡ ]≡ (subst SemTy Γ≡ A)
+⟦⟧tys≡-lemma refl = refl
+
+⟦ ε ⟧tys≡ = refl
+⟦ Γ′ , A ⟧tys≡ = Γ≡′ ,s≡ ⟦⟧tys≡-lemma Γ≡′
+  where Γ≡′ = ⟦ Γ′ ⟧tys≡
+
+⟦⟧tys≡ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′} (Γ≡ : Γ₁ ≡ Γ₂) → Γ₁′ ≡[ Tys≡ Γ≡ ]≡ Γ₂′ 
+       → ⟦ Γ₁′ ⟧tys ≡[ SemTys≡ ⟦ Γ≡ ⟧c≡ ]≡ ⟦ Γ₂′ ⟧tys
+⟦⟧tys≡ refl refl = refl
+
+{-# REWRITE ⟦_⟧tys≡ #-}
+
+⟦[]⟧wtys≡ : ∀ Γ′ (δ : Wk Δ Γ) 
+          → ⟦ Γ′ [ δ ]wtys ⟧tys ≡ ⟦ Γ′ ⟧tys [ ⟦ δ ⟧w ]semtys
+⟦[]⟧stys≡ : ∀ Γ′ (δ : Sub Δ Γ) 
+          → ⟦ Γ′ [ δ ]stys ⟧tys ≡ ⟦ Γ′ ⟧tys [ ⟦ δ ⟧s ]semtys
+
+⟦↑↑w⟧≡ : ∀ Γ′ (δ : Wk Δ Γ) 
+      → ⟦ δ ↑↑w Γ′ ⟧w ≡[ SemSub≡ (refl ++s≡ (⟦[]⟧wtys≡ Γ′ δ)) refl 
+     ]≡ ⟦ δ ⟧w ↑↑sem ⟦ Γ′ ⟧tys
+⟦↑↑s⟧≡ : ∀ Γ′ (δ : Sub Δ Γ) 
+      → ⟦ δ ↑↑s Γ′ ⟧s ≡[ SemSub≡ (refl ++s≡ (⟦[]⟧stys≡ Γ′ δ)) refl 
+     ]≡ ⟦ δ ⟧s ↑↑sem ⟦ Γ′ ⟧tys
+
+⟦[]⟧wtys≡ ε δ = refl
+⟦[]⟧wtys≡ (Γ′ , A) δ 
+  = ,semtys≡ _ (⟦[]⟧wtys≡ Γ′ δ) ([]sem≡ (erefl ⟦ A ⟧T) (⟦↑↑w⟧≡ Γ′ δ))
+⟦[]⟧stys≡ ε δ = refl
+⟦[]⟧stys≡ (Γ′ , A) δ 
+  = ,semtys≡ _ (⟦[]⟧stys≡ Γ′ δ) ([]sem≡ (erefl ⟦ A ⟧T) (⟦↑↑s⟧≡ Γ′ δ))
+
+⟦↑↑w⟧≡ ε δ = refl
+⟦↑↑w⟧≡ (Γ′ , A) δ = ↑s≡ (refl ++s≡ ⟦[]⟧wtys≡ Γ′ δ) (⟦↑↑w⟧≡ Γ′ δ)
+⟦↑↑s⟧≡ ε δ = refl
+⟦↑↑s⟧≡ (Γ′ , A) δ = ↑s≡ (refl ++s≡ ⟦[]⟧stys≡ Γ′ δ) (⟦↑↑s⟧≡ Γ′ δ)
+
+{-# REWRITE ⟦[]⟧wtys≡ ⟦[]⟧stys≡ #-}
+
+⟦↑↑w⟧≡-rw : ∀ Γ′ (δ : Wk Δ Γ) 
+          → ⟦ δ ↑↑w Γ′ ⟧w ≡ ⟦ δ ⟧w ↑↑sem ⟦ Γ′ ⟧tys
+⟦↑↑w⟧≡-rw Γ′ δ = ≡[]≡-uip (⟦↑↑w⟧≡ Γ′ δ)
+
+⟦↑↑s⟧≡-rw : ∀ Γ′ (δ : Sub Δ Γ) 
+          → ⟦ δ ↑↑s Γ′ ⟧s ≡ ⟦ δ ⟧s ↑↑sem ⟦ Γ′ ⟧tys
+⟦↑↑s⟧≡-rw Γ′ δ = ≡[]≡-uip (⟦↑↑s⟧≡ Γ′ δ)
+
+
+{-# REWRITE ⟦↑↑w⟧≡-rw ⟦↑↑s⟧≡-rw #-}
