@@ -1,12 +1,22 @@
-{-# OPTIONS --rewriting --local-confluence-check #-}
+{-# OPTIONS --rewriting --local-confluence-check --prop #-}
 
 import Agda.Builtin.Equality.Rewrite 
 
-open import Function using (id)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst)
-  renaming (trans to _∙_)
-
 module Coincidences.Utils where
+
+open import Function using (_∘_; case_of_; id)
+  public
+open import Relation.Binary.PropositionalEquality 
+  using (_≡_; refl; cong; cong₂; subst; dcong₂; sym; erefl; cong-app; dcong
+        ; subst-application′)
+  renaming (trans to infixr 9 _∙_)
+  public
+open import Data.Product using (Σ; _,_; proj₁; proj₂) public
+open import Data.Unit using (⊤; tt) public
+open import Data.Empty using (⊥; ⊥-elim) public
+
+coe : ∀ {ℓ} {A B : Set ℓ} → A ≡ B → A → B
+coe = subst id
 
 dcong-app : ∀ {a b} {A : Set a} {B : A → Set b} {f g : (x : A) → B x} →
            f ≡ g → ∀ {x y} → (p : x ≡ y) → subst B p (f x) ≡ g y
@@ -36,3 +46,7 @@ drefl refl = refl
 _∙P_ : ∀ {a} {A B C : Set a} {p : A ≡ B} {q : B ≡ C} {x y z} 
      → x ≡[ p ]≡ y → y ≡[ q ]≡ z → x ≡[ p ∙ q ]≡ z
 _∙P_ {p = refl} {q = refl} refl refl = refl
+
+to-coe≡ : ∀ {a} {A B : Set a} {p : A ≡ B} {x y} → x ≡[ p ]≡ y → coe p x ≡ y
+to-coe≡ {p = refl} = id
+ 

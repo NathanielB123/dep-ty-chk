@@ -1,9 +1,5 @@
 {-# OPTIONS --rewriting #-}
 
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; erefl; cong)
-open import Function using (id; _∘_)
-open import Data.Product using (_,_)
-
 open import Coincidences.Utils
 open import Coincidences.Syntax
 open import Coincidences.Sub

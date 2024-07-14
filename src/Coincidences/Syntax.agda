@@ -2,16 +2,6 @@
 
 import Agda.Builtin.Equality.Rewrite
 
-open import Data.Empty using (⊥; ⊥-elim)
-open import Data.Unit using (⊤; tt)
-open import Data.Product using (Σ; _,_; proj₁; proj₂)
-open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Function using (_∘_; id)
-open import Relation.Binary.PropositionalEquality 
-  using (_≡_; refl; erefl; cong; cong₂; cong-app; subst; sym; dcong; dcong₂
-  ; subst-application′)
-  renaming (trans to _∙_)
-open import Data.Nat using (ℕ; suc; zero)
 open import Coincidences.Utils
 
 module Coincidences.Syntax where

@@ -1,8 +1,5 @@
 {-# OPTIONS --rewriting #-}
 
-open import Relation.Binary.PropositionalEquality 
-  using (_≡_; refl; erefl; cong; cong₂)
-
 open import Coincidences.Utils
 open import Coincidences.Syntax
 open import Coincidences.Sub 

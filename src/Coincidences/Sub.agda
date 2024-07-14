@@ -1,13 +1,4 @@
 {-# OPTIONS --rewriting --local-confluence-check #-}
---local-confluence-check
-
-import Agda.Builtin.Equality.Rewrite
-
-open import Relation.Binary.PropositionalEquality 
-  using (_≡_; refl; subst; sym; cong; dcong₂; subst-application′; cong₂; erefl)
-  renaming (trans to _∙_)
-open import Function using (_∘_; id)
-open import Data.Product using (Σ; _,_; proj₁; proj₂)
 
 open import Coincidences.Utils
 open import Coincidences.Syntax
