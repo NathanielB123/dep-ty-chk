@@ -1,6 +1,4 @@
-{-# OPTIONS --rewriting --local-confluence-check #-}
-
-import Agda.Builtin.Equality.Rewrite
+{-# OPTIONS --rewriting --local-confluence-check --prop #-}
 
 open import Coincidences.Utils
 
@@ -125,21 +123,21 @@ private module Congruences where
       → (Ctx._,_ Γ₁ A₁) ≡ (Ctx._,_ Γ₂ A₂)
   refl ,≡ refl = refl
 
-  ⟦_⟧T≡ : ∀ {Γ₁ Γ₂ A₁ A₂} {Γ≡ : Γ₁ ≡ Γ₂} → A₁ ≡[ Ty≡ Γ≡ ]≡ A₂ 
+  ⟦⟧T≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) → A₁ ≡[ Ty≡ Γ≡ ]≡ A₂ 
         → ⟦ A₁ ⟧T ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ ⟦ A₂ ⟧T
-  ⟦_⟧T≡ {Γ≡ = refl} refl = refl
+  ⟦⟧T≡ refl refl = refl
 
   ⊥≡ : ∀ {Γ₁ Γ₂} (Γ≡ : Γ₁ ≡ Γ₂) → ⊥' ≡[ Ty≡ Γ≡ ]≡ ⊥'
   ⊥≡ refl = refl
 
-  Π≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂} {Γ≡ : Γ₁ ≡ Γ₂} (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂) 
+  Π≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂) 
     → B₁ ≡[ Ty≡ (Γ≡ ,≡ A≡) ]≡ B₂ → Π' A₁ B₁ ≡[ Ty≡ Γ≡ ]≡ Π' A₂ B₂
-  Π≡ {Γ≡ = refl} refl refl = refl
+  Π≡ refl refl refl = refl
 
-  El≡ : ∀ {Γ₁ Γ₂ M₁ M₂} {Γ≡ : Γ₁ ≡ Γ₂}
-      → M₁ ≡[ Tm≡ Γ≡ (⟦ ⊥≡ Γ≡ ⟧T≡) ]≡ M₂
+  El≡ : ∀ {Γ₁ Γ₂ M₁ M₂} (Γ≡ : Γ₁ ≡ Γ₂)
+      → M₁ ≡[ Tm≡ Γ≡ (⟦⟧T≡ Γ≡ (⊥≡ Γ≡)) ]≡ M₂
       → El' M₁ ≡[ Ty≡ Γ≡ ]≡ El' M₂
-  El≡ {Γ≡ = refl} refl = refl
+  El≡ refl refl = refl
 
   _,s≡_ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) → A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂ 
         → Γ₁ ,s A₁ ≡ Γ₂ ,s A₂
@@ -150,21 +148,15 @@ private module Congruences where
         → Πsem A₁ B₁ ≡[ SemTy≡ Γ≡ ]≡ Πsem A₂ B₂
   Πsem≡ refl refl refl = refl
 
-  ⟦⟧c≡β : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
-        → cong ⟦_⟧c (Γ≡ ,≡ A≡) ≡ ⟦ Γ≡ ⟧c≡ ,s≡ ⟦ A≡ ⟧T≡
-  ⟦⟧c≡β refl refl = refl
-
-  {-# REWRITE ⟦⟧c≡β #-}
-
-  var≡ : ∀ {Γ₁ Γ₂ A₁ A₂ x₁ x₂} {Γ≡ : Γ₁ ≡ Γ₂} (A≡ : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂)
+  var≡ : ∀ {Γ₁ Γ₂ A₁ A₂ x₁ x₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂)
         → (x₁ ≡[ Var≡ Γ≡ A≡ ]≡ x₂) → var x₁ ≡[ Tm≡ Γ≡ A≡ ]≡ var x₂
-  var≡ {Γ≡ = refl} refl refl = refl
+  var≡ refl refl refl = refl
 
-  lam≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ M₁ M₂} {Γ≡ : Γ₁ ≡ Γ₂} (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
+  lam≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ M₁ M₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
             (B≡ : B₁ ≡[ SemTy≡ ⟦ Γ≡ ,≡ A≡ ⟧c≡ ]≡ B₂) 
             (M≡ : M₁ ≡[ Tm≡ (Γ≡ ,≡ A≡) B≡ ]≡ M₂) 
-        → lam M₁ ≡[ Tm≡ Γ≡ (Πsem≡ ⟦ Γ≡ ⟧c≡ ⟦ A≡ ⟧T≡ B≡) ]≡ lam M₂
-  lam≡ {Γ≡ = refl} refl refl refl = refl
+        → lam M₁ ≡[ Tm≡ Γ≡ (Πsem≡ ⟦ Γ≡ ⟧c≡ (⟦⟧T≡ Γ≡ A≡) B≡) ]≡ lam M₂
+  lam≡ refl refl refl refl = refl
 
   semwk≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂} (Γ≡ : Γ₁ ≡ Γ₂) 
              (A≡ : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂) (B≡ : B₁ ≡[ SemTy≡ Γ≡ ]≡ B₂) 
@@ -187,20 +179,20 @@ private module Congruences where
       ]≡ app M₂ N₂
   app≡ refl refl refl refl refl = refl
 
-  []sem≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂ δ₁ δ₂} {Γ≡ : Γ₁ ≡ Γ₂} {Δ≡ : Δ₁ ≡ Δ₂}
+  []sem≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂ δ₁ δ₂} (Γ≡ : Γ₁ ≡ Γ₂) (Δ≡ : Δ₁ ≡ Δ₂)
          → A₁ ≡[ SemTy≡ Δ≡ ]≡ A₂ → δ₁ ≡[ SemSub≡ Γ≡ Δ≡ ]≡ δ₂ 
          → A₁ ∘ δ₁ ≡[ SemTy≡ Γ≡ ]≡ A₂ ∘ δ₂
-  []sem≡ {Γ≡ = refl} {Δ≡ = refl} refl refl = refl
+  []sem≡ refl refl refl refl = refl
 
-  vz≡ : ∀ {Γ₁ Γ₂ A₁ A₂} {Γ≡ : Γ₁ ≡ Γ₂} (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
-      → vz ≡[ Var≡ (Γ≡ ,≡ A≡) (semwk≡ _ _ ⟦ A≡ ⟧T≡) ]≡ vz
-  vz≡ {Γ≡ = refl} refl = refl
+  vz≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
+      → vz ≡[ Var≡ (Γ≡ ,≡ A≡) (semwk≡ ⟦ Γ≡ ⟧c≡ (⟦⟧T≡ Γ≡ A≡) (⟦⟧T≡ Γ≡ A≡)) ]≡ vz
+  vz≡ refl refl = refl
 
-  vs≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ x₁ x₂} {Γ≡ : Γ₁ ≡ Γ₂}
+  vs≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ x₁ x₂} (Γ≡ : Γ₁ ≡ Γ₂)
           (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂) (B≡ : B₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ B₂)
           (x≡ : x₁ ≡[ Var≡ Γ≡ B≡ ]≡ x₂)
-      → vs x₁ ≡[ Var≡ (Γ≡ ,≡ A≡) (semwk≡ _ _ B≡) ]≡ vs x₂
-  vs≡ {Γ≡ = refl} refl refl refl = refl
+      → vs x₁ ≡[ Var≡ (Γ≡ ,≡ A≡) (semwk≡ ⟦ Γ≡ ⟧c≡ (⟦⟧T≡ Γ≡ A≡) B≡) ]≡ vs x₂
+  vs≡ refl refl refl refl = refl
 
 open Congruences public
   

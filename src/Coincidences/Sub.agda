@@ -1,4 +1,4 @@
-{-# OPTIONS --rewriting --local-confluence-check #-}
+{-# OPTIONS --rewriting --local-confluence-check --prop #-}
 
 open import Coincidences.Utils
 open import Coincidences.Syntax
@@ -197,17 +197,10 @@ private module Congruences where
         → Γ₁ ++ Γ₁′ ≡ Γ₂ ++ Γ₂′
   refl ++≡ refl = refl
 
-  ,tys≡ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′ A₁ A₂} {Γ≡ : Γ₁ ≡ Γ₂} 
+  ,tys≡ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) 
             (Γ≡′ : Γ₁′ ≡[ Tys≡ Γ≡ ]≡ Γ₂′)
         → A₁ ≡[ Ty≡ (Γ≡ ++≡ Γ≡′) ]≡ A₂ → Γ₁′ , A₁ ≡[ Tys≡ Γ≡ ]≡ Γ₂′ , A₂ 
-  ,tys≡ {Γ≡ = refl} refl refl = refl
-
-  ++≡β : ∀ {Γ} {Γ₁′ Γ₂′ : Tys Γ} {A₁ A₂} 
-          (p : Γ₁′ ≡ Γ₂′) (q : A₁ ≡[ Ty≡ (refl ++≡ p) ]≡ A₂) 
-      → refl ++≡ ,tys≡ p q ≡ (refl ++≡ p) ,≡ q
-  ++≡β refl refl = refl
-
-  {-# REWRITE ++≡β #-}
+  ,tys≡ refl refl refl = refl
 
   _++s≡_ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′} (Γ≡ : Γ₁ ≡ Γ₂) → Γ₁′ ≡[ SemTys≡ Γ≡ ]≡ Γ₂′
         → Γ₁ ++s Γ₁′ ≡ Γ₂ ++s Γ₂′
@@ -217,13 +210,6 @@ private module Congruences where
             (Γ≡′ : Γ₁′ ≡[ SemTys≡ Γ≡ ]≡ Γ₂′)
         → A₁ ≡[ SemTy≡ (Γ≡ ++s≡ Γ≡′) ]≡ A₂ → Γ₁′ , A₁ ≡[ SemTys≡ Γ≡ ]≡ Γ₂′ , A₂ 
   ,semtys≡ refl refl refl = refl
-
-  ++s≡β : ∀ {Γ} {Γ₁′ Γ₂′ : SemTys Γ} {A₁ A₂} 
-            (p : Γ₁′ ≡ Γ₂′) (q : A₁ ≡[ SemTy≡ (refl ++s≡ p) ]≡ A₂) 
-        → refl ++s≡ ,semtys≡ refl p q ≡ (refl ++s≡ p) ,s≡ q
-  ++s≡β refl refl = refl
-
-  {-# REWRITE ++s≡β #-}
 
   ,proj≡₁ : ∀ {Γ Γ₁′ Γ₂′} {A₁ : Ty (Γ ++ Γ₁′)} {A₂ : Ty (Γ ++ Γ₂′)} 
           → Tys._,_ Γ₁′ A₁ ≡ Tys._,_ Γ₂′ A₂ → Γ₁′ ≡ Γ₂′
@@ -235,7 +221,7 @@ private module Congruences where
 
   ↑s≡ : ∀ {Γ₁ Γ₂ Δ δ₁ δ₂} {A : SemTy Δ} (Γ≡ : Γ₁ ≡ Γ₂)
             (δ≡ : δ₁ ≡[ SemSub≡ Γ≡ refl ]≡ δ₂) 
-        → δ₁ ↑s A ≡[ SemSub≡ (Γ≡ ,s≡ ([]sem≡ (erefl A) δ≡)) refl 
+        → δ₁ ↑s A ≡[ SemSub≡ (Γ≡ ,s≡ ([]sem≡ Γ≡ refl (erefl A) δ≡)) refl 
        ]≡ δ₂ ↑s A
   ↑s≡ refl refl = refl 
 
@@ -249,31 +235,33 @@ private module Congruences where
        → A₁ [ δ₁ ]s ≡[ Ty≡ Δ≡ ]≡ A₂ [ δ₂ ]s
   []s≡ refl refl refl refl = refl
 
-  ⟦⟧w≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ δ₁ δ₂} {Γ≡ : Γ₁ ≡ Γ₂} {Δ≡ : Δ₁ ≡ Δ₂}
+  ⟦⟧w≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ δ₁ δ₂} (Γ≡ : Γ₁ ≡ Γ₂) (Δ≡ : Δ₁ ≡ Δ₂)
        → δ₁ ≡[ Wk≡ Γ≡ Δ≡ ]≡ δ₂ 
        → ⟦ δ₁ ⟧w ≡[ SemSub≡ ⟦ Γ≡ ⟧c≡ ⟦ Δ≡ ⟧c≡ ]≡ ⟦ δ₂ ⟧w
-  ⟦⟧w≡ {Γ≡ = refl} {Δ≡ = refl} refl = refl
+  ⟦⟧w≡ refl refl refl = refl
 
-  ⟦⟧s≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ δ₁ δ₂} {Γ≡ : Γ₁ ≡ Γ₂} {Δ≡ : Δ₁ ≡ Δ₂}
+  ⟦⟧s≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ δ₁ δ₂} (Γ≡ : Γ₁ ≡ Γ₂) (Δ≡ : Δ₁ ≡ Δ₂)
        → δ₁ ≡[ Sub≡ Γ≡ Δ≡ ]≡ δ₂ 
        → ⟦ δ₁ ⟧s ≡[ SemSub≡ ⟦ Γ≡ ⟧c≡ ⟦ Δ≡ ⟧c≡ ]≡ ⟦ δ₂ ⟧s
-  ⟦⟧s≡ {Γ≡ = refl} {Δ≡ = refl} refl = refl
+  ⟦⟧s≡ refl refl refl = refl
 
-  []wtm≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂ M₁ M₂ δ₁ δ₂} {Γ≡ : Γ₁ ≡ Γ₂} {Δ≡ : Δ₁ ≡ Δ₂}
+  []wtm≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂ M₁ M₂ δ₁ δ₂} (Γ≡ : Γ₁ ≡ Γ₂) (Δ≡ : Δ₁ ≡ Δ₂)
              (A≡ : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂) (δ≡ : δ₁ ≡[ Wk≡ Δ≡ Γ≡ ]≡ δ₂)
          → M₁ ≡[ Tm≡ Γ≡ A≡ ]≡ M₂
-         → M₁ [ δ₁ ]wtm ≡[ Tm≡ Δ≡ ([]sem≡ A≡ (⟦⟧w≡ δ≡)) ]≡ M₂ [ δ₂ ]wtm
-  []wtm≡ {Γ≡ = refl} {Δ≡ = refl} refl refl refl = refl
+         → M₁ [ δ₁ ]wtm ≡[ Tm≡ Δ≡ ([]sem≡ ⟦ Δ≡ ⟧c≡ ⟦ Γ≡ ⟧c≡ A≡ (⟦⟧w≡ Δ≡ Γ≡ δ≡)) 
+        ]≡ M₂ [ δ₂ ]wtm
+  []wtm≡ refl refl refl refl refl = refl
 
-  []stm≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂ M₁ M₂ δ₁ δ₂} {Γ≡ : Γ₁ ≡ Γ₂} {Δ≡ : Δ₁ ≡ Δ₂}
+  []stm≡ : ∀ {Γ₁ Γ₂ Δ₁ Δ₂ A₁ A₂ M₁ M₂ δ₁ δ₂} (Γ≡ : Γ₁ ≡ Γ₂) (Δ≡ : Δ₁ ≡ Δ₂)
              (A≡ : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂) (δ≡ : δ₁ ≡[ Sub≡ Δ≡ Γ≡ ]≡ δ₂)
          → M₁ ≡[ Tm≡ Γ≡ A≡ ]≡ M₂
-         → M₁ [ δ₁ ]stm ≡[ Tm≡ Δ≡ ([]sem≡ A≡ (⟦⟧s≡ δ≡)) ]≡ M₂ [ δ₂ ]stm
-  []stm≡ {Γ≡ = refl} {Δ≡ = refl} refl refl refl = refl
+         → M₁ [ δ₁ ]stm ≡[ Tm≡ Δ≡ ([]sem≡ ⟦ Δ≡ ⟧c≡ ⟦ Γ≡ ⟧c≡ A≡ (⟦⟧s≡ Δ≡ Γ≡ δ≡)) 
+        ]≡ M₂ [ δ₂ ]stm
+  []stm≡ refl refl refl refl refl = refl
 
-  wk≡ : ∀ {Γ₁ Γ₂ A₁ A₂} {Γ≡ : Γ₁ ≡ Γ₂} (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂) 
+  wk≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂) 
       → wk ≡[ Wk≡ (Γ≡ ,≡ A≡) Γ≡ ]≡ wk 
-  wk≡ {Γ≡ = refl} refl = refl
+  wk≡ refl refl = refl
 
 open Congruences public
 
@@ -284,13 +272,9 @@ open Congruences public
 ⟦ ε ⟧tys = ε
 ⟦ Γ′ , A ⟧tys = ⟦ Γ′ ⟧tys , (subst SemTy (⟦++⟧tys≡ Γ′) ⟦ A ⟧T)
 
--- Note this is a congruence as well! I just couldn't put it in the above
--- module because we need ⟦_⟧tys to be defined
-⟦_⟧tys≡ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′} {Γ≡ : Γ₁ ≡ Γ₂} → Γ₁′ ≡[ Tys≡ Γ≡ ]≡ Γ₂′ 
+⟦⟧tys≡ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′} (Γ≡ : Γ₁ ≡ Γ₂) → Γ₁′ ≡[ Tys≡ Γ≡ ]≡ Γ₂′ 
         → ⟦ Γ₁′ ⟧tys ≡[ SemTys≡ ⟦ Γ≡ ⟧c≡ ]≡ ⟦ Γ₂′ ⟧tys
-⟦_⟧tys≡ {Γ≡ = refl} refl = refl
-
-
+⟦⟧tys≡ refl refl = refl
 
 ⟦⟧tys≡-lemma : ∀ {Γ₁ Γ₂} {A : SemTy Γ₁} (Γ≡ : Γ₁ ≡ Γ₂) 
              → A ≡[ SemTy≡ Γ≡ ]≡ (subst SemTy Γ≡ A)
