@@ -20,6 +20,7 @@ subst-uip _ refl _ = refl
 {-# REWRITE subst-uip #-}
 
 infix 3 _≡[_]≡_
+infixr 9 _∙P_
 
 _≡[_]≡_ : ∀ {a} {A B : Set a} → A → A ≡ B → B → Set a
 x ≡[ refl ]≡ y = x ≡ y
@@ -32,6 +33,6 @@ drefl refl = refl
 ≡[]≡-uip : ∀ {a} {A B : Set a} {p q : A ≡ B} {x y} → x ≡[ p ]≡ y → x ≡[ q ]≡ y
 ≡[]≡-uip {p = refl} {q = refl} = id
 
-_∙P_ : ∀ {a} {A B C D : Set a} {p : A ≡ B} {q : B ≡ C} {x y z} 
+_∙P_ : ∀ {a} {A B C : Set a} {p : A ≡ B} {q : B ≡ C} {x y z} 
      → x ≡[ p ]≡ y → y ≡[ q ]≡ z → x ≡[ p ∙ q ]≡ z
 _∙P_ {p = refl} {q = refl} refl refl = refl

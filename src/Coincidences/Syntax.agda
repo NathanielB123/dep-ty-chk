@@ -166,9 +166,9 @@ private module Congruences where
 
   {-# REWRITE ⟦⟧c≡β #-}
 
-  var≡ : ∀ {Γ₁ Γ₂ A₁ A₂ x₁ x₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂)
+  var≡ : ∀ {Γ₁ Γ₂ A₁ A₂ x₁ x₂} {Γ≡ : Γ₁ ≡ Γ₂} (A≡ : A₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ A₂)
         → (x₁ ≡[ Var≡ Γ≡ A≡ ]≡ x₂) → var x₁ ≡[ Tm≡ Γ≡ A≡ ]≡ var x₂
-  var≡ refl refl refl = refl
+  var≡ {Γ≡ = refl} refl refl = refl
 
   lam≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ M₁ M₂} {Γ≡ : Γ₁ ≡ Γ₂} (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
             (B≡ : B₁ ≡[ SemTy≡ ⟦ Γ≡ ,≡ A≡ ⟧c≡ ]≡ B₂) 
@@ -202,9 +202,15 @@ private module Congruences where
          → A₁ ∘ δ₁ ≡[ SemTy≡ Γ≡ ]≡ A₂ ∘ δ₂
   []sem≡ {Γ≡ = refl} {Δ≡ = refl} refl refl = refl
 
-  vz≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
+  vz≡ : ∀ {Γ₁ Γ₂ A₁ A₂} {Γ≡ : Γ₁ ≡ Γ₂} (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
       → vz ≡[ Var≡ (Γ≡ ,≡ A≡) (semwk≡ _ _ ⟦ A≡ ⟧T≡) ]≡ vz
-  vz≡ refl refl = refl
+  vz≡ {Γ≡ = refl} refl = refl
+
+  vs≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ x₁ x₂} {Γ≡ : Γ₁ ≡ Γ₂}
+          (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂) (B≡ : B₁ ≡[ SemTy≡ ⟦ Γ≡ ⟧c≡ ]≡ B₂)
+          (x≡ : x₁ ≡[ Var≡ Γ≡ B≡ ]≡ x₂)
+      → vs x₁ ≡[ Var≡ (Γ≡ ,≡ A≡) (semwk≡ _ _ B≡) ]≡ vs x₂
+  vs≡ {Γ≡ = refl} refl refl refl = refl
 
 open Congruences public
   
