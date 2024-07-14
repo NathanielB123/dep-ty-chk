@@ -39,16 +39,9 @@ funky2 refl refl = refl
 -- This feels like a bug to me...
 {-# REWRITE ⟦++⟧c≡β #-}
 
--- funky2 : ∀ {Γ₁′ Γ₂′ : Tys Γ} {A₁ A₂} (Γ≡ : (Γ₁′ , A₁) ≡ (Γ₂′ , A₂)) 
---           (A≡ : A₁ ≡[ Ty≡ (refl ++≡ ,proj≡₁ Γ≡) ]≡ A₂)
---       → (refl ++s≡ ⟦ ,proj≡₁ Γ≡ ⟧tys≡) ,s≡ ⟦ A≡ ⟧T≡ ≡ refl ++s≡ ⟦ Γ≡ ⟧tys≡
--- funky2 refl refl = refl
-
--- {-# REWRITE funky2 #-}
-
 ⟦,⟧tys≡β : ∀ {Γ₁′ Γ₂′ : Tys Γ} {A₁ A₂} (Γ≡ : Γ₁′ ≡ Γ₂′) 
              (A≡ : A₁ ≡[ Ty≡ (refl ++≡ Γ≡) ]≡ A₂)
-         → ⟦ ,tys≡ refl Γ≡ A≡ ⟧tys≡ ≡ ,semtys≡ _ ⟦ Γ≡ ⟧tys≡ ⟦ A≡ ⟧T≡
+         → ⟦ ,tys≡ Γ≡ A≡ ⟧tys≡ ≡ ,semtys≡ _ ⟦ Γ≡ ⟧tys≡ ⟦ A≡ ⟧T≡
 
 ⟦,⟧tys≡β refl refl = refl 
 

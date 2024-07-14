@@ -170,11 +170,11 @@ private module Congruences where
         → (x₁ ≡[ Var≡ Γ≡ A≡ ]≡ x₂) → var x₁ ≡[ Tm≡ Γ≡ A≡ ]≡ var x₂
   var≡ refl refl refl = refl
 
-  lam≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ M₁ M₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
+  lam≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ M₁ M₂} {Γ≡ : Γ₁ ≡ Γ₂} (A≡ : A₁ ≡[ Ty≡ Γ≡ ]≡ A₂)
             (B≡ : B₁ ≡[ SemTy≡ ⟦ Γ≡ ,≡ A≡ ⟧c≡ ]≡ B₂) 
             (M≡ : M₁ ≡[ Tm≡ (Γ≡ ,≡ A≡) B≡ ]≡ M₂) 
         → lam M₁ ≡[ Tm≡ Γ≡ (Πsem≡ ⟦ Γ≡ ⟧c≡ ⟦ A≡ ⟧T≡ B≡) ]≡ lam M₂
-  lam≡ refl refl refl refl = refl
+  lam≡ {Γ≡ = refl} refl refl refl = refl
 
   semwk≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂} (Γ≡ : Γ₁ ≡ Γ₂) 
              (A≡ : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂) (B≡ : B₁ ≡[ SemTy≡ Γ≡ ]≡ B₂) 

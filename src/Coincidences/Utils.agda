@@ -4,6 +4,7 @@ import Agda.Builtin.Equality.Rewrite
 
 open import Function using (id)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst)
+  renaming (trans to _∙_)
 
 module Coincidences.Utils where
 
@@ -30,3 +31,7 @@ drefl refl = refl
 -- compute on the neutral equations (like ++≡β).
 ≡[]≡-uip : ∀ {a} {A B : Set a} {p q : A ≡ B} {x y} → x ≡[ p ]≡ y → x ≡[ q ]≡ y
 ≡[]≡-uip {p = refl} {q = refl} = id
+
+_∙P_ : ∀ {a} {A B C D : Set a} {p : A ≡ B} {q : B ≡ C} {x y z} 
+     → x ≡[ p ]≡ y → y ≡[ q ]≡ z → x ≡[ p ∙ q ]≡ z
+_∙P_ {p = refl} {q = refl} refl refl = refl

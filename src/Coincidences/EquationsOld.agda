@@ -59,14 +59,14 @@ module Coincidences.EquationsOld where
                     [ ⟨ < N [ δ ]tm > ⟩s ↑↑ Γ′ [ δ ↑m A ]tys ]tm
 
 <>-commutes-tys ε = refl
-<>-commutes-tys (Γ′ , B) = ,tys≡ refl Γ≡′ (<>-commutes↑↑ Γ′ B Γ≡′)
+<>-commutes-tys (Γ′ , B) = ,tys≡ Γ≡′ (<>-commutes↑↑ Γ′ B Γ≡′)
   where Γ≡′ = <>-commutes-tys Γ′
 
 <>-commutes↑↑ Γ′ ⊥' p = ⊥≡ (refl ++≡ p)
 <>-commutes↑↑ Γ′ (Π' B₁ B₂) p 
-  = Π≡ B₁≡ B₂≡
+  = Π≡ B₁≡ (≡[]≡-uip B₂≡)
   where B₁≡ = <>-commutes↑↑ Γ′ B₁ p
-        B₂≡ = <>-commutes↑↑ (Γ′ , B₁) B₂ (,tys≡ refl p B₁≡)
+        B₂≡ = <>-commutes↑↑ (Γ′ , B₁) B₂ (,tys≡ p B₁≡)
 <>-commutes↑↑ Γ′ (El' B) p 
   = El≡ (≡[]≡-uip (<>-commutes↑↑-tm Γ′ B p))
 
@@ -129,11 +129,11 @@ lam[]-spec2 Γ′ M
     M≡ = <>-commutes↑↑-tm Γ′ M p
     N≡ = <>-commutes↑↑-tm Γ′ N p
 <>-commutes↑↑-tm Γ′ (lam {A = A} {B = B} M) p 
-  = ≡[]≡-uip (lam≡ (_ ++≡ p) A≡ (≡[]≡-uip B≡) (≡[]≡-uip M≡))
+  = ≡[]≡-uip (lam≡ A≡ (≡[]≡-uip B≡) (≡[]≡-uip M≡))
   where
     A≡ = <>-commutes↑↑ Γ′ A p 
-    B≡ = <>-commutes↑↑-sem ⟦ Γ′ , A ⟧tys B ⟦ ,tys≡ _ p A≡ ⟧tys≡
-    M≡ = <>-commutes↑↑-tm (Γ′ , A) M (,tys≡ refl p A≡)
+    B≡ = <>-commutes↑↑-sem ⟦ Γ′ , A ⟧tys B ⟦ ,tys≡ p A≡ ⟧tys≡
+    M≡ = <>-commutes↑↑-tm (Γ′ , A) M (,tys≡ p A≡)
             
 -- <>-commutes↑↑-tm :  ∀ {Γ Δ} {δ : MSub Δ Γ} {A} Γ′ {N B} (M : Tm _ B) 
 --               → Γ′ [ idₛ ◂s < N > ]tys [ δ ]tys 

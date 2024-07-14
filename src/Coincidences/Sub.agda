@@ -206,17 +206,17 @@ private module Congruences where
         → Γ₁ ++ Γ₁′ ≡ Γ₂ ++ Γ₂′
   refl ++≡ refl = refl
 
-  ,tys≡ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) 
+  ,tys≡ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′ A₁ A₂} {Γ≡ : Γ₁ ≡ Γ₂} 
             (Γ≡′ : Γ₁′ ≡[ Tys≡ Γ≡ ]≡ Γ₂′)
         → A₁ ≡[ Ty≡ (Γ≡ ++≡ Γ≡′) ]≡ A₂ → Γ₁′ , A₁ ≡[ Tys≡ Γ≡ ]≡ Γ₂′ , A₂ 
-  ,tys≡ refl refl refl = refl
+  ,tys≡ {Γ≡ = refl} refl refl = refl
 
   ++≡β : ∀ {Γ} {Γ₁′ Γ₂′ : Tys Γ} {A₁ A₂} 
           (p : Γ₁′ ≡ Γ₂′) (q : A₁ ≡[ Ty≡ (refl ++≡ p) ]≡ A₂) 
-      → refl ++≡ ,tys≡ refl p q ≡ (refl ++≡ p) ,≡ q
+      → refl ++≡ ,tys≡ p q ≡ (refl ++≡ p) ,≡ q
   ++≡β refl refl = refl
 
-  -- {-# REWRITE ++≡β #-}
+  {-# REWRITE ++≡β #-}
 
   _++s≡_ : ∀ {Γ₁ Γ₂ Γ₁′ Γ₂′} (Γ≡ : Γ₁ ≡ Γ₂) → Γ₁′ ≡[ SemTys≡ Γ≡ ]≡ Γ₂′
         → Γ₁ ++s Γ₁′ ≡ Γ₂ ++s Γ₂′
