@@ -1,4 +1,4 @@
-{-# OPTIONS --rewriting #-}
+{-# OPTIONS --rewriting --prop #-}
 
 open import Coincidences.Utils
 open import Coincidences.Syntax
@@ -91,14 +91,14 @@ var[] (δ ◂s σ) = cong (_[ σ ]stm) (var[] δ)
 app[] : ∀ {A B} {M : Tm Γ (Πsem A B)} {N : Tm Γ A} (δ : MSub Δ Γ) 
       → app M N [ δ ]tm ≡ app (M [ δ ]tm) (N [ δ ]tm)
 app[] idₛ = refl
-app[] (δ ◂w σ) = cong (_[ σ ]wtm) (app[] δ)
-app[] (δ ◂s σ) = cong (_[ σ ]stm) (app[] δ)
+app[] (δ ◂w σ) = [ cong (_[ σ ]wtm) (app[] δ) ]p
+app[] (δ ◂s σ) = [ cong (_[ σ ]stm) (app[] δ) ]p
 
 lam[] : ∀ {A B} {M : Tm (Γ , A) B} (δ : MSub Δ Γ) 
       → lam M [ δ ]tm ≡ lam (M [ δ ↑m _ ]tm)
 lam[] idₛ = refl
-lam[] (δ ◂w σ) = cong (_[ σ ]wtm) (lam[] δ)
-lam[] (δ ◂s σ) = cong (_[ σ ]stm) (lam[] δ)
+lam[] (δ ◂w σ) = [ cong (_[ σ ]wtm) (lam[] δ) ]p
+lam[] (δ ◂s σ) = [ cong (_[ σ ]stm) (lam[] δ) ]p
 
 {-# REWRITE var[] app[] lam[] #-}
 
@@ -113,6 +113,10 @@ A [ δ ]sem = A ∘ ⟦ δ ⟧ms
 
 -- The lam[] rewrite rule sometimes doesn't apply. I am not sure why - is this
 -- an Agda typechecker bug?
+-- UPDATE: These sorts of issues only seem to crop up when there is at least
+-- rule which fails `--local-confluence-check` so I assume it is to do with
+-- confluence: there are multiple possible reductions, and Agda unfortunately
+-- doesn't take th one we would like it to
 
 agda-is-broke : ∀ {N B} (M : Tm (Γ , (A [ ⟨ < N > ⟩s ])) B) (δ : MSub Δ Γ)
               → lam M [ δ ]tm ≡ lam (M [ δ ↑m _ ]tm)
@@ -137,17 +141,14 @@ _↑↑_ : ∀ (δ : MSub Δ Γ) Γ′ → MSub (Δ ++ Γ′ [ δ ]tys) (Γ ++ �
 
 ⟦[]⟧tys≡ ε δ = refl
 ⟦[]⟧tys≡ (Γ′ , A) δ 
-  = ,semtys≡ _ (⟦[]⟧tys≡ Γ′ δ) ([]sem≡ (erefl ⟦ A ⟧T) (⟦↑↑⟧≡  Γ′ δ))
+  = ,semtys≡ refl δ≡ ([]sem≡ (refl ++s≡ δ≡) refl (erefl ⟦ A ⟧T) (⟦↑↑⟧≡ Γ′ δ))
+  where δ≡ = ⟦[]⟧tys≡ Γ′ δ
 
 ⟦↑↑⟧≡ ε δ = refl
-⟦↑↑⟧≡ (Γ′ , A) δ = ≡[]≡-uip (↑s≡ (refl ++s≡ ⟦[]⟧tys≡ Γ′ δ) (⟦↑↑⟧≡ Γ′ δ))
+⟦↑↑⟧≡ (Γ′ , A) δ = ↑s≡ (refl ++s≡ ⟦[]⟧tys≡ Γ′ δ) (⟦↑↑⟧≡ Γ′ δ)
 
 {-# REWRITE ⟦[]⟧tys≡ #-}
-⟦↑↑⟧≡-rw :  ∀ Γ′ (δ : MSub Δ Γ) 
-         → ⟦ δ ↑↑ Γ′ ⟧ms ≡ ⟦ δ ⟧ms ↑↑sem ⟦ Γ′ ⟧tys
-⟦↑↑⟧≡-rw Γ′ δ with ⟦[]⟧tys≡ Γ′ δ  | ⟦↑↑⟧≡ Γ′ δ 
-... | refl | p = p
-{-# REWRITE ⟦↑↑⟧≡-rw  #-}
+{-# REWRITE ⟦↑↑⟧≡  #-}
 
 variable
   δ : MSub Δ Γ

@@ -1,4 +1,4 @@
-{-# OPTIONS --rewriting --local-confluence-check --prop #-}
+{-# OPTIONS --prop --show-irrelevant --rewriting --local-confluence-check #-}
 
 open import Coincidences.Utils
 open import Coincidences.Syntax
@@ -10,13 +10,10 @@ infixl 100 _[_]stys _[_]wtys
 infixl 100 _[_]semtys
 
 data Wk  : Ctx → Ctx → Set
-data Sub : Ctx → Ctx → Set
+
 ⟦_⟧w : Wk Δ Γ  → SemSub ⟦ Δ ⟧c ⟦ Γ ⟧c
-⟦_⟧s : Sub Δ Γ → SemSub ⟦ Δ ⟧c ⟦ Γ ⟧c
 _[_]w  : Ty Γ → Wk Δ Γ  → Ty Δ
-_[_]s  : Ty Γ → Sub Δ Γ → Ty Δ
-_[_]wβ : ∀ A (δ : Wk Δ Γ)  → ⟦ A [ δ ]w ⟧T ≡ ⟦ A ⟧T ∘ ⟦ δ ⟧w
-_[_]sβ : ∀ A (δ : Sub Δ Γ) → ⟦ A [ δ ]s ⟧T ≡ ⟦ A ⟧T ∘ ⟦ δ ⟧s
+_[_]w≡ : ∀ A (δ : Wk Δ Γ)  → ⟦ A [ δ ]w ⟧T ≡ ⟦ A ⟧T ∘ ⟦ δ ⟧w
 
 -- Prepare for a lot of duplication between weakenings/substitutions. 
 -- I don't know how to get rid of this without Agda's termination checker
@@ -25,57 +22,50 @@ data Wk where
   wk : Wk (Γ , A) Γ
   _↑_ : ∀ (δ : Wk Γ Δ) A → Wk (Γ , A [ δ ]w) (Δ , A)
 
-data Sub where
-  <_> : Tm Γ ⟦ A ⟧T → Sub Γ (Γ , A)
-  _↑_ : ∀ (δ : Sub Γ Δ) A → Sub (Γ , A [ δ ]s) (Δ , A)
+_↑s_ : ∀ {Γ Δ} (δ : SemSub Δ Γ) A → SemSub (Δ ,s (A ∘ δ)) (Γ ,s A)
+_↑s_ δ A (ρ , x) = δ ρ , x
 
-⟦ wk ⟧w            = proj₁
-⟦ δ ↑ A ⟧w (ρ , M) = ⟦ δ ⟧w ρ , subst (λ AB → El (AB ρ)) (A [ δ ]wβ) M
-
-⟦ < M > ⟧s ρ       = ρ , ⟦ M ⟧tm ρ
-⟦ δ ↑ A ⟧s (ρ , M) = ⟦ δ ⟧s ρ , subst (λ AB → El (AB ρ)) (A [ δ ]sβ) M
+⟦ wk ⟧w    = semwk _
+⟦ δ ↑ A ⟧w (ρ , x) 
+  = (⟦ δ ⟧w ↑s ⟦ A ⟧T) (ρ , subst (λ A[] → El (A[] ρ)) ((A [ δ ]w≡)) x) 
 
 _[_]wtm  : ∀ {Γ A} → Tm Γ A → (δ : Wk Δ Γ)  → Tm Δ (A ∘ ⟦ δ ⟧w)
-_[_]stm  : ∀ {Γ A} → Tm Γ A → (δ : Sub Δ Γ) → Tm Δ (A ∘ ⟦ δ ⟧s)
 
 ⊥' [ δ ]w = ⊥'
 (Π' A B) [ δ ]w = Π' (A [ δ ]w) (B [ δ ↑ A ]w)
 El' A [ δ ]w = El' (A [ δ ]wtm) 
 
-⊥' [ δ ]s = ⊥'
-Π' A B [ δ ]s = Π' (A [ δ ]s) (B [ δ ↑ A ]s)
-El' A [ δ ]s = El' (A [ δ ]stm) 
+-- TODO: These are just proofs on semantic substitutions, and so we could
+-- probably turn these into rewrites and simplify a bunch of the below proofs.
+[]-helper : ∀ {Γ Δ A A[]} (B : SemTy (Γ ,s A)) (δ : SemSub Δ Γ) 
+               (p : A[] ≡ A ∘ δ) 
+        → subst (SemTy ∘ (_ ,s_)) (sym p)
+          (B ∘ (δ ↑s _))
+        ≡ (λ (ρ , x) → B (δ ρ , subst (λ AB → El (AB ρ)) p x))
+[]-helper B δ refl = refl
 
--- TODO: Simplify these proofs
-[]w-helper : ∀ {⟦A[δ]⟧} (B : Ty (Γ , A)) (δ : Wk Δ Γ) 
-            (p : ⟦A[δ]⟧ ≡ ⟦ A ⟧T ∘ ⟦ δ ⟧w) 
-        → subst (λ A′ → Σ ⟦ Δ ⟧c (El ∘ A′) → U) (sym p)
-          (λ where (ρ , x) → ⟦ B ⟧T (⟦ δ ⟧w ρ , x))
-        ≡ (λ where (ρ , x) → ⟦ B ⟧T (⟦ δ ⟧w ρ , subst (λ AB → El (AB ρ)) p x))
-[]w-helper B δ refl = refl
+[]v-helper : ∀ {Γ A B} (p : A ≡ B)
+       → subst (SemVal (Γ ,s A)) (cong (_∘ semwk _) p) 
+               semvz
+       ≡ (λ (ρ , x) → subst (λ AB → El (AB ρ)) p x)
+[]v-helper refl = refl
 
-[]s-helper : ∀ {⟦A[δ]⟧} (B : Ty (Γ , A)) (δ : Sub Δ Γ) 
-            (p : ⟦A[δ]⟧ ≡ ⟦ A ⟧T ∘ ⟦ δ ⟧s) 
-        → subst (λ A′ → Σ ⟦ Δ ⟧c (El ∘ A′) → U) (sym p)
-          (λ where (ρ , x) → ⟦ B ⟧T (⟦ δ ⟧s ρ , x))
-        ≡ (λ where (ρ , x) → ⟦ B ⟧T (⟦ δ ⟧s ρ , subst (λ AB → El (AB ρ)) p x))
-[]s-helper B δ refl = refl
+[]tm-helper : ∀ {Γ Δ} (δ : SemSub Δ Γ) {A[]} 
+                {A : SemTy Γ} {B : SemTy (Γ ,s A)} 
+                (M : SemVal _ B) (A≡ : A[] ≡ _) B≡
+            → subst (SemVal Δ) (Πsem≡ refl A≡ B≡)
+              (λ ρ x → (M ∘ (δ ↑s A)) 
+                       (ρ , subst (λ A[] → El (A[] ρ)) A≡ x))
+            ≡ (λ ρ N → M (ρ , N)) ∘ δ
+[]tm-helper _ _ refl refl = refl
 
-⊥' [ δ ]wβ = refl
-Π' A B [ δ ]wβ 
-  = cong (Πsem ⟦ A [ δ ]w ⟧T) (B [ δ ↑ A ]wβ)
-  ∙ sym (dcong₂ Πsem (sym A≡) ([]w-helper B δ A≡))
-  where A≡ = A [ δ ]wβ
-El' A [ δ ]wβ = refl
-
-⊥' [ δ ]sβ = refl
-Π' A B [ δ ]sβ 
-  = cong (Πsem ⟦ A [ δ ]s ⟧T) (B [ δ ↑ A ]sβ)
-  ∙ sym (dcong₂ Πsem (sym A≡) ([]s-helper B δ A≡))
-  where A≡ = A [ δ ]sβ
-El' A [ δ ]sβ = refl
-
-{-# REWRITE _[_]wβ _[_]sβ #-}
+⊥' [ δ ]w≡ = refl
+Π' A B [ δ ]w≡ 
+  = cong (Πsem ⟦ A [ δ ]w ⟧T) B≡ 
+  ∙ sym (dcong₂ Πsem (sym A≡) ([]-helper ⟦ B ⟧T ⟦ δ ⟧w A≡))
+  where A≡ = A [ δ ]w≡
+        B≡ = B [ δ ↑ _ ]w≡
+El' A [ δ ]w≡ = refl
 
 _[_]wtm≡ : ∀ {A} (M : Tm Γ A) (δ : Wk Δ Γ) 
          → ⟦ M [ δ ]wtm ⟧tm ≡ ⟦ M ⟧tm ∘ ⟦ δ ⟧w
@@ -84,60 +74,125 @@ _[_]wv≡ : ∀ {A} (x : Var Γ A) (δ : Wk Δ Γ)
         → ⟦ x [ δ ]wv ⟧v ≡ ⟦ x ⟧v ∘ ⟦ δ ⟧w
 
 x    [ wk    ]wv = vs x
-vz   [ δ ↑ A ]wv = vz
+vz   [ δ ↑ A ]wv = subst (Var _) (cong (_∘ semwk _) (A [ δ ]w≡)) 
+                         (vz {A = A [ δ ]w})
 vs x [ δ ↑ A ]wv = vs (x [ δ ]wv)
 
 x [ wk ]wv≡ = refl
-vz [ δ ↑ A ]wv≡ = refl
+vz [ δ ↑ A ]wv≡ 
+  = sym lift ∙ []v-helper (A [ δ ]w≡)
+  where 
+    lift = subst-application′ (Var _)
+                             {y = vz {A = A [ δ ]w}} 
+                             (λ _ → ⟦_⟧v)
+                             (cong  (_∘ semwk _) (A [ δ ]w≡))
 vs x [ δ ↑ A ]wv≡ = cong (_∘ proj₁) (x [ δ ]wv≡)
 
 var x [ δ ]wtm = var (x [ δ ]wv)
 app {B = B} M N [ δ ]wtm 
   = subst (λ x → (Tm _ (λ ρ → B (⟦ δ ⟧w ρ , x ρ)))) 
           (N [ δ ]wtm≡) (app (M [ δ ]wtm) (N [ δ ]wtm))
-lam M [ δ ]wtm = lam (M [ δ ↑ _ ]wtm)
+lam {A = A} {B = B} M [ δ ]wtm 
+  = subst (Tm _) (Πsem≡ refl A≡ (from-coe≡⁻¹ _ ([]-helper B ⟦ δ ⟧w A≡))) 
+          (lam (M [ δ ↑ _ ]wtm))
+  where
+    A≡ = A [ δ ]w≡
 
 var x [ δ ]wtm≡ = x [ δ ]wv≡
-app {B = B} M N [ δ ]wtm≡ 
-  = sym (subst-application′ _ (λ _ → ⟦_⟧tm) (N [ δ ]wtm≡)) 
+app {A = A} {B = B} M N [ δ ]wtm≡ 
+  = sym lift-subst
   ∙ dcong-app (cong appsem (M [ δ ]wtm≡)) (N [ δ ]wtm≡)
-lam M [ δ ]wtm≡ = cong (λ M′ ρ → M′ ∘ (ρ ,_)) (M [ δ ↑ _ ]wtm≡)
+  where lift-subst = subst-application′ (λ x → Tm _ (λ ρ → B (⟦ δ ⟧w ρ , x ρ)))
+                                        (λ _ → ⟦_⟧tm) (N [ δ ]wtm≡)
+lam {A = A} {B = B} M [ δ ]wtm≡ 
+  = sym lift 
+  ∙ cong (subst (SemVal _) coe-eq) 
+         (cong (λ M′ ρ → M′ ∘ (ρ ,_)) (M [ δ ↑ _ ]wtm≡)) 
+  ∙ []tm-helper ⟦ δ ⟧w ⟦ M ⟧tm A≡ B≡
+  where A≡ = A [ δ ]w≡
+        B≡ = from-coe≡⁻¹ _ ([]-helper B ⟦ δ ⟧w A≡)
+        coe-eq = Πsem≡ refl A≡ B≡
+        lift = subst-application′ (Tm _) (λ _ → ⟦_⟧tm) coe-eq
 
-{-# REWRITE _[_]wv≡ _[_]wtm≡ #-}
+{-# REWRITE _[_]w≡ _[_]wv≡ _[_]wtm≡ #-}
+
+data Sub : Ctx → Ctx → Set
+
+⟦_⟧s : Sub Δ Γ → SemSub ⟦ Δ ⟧c ⟦ Γ ⟧c
+_[_]s  : Ty Γ → Sub Δ Γ → Ty Δ
+_[_]s≡ : ∀ A (δ : Sub Δ Γ) → ⟦ A [ δ ]s ⟧T ≡ ⟦ A ⟧T ∘ ⟦ δ ⟧s
+
+data Sub where
+  <_> : Tm Γ ⟦ A ⟧T → Sub Γ (Γ , A)
+  _↑_ : ∀ (δ : Sub Γ Δ) A → Sub (Γ , A [ δ ]s) (Δ , A)
+
+⟦ < M > ⟧s = sem< ⟦ M ⟧tm >
+⟦ δ ↑ A ⟧s (ρ , x) 
+  = (⟦ δ ⟧s ↑s ⟦ A ⟧T) (ρ , subst (λ A[] → El (A[] ρ)) ((A [ δ ]s≡)) x) 
+
+_[_]stm  : ∀ {Γ A} → Tm Γ A → (δ : Sub Δ Γ) → Tm Δ (A ∘ ⟦ δ ⟧s)
+
+⊥' [ δ ]s = ⊥'
+Π' A B [ δ ]s = Π' (A [ δ ]s) (B [ δ ↑ A ]s)
+El' A [ δ ]s = El' (A [ δ ]stm) 
+
+⊥' [ δ ]s≡ = refl
+Π' A B [ δ ]s≡ 
+  = cong (Πsem ⟦ A [ δ ]s ⟧T) B≡ 
+  ∙ sym (dcong₂ Πsem (sym A≡) ([]-helper ⟦ B ⟧T ⟦ δ ⟧s A≡))
+  where A≡ = A [ δ ]s≡
+        B≡ = B [ δ ↑ _ ]s≡
+El' A [ δ ]s≡ = refl
 
 _[_]stm≡ : ∀ {A} (M : Tm Γ A) (δ : Sub Δ Γ) 
          → ⟦ M [ δ ]stm ⟧tm ≡ ⟦ M ⟧tm ∘ ⟦ δ ⟧s
-
 _[_]sv  : ∀ {A} → Var Γ A → (δ : Sub Δ Γ) → Tm Δ (A ∘ ⟦ δ ⟧s)
 _[_]sv≡ : ∀ {A} (x : Var Γ A) (δ : Sub Δ Γ) 
        → ⟦ x [ δ ]sv ⟧tm ≡ ⟦ x ⟧v ∘ ⟦ δ ⟧s
+
+vz   [ < M > ]sv = M
+vs x [ < M > ]sv = var x 
+vz   [ δ ↑ A ]sv = var (subst (Var _) (cong (_∘ semwk _) (A [ δ ]s≡)) vz)
+vs x [ δ ↑ A ]sv = x [ δ ]sv [ wk ]wtm
+
+vz [ < M > ]sv≡ = refl
+vs x [ < M > ]sv≡ = refl
+vz [ δ ↑ A ]sv≡ = sym lift ∙ []v-helper (A [ δ ]s≡)
+  where
+    lift = subst-application′ (Var _)
+                             {y = vz {A = A [ δ ]s}} 
+                             (λ _ → ⟦_⟧v)
+                             (cong  (_∘ semwk _) (A [ δ ]s≡))
+vs x [ δ ↑ A ]sv≡ = cong (_∘ semwk _) (x [ δ ]sv≡)
 
 var x [ δ ]stm = x [ δ ]sv
 app {B = B} M N [ δ ]stm 
   = subst (λ x → (Tm _ (λ ρ → B (⟦ δ ⟧s ρ , x ρ)))) 
           (N [ δ ]stm≡) (app (M [ δ ]stm) (N [ δ ]stm))
-lam M [ δ ]stm = lam (M [ δ ↑ _ ]stm)
+lam {A = A} {B = B} M [ δ ]stm 
+  = subst (Tm _) (Πsem≡ refl A≡ (from-coe≡⁻¹ _ ([]-helper B ⟦ δ ⟧s A≡))) 
+          (lam (M [ δ ↑ _ ]stm))
+  where
+    A≡ = A [ δ ]s≡
 
 var x [ δ ]stm≡ = x [ δ ]sv≡
-app {B = B} M N [ δ ]stm≡ 
-  = sym (subst-application′ _ (λ _ → ⟦_⟧tm) (N [ δ ]stm≡)) 
+app {A = A} {B = B} M N [ δ ]stm≡ 
+  = sym lift-subst
   ∙ dcong-app (cong appsem (M [ δ ]stm≡)) (N [ δ ]stm≡)
-lam M [ δ ]stm≡ = cong (λ M′ ρ → M′ ∘ (ρ ,_)) (M [ δ ↑ _ ]stm≡)
+  where lift-subst = subst-application′ (λ x → Tm _ (λ ρ → B (⟦ δ ⟧s ρ , x ρ)))
+                                        (λ _ → ⟦_⟧tm) (N [ δ ]stm≡)
+lam {A = A} {B = B} M [ δ ]stm≡ 
+  = sym lift 
+  ∙ cong (subst (SemVal _) coe-eq) 
+         (cong (λ M′ ρ → M′ ∘ (ρ ,_)) (M [ δ ↑ _ ]stm≡)) 
+  ∙ []tm-helper ⟦ δ ⟧s ⟦ M ⟧tm A≡ B≡
+  where A≡ = A [ δ ]s≡
+        B≡ = from-coe≡⁻¹ _ ([]-helper B ⟦ δ ⟧s A≡)
+        coe-eq = Πsem≡ refl A≡ B≡
+        lift = subst-application′ (Tm _) (λ _ → ⟦_⟧tm) coe-eq
 
-vz   [ < M > ]sv = M
-vs x [ < M > ]sv = var x 
-vz   [ δ ↑ A ]sv = var vz
-vs x [ δ ↑ A ]sv = x [ δ ]sv [ wk ]wtm
 
-vz [ < M > ]sv≡ = refl
-vs x [ < M > ]sv≡ = refl
-vz [ δ ↑ A ]sv≡ = refl
-vs x [ δ ↑ A ]sv≡ = cong (_∘ proj₁) (x [ δ ]sv≡)
- 
-{-# REWRITE _[_]sv≡ _[_]stm≡ #-}
-
-_↑s_ : ∀ {Γ Δ} (δ : SemSub Δ Γ) A → SemSub (Δ ,s (A ∘ δ)) (Γ ,s A)
-(δ ↑s A) (ρ , x) = δ ρ , x
+{-# REWRITE _[_]s≡  _[_]sv≡ _[_]stm≡ #-}
 
 data Tys : Ctx → Set
 _++_ : ∀ Γ → Tys Γ → Ctx
@@ -285,3 +340,4 @@ open Congruences public
   where Γ≡′ = ⟦++⟧tys≡ Γ′
   
 {-# REWRITE ⟦++⟧tys≡ #-}
+           

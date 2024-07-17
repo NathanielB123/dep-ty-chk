@@ -46,4 +46,3 @@ module Coincidences.SubNoConf where
 
 {-# REWRITE ⟦[]⟧wtys≡ ⟦[]⟧stys≡ #-}
 {-# REWRITE ⟦↑↑w⟧≡ ⟦↑↑s⟧≡ #-}
-

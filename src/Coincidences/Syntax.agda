@@ -1,4 +1,5 @@
-{-# OPTIONS --rewriting --local-confluence-check --prop #-}
+{-# OPTIONS --prop --show-irrelevant --rewriting --local-confluence-check 
+            --no-require-unique-meta-solutions #-}
 
 open import Coincidences.Utils
 
@@ -71,6 +72,9 @@ SemSub Γ Δ = Γ → Δ
 
 semwk :  ∀ {Γ} A → SemSub (Γ ,s A) Γ
 semwk _ = proj₁
+
+semvz : ∀ {Γ A} → SemVal (Γ ,s A) (A ∘ semwk A)
+semvz = proj₂
 
 sem<_> : ∀ {Γ A} (M : SemVal Γ A) → SemSub Γ (Γ ,s A)
 sem< M > Γ = Γ , M Γ
@@ -195,4 +199,3 @@ private module Congruences where
   vs≡ refl refl refl refl = refl
 
 open Congruences public
-  

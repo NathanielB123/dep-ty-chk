@@ -1,4 +1,5 @@
-{-# OPTIONS --rewriting --local-confluence-check --prop #-}
+{-# OPTIONS --rewriting --local-confluence-check --prop  
+            --no-require-unique-meta-solutions #-}
 
 module Coincidences.Utils where
 
@@ -11,7 +12,6 @@ open import Data.Empty using (⊥; ⊥-elim) public
 infix 3 _≡[_]≡_
 infix 4 _≡_
 infixr 9 _∙_
--- infixr 9 _∙P_
 
 data _≡_ {a} {A : Set a} (x : A) : A → Prop a where
   refl : x ≡ x
@@ -47,10 +47,13 @@ subst-prop P refl m = m
 -- Agda's prop does not allow eliminating from Prop into Set, however, I believe
 -- J for strict-prop-equality is reasonable along as we have K 
 postulate
-  subst  : ∀ {a b} {A : Set a} {x y} (P : A → Set b) → x ≡ y → P x → P y
-  substβ : ∀ {a b} {A : Set a} {x} (P : A → Set b) (m : P x) 
-         → subst P refl m ≡ m
-{-# REWRITE substβ #-} 
+  coe  : ∀ {ℓ} {A B : Set ℓ} → A ≡ B → A → B
+  coeβ : ∀ {ℓ} {A : Set ℓ} (x : A) 
+         → coe refl x ≡ x
+{-# REWRITE coeβ #-} 
+
+subst : ∀ {a b} {A : Set a} {x y} (P : A → Set b) → x ≡ y → P x → P y
+subst P p = coe (cong P p)
 
 dcong : ∀ {a b} {A : Set a} {B : A → Set b} (f : (x : A) → B x) {x y}
       → (p : x ≡ y) → subst B p (f x) ≡ f y
@@ -71,9 +74,6 @@ subst-application′ _ _ refl = refl
 
 --------------------------------------------------------------------------------
 
-coe : ∀ {ℓ} {A B : Set ℓ} → A ≡ B → A → B
-coe = subst id
-
 coe-prop : ∀ {ℓ} {A B : Prop ℓ} → A ≡ B → A → B
 coe-prop = subst-prop (λ x → x)
 
@@ -81,22 +81,55 @@ dcong-app : ∀ {a b} {A : Set a} {B : A → Set b} {f g : (x : A) → B x} →
            f ≡ g → ∀ {x y} → (p : x ≡ y) → subst B p (f x) ≡ g y
 dcong-app refl refl = refl
 
-postulate 
-  _≡[_]≡_ : ∀ {a} {A B : Set a} → A → A ≡ B → B → Prop a
-  ≡[]≡β : ∀ {a} {A : Set a} {x y : A}
-        → (x ≡[ refl ]≡ y) ≡ (x ≡ y)
-{-# REWRITE ≡[]≡β #-} 
+-- Some fancy tricks to define a definitionally injective dependent identity 
+-- type which also reduces properly. This should be sound (though implies K),
+-- because _≡_ is a subsingleton.
+
+-- Equivalent to
+
+-- > postulate 
+-- >   _≡[_]≡′_ : ∀ {a} {A B : Set a} → A → A ≡ B → B → Prop a
+-- >   ≡[]≡β : ∀ {a} {A : Set a} {x y : A}
+-- >         → (x ≡[ refl ]≡′ y) ≡ (x ≡ y)
+-- > {-# REWRITE ≡[]≡β #-} 
+
+private
+  data Id {a} {A : Set a} (x : A) : A → Set a where
+    refl : Id x x
+
+  postulate
+    to-id : ∀ {a} {A : Set a} {x y : A} → x ≡ y → Id x y
+    to-idβ : ∀ {a} {A : Set a} {x : A} → to-id (erefl x) ≡ refl
+
+  {-# REWRITE to-idβ #-}  
+
+_≡[_]≡_ : ∀ {a} {A B : Set a} → A → A ≡ B → B → Prop a
+_≡[_]≡_ x p y with refl ← to-id p = x ≡ y
+
+symm : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → x ≡[ p ]≡ y → y ≡[ sym p ]≡ x
+symm refl refl = refl
 
 trans : ∀ {a} {A B C : Set a} (p : A ≡ B) (q : B ≡ C) {x y z} 
      → x ≡[ p ]≡ y → y ≡[ q ]≡ z → x ≡[ p ∙ q ]≡ z
 trans refl refl refl refl = refl
 
+-- icong : ∀ {a b} {A : Set a} {B : Set b} (f : A → B) {x y} 
+--       → x ≡[ p ]≡ y → f x ≡ f y
+
 to-coe≡ : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → x ≡[ p ]≡ y → coe p x ≡ y
 to-coe≡ refl eq = eq
- 
--- Sometimes, Agda will refuse to evaluate some Prop far enough (especially in
+
+from-coe≡ : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → coe p x ≡ y → x ≡[ p ]≡ y
+from-coe≡ refl eq = eq
+
+from-coe≡⁻¹ : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → coe (sym p) y ≡ x 
+            → x ≡[ p ]≡ y
+from-coe≡⁻¹ refl = sym
+
+-- Sometimes, Agda will refuse to evaluate some 'Prop' far enough (especially in
 -- the presence of rewrite rules) and spurious type errors get thrown. 
 -- It turns out that applying the identity function is usually enough to 
 -- convince Agda that everything is ok.
 [_]p : ∀ {ℓ} {A : Prop ℓ} → A → A
 [ x ]p = x
+ 
