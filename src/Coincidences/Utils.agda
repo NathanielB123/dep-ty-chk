@@ -5,7 +5,7 @@ module Coincidences.Utils where
 
 open import Function using (_∘_; case_of_; id)
   public
-open import Data.Product using (Σ; _,_; proj₁; proj₂) public
+open import Data.Product using (Σ; _,_; proj₁; proj₂; _×_) public
 open import Data.Unit using (⊤; tt) public
 open import Data.Empty using (⊥; ⊥-elim) public
 
@@ -93,15 +93,17 @@ dcong-app refl refl = refl
 -- >         → (x ≡[ refl ]≡′ y) ≡ (x ≡ y)
 -- > {-# REWRITE ≡[]≡β #-} 
 
-private
-  data Id {a} {A : Set a} (x : A) : A → Set a where
-    refl : Id x x
+data Id {a} {A : Set a} (x : A) : A → Set a where
+  refl : Id x x
 
-  postulate
-    to-id : ∀ {a} {A : Set a} {x y : A} → x ≡ y → Id x y
-    to-idβ : ∀ {a} {A : Set a} {x : A} → to-id (erefl x) ≡ refl
+private postulate
+  to-id : ∀ {a} {A : Set a} {x y : A} → x ≡ y → Id x y
+  to-idβ : ∀ {a} {A : Set a} {x : A} → to-id (erefl x) ≡ refl
 
   {-# REWRITE to-idβ #-}  
+
+to-≡ : ∀ {a} {A : Set a} {x y : A} → Id x y → x ≡ y
+to-≡ refl = refl
 
 _≡[_]≡_ : ∀ {a} {A B : Set a} → A → A ≡ B → B → Prop a
 _≡[_]≡_ x p y with refl ← to-id p = x ≡ y
@@ -112,9 +114,6 @@ symm refl refl = refl
 trans : ∀ {a} {A B C : Set a} (p : A ≡ B) (q : B ≡ C) {x y z} 
      → x ≡[ p ]≡ y → y ≡[ q ]≡ z → x ≡[ p ∙ q ]≡ z
 trans refl refl refl refl = refl
-
--- icong : ∀ {a b} {A : Set a} {B : Set b} (f : A → B) {x y} 
---       → x ≡[ p ]≡ y → f x ≡ f y
 
 to-coe≡ : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → x ≡[ p ]≡ y → coe p x ≡ y
 to-coe≡ refl eq = eq
@@ -132,4 +131,9 @@ from-coe≡⁻¹ refl = sym
 -- convince Agda that everything is ok.
 [_]p : ∀ {ℓ} {A : Prop ℓ} → A → A
 [ x ]p = x
- 
+
+record Box (A : Prop) : Set where
+  constructor box
+  field
+    unbox : A
+open Box public

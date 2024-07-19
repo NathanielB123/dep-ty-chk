@@ -5,6 +5,12 @@
 - **Sound:** The main point of interest of this development. I aim for the typechecker aims to produce programs in an intrinsically-typed syntax (so accepted programs are verified to be typeable).
 - **Dependent:** The object type theory contains pi-types and large elimination.
 
+## Setup Info
+
+Developed using Agda 2.7.0 and standard library version 2.0
+
+Agda >=2.7.0 is a hard requirement for [Coincidences/](./src/Coincidences) to typecheck as a few important bugs with rewrite rules were fixed in that release.
+
 ## Current Progress
 
 ### Challenges

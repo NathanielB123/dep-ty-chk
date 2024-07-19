@@ -115,7 +115,7 @@ wk<>-id-↑↑-tm : ∀ {A} Γ′ {N : Tm Γ ⟦ A ⟧T} {B} (M : Tm _ B)
                   (Γ≡ : Γ′ [ wk {A = A} ]wtys [ < N > ]stys ≡ Γ′)
               → M [ wk {A = A} ↑↑w Γ′ ]wtm [ < N > ↑↑s Γ′ [ wk ]wtys ]stm
              ≡[ Tm≡ (refl ++≡ Γ≡) 
-                    (wk<>-id-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡ ]p)
+                    (wk<>-id-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡))
              ]≡ M
 
 wk-comm-↑↑w-tm : ∀ {δ : Wk Δ Γ} {A} Γ′ {B} (M : Tm _ B) 
@@ -123,7 +123,7 @@ wk-comm-↑↑w-tm : ∀ {δ : Wk Δ Γ} {A} Γ′ {B} (M : Tm _ B)
                       ≡ Γ′ [ δ ]wtys [ wk ]wtys)
                → M [ wk {A = A} ↑↑w Γ′ ]wtm [ (δ ↑ A) ↑↑w Γ′ [ wk ]wtys ]wtm
               ≡[ Tm≡ (refl ++≡ Γ≡) 
-                     (wk-comm-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡ ]p)
+                     (wk-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡))
               ]≡ M [ δ ↑↑w Γ′ ]wtm [ wk ↑↑w Γ′ [ δ ]wtys ]wtm
 
 wk-comm-↑↑s-tm : ∀ {δ : Sub Δ Γ} {A} Γ′ {B} (M : Tm _ B) 
@@ -131,7 +131,7 @@ wk-comm-↑↑s-tm : ∀ {δ : Sub Δ Γ} {A} Γ′ {B} (M : Tm _ B)
                       ≡ Γ′ [ δ ]stys [ wk ]wtys)
                → M [ wk {A = A} ↑↑w Γ′ ]wtm [ (δ ↑ A) ↑↑s Γ′ [ wk ]wtys ]stm
               ≡[ Tm≡ (refl ++≡ Γ≡) 
-                     (wk-comm-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡ ]p)
+                     (wk-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡))
               ]≡ M [ δ ↑↑s Γ′ ]stm [ wk ↑↑w Γ′ [ δ ]stys ]wtm
 
 <>-comm-↑↑w-tm : ∀ {δ : Wk Δ Γ} {A} Γ′ {N : Tm Γ ⟦ A ⟧T} {B} (M : Tm _ B) 
@@ -139,7 +139,7 @@ wk-comm-↑↑s-tm : ∀ {δ : Sub Δ Γ} {A} Γ′ {B} (M : Tm _ B)
                       ≡ Γ′ [ δ ↑ A ]wtys [ < N [ δ ]wtm > ]stys)
                → M [ < N > ↑↑s Γ′ ]stm [ δ ↑↑w Γ′ [ < N > ]stys ]wtm
               ≡[ Tm≡ (refl ++≡ Γ≡) 
-                     (<>-comm-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡ ]p)
+                     (<>-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡))
               ]≡ M [ (δ ↑ A) ↑↑w Γ′ ]wtm 
                    [ < N [ δ ]wtm > ↑↑s Γ′ [ δ ↑ A ]wtys ]stm
 
@@ -148,7 +148,7 @@ wk-comm-↑↑s-tm : ∀ {δ : Sub Δ Γ} {A} Γ′ {B} (M : Tm _ B)
                       ≡ Γ′ [ δ ↑ A ]stys [ < N [ δ ]stm > ]stys)
                → M [ < N > ↑↑s Γ′ ]stm [ δ ↑↑s Γ′ [ < N > ]stys ]stm
               ≡[ Tm≡ (refl ++≡ Γ≡) 
-                     (<>-comm-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡ ]p)
+                     (<>-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡))
               ]≡ M [ (δ ↑ A) ↑↑s Γ′ ]stm 
                    [ < N [ δ ]stm > ↑↑s Γ′ [ δ ↑ A ]stys ]stm
 
@@ -157,7 +157,7 @@ wk<>-id-↑↑-v : ∀ {A} Γ′ {N : Tm Γ ⟦ A ⟧T} {B} (x : Var _ B)
                 → (Γ≡ : Γ′ [ wk {A = A} ]wtys [ < N > ]stys ≡ Γ′)
                 → x [ wk {A = A} ↑↑w Γ′ ]wv [ < N > ↑↑s Γ′ [ wk ]wtys ]sv 
                ≡[ Tm≡ (refl ++≡ Γ≡) 
-                      (wk<>-id-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡ ]p)
+                      (wk<>-id-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡))
                ]≡ var x
 
 wk-comm-↑↑w-v : ∀ {δ : Wk Δ Γ} {A} Γ′ {B} (x : Var _ B) 
@@ -165,7 +165,7 @@ wk-comm-↑↑w-v : ∀ {δ : Wk Δ Γ} {A} Γ′ {B} (x : Var _ B)
                       ≡ Γ′ [ δ ]wtys [ wk ]wtys)
                → x [ wk {A = A} ↑↑w Γ′ ]wv [ (δ ↑ A) ↑↑w Γ′ [ wk ]wtys ]wv
               ≡[ Var≡ (refl ++≡ Γ≡) 
-                      (wk-comm-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡ ]p)
+                      (wk-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡))
               ]≡ x [ δ ↑↑w Γ′ ]wv [ wk ↑↑w Γ′ [ δ ]wtys ]wv
 
 wk-comm-↑↑s-v : ∀ {δ : Sub Δ Γ} {A} Γ′ {B} (x : Var _ B) 
@@ -173,7 +173,7 @@ wk-comm-↑↑s-v : ∀ {δ : Sub Δ Γ} {A} Γ′ {B} (x : Var _ B)
                       ≡ Γ′ [ δ ]stys [ wk ]wtys)
                → x [ wk {A = A} ↑↑w Γ′ ]wv [ (δ ↑ A) ↑↑s Γ′ [ wk ]wtys ]sv
               ≡[ Tm≡ (refl ++≡ Γ≡) 
-                     (wk-comm-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡ ]p)
+                     (wk-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡))
               ]≡ x [ δ ↑↑s Γ′ ]sv [ wk ↑↑w Γ′ [ δ ]stys ]wtm
 
 <>-comm-↑↑w-v : ∀ {δ : Wk Δ Γ} {A} Γ′ {N B} (x : Var _ B) 
@@ -181,7 +181,7 @@ wk-comm-↑↑s-v : ∀ {δ : Sub Δ Γ} {A} Γ′ {B} (x : Var _ B)
                     ≡ Γ′ [ δ ↑ A ]wtys [ < N [ δ ]wtm > ]stys)
               → x [ < N > ↑↑s Γ′ ]sv [ δ ↑↑w Γ′ [ < N > ]stys ]wtm 
               ≡[ Tm≡ (refl ++≡ Γ≡) 
-                     (<>-comm-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡ ]p)
+                     (<>-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡))
               ]≡ x [ (δ ↑ A) ↑↑w Γ′ ]wv
                    [ < N [ δ ]wtm > ↑↑s Γ′ [ δ ↑ A ]wtys ]sv
 
@@ -190,7 +190,7 @@ wk-comm-↑↑s-v : ∀ {δ : Sub Δ Γ} {A} Γ′ {B} (x : Var _ B)
                     ≡ Γ′ [ δ ↑ A ]stys [ < N [ δ ]stm > ]stys)
               → x [ < N > ↑↑s Γ′ ]sv [ δ ↑↑s Γ′ [ < N > ]stys ]stm 
               ≡[ Tm≡ (refl ++≡ Γ≡) 
-                     (<>-comm-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡ ]p)
+                     (<>-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡))
               ]≡ x [ (δ ↑ A) ↑↑s Γ′ ]sv
                    [ < N [ δ ]stm > ↑↑s Γ′ [ δ ↑ A ]stys ]stm
 
@@ -227,8 +227,8 @@ wk-comm-↑↑s Γ′ (El' M) Γ≡ = El≡ (refl ++≡ Γ≡) (wk-comm-↑↑s-
 wk<>-id-↑↑-tm Γ′ (var x) Γ≡ = wk<>-id-↑↑-v Γ′ x Γ≡
 wk<>-id-↑↑-tm Γ′ (app {A = A} {B = B} M N) Γ≡ 
   = app≡ (refl ++≡ Γ≡) A≡ B≡ M≡ N≡
-  where A≡ = wk<>-id-↑↑-sem _ A [ ⟦⟧tys≡ refl Γ≡ ]p
-        B≡ = wk<>-id-↑↑-sem _ B (,semtys≡ refl [ ⟦⟧tys≡ refl Γ≡ ]p A≡)
+  where A≡ = wk<>-id-↑↑-sem _ A (⟦⟧tys≡ refl Γ≡)
+        B≡ = wk<>-id-↑↑-sem _ B (,semtys≡ refl (⟦⟧tys≡ refl Γ≡) A≡)
         M≡ = wk<>-id-↑↑-tm Γ′ M Γ≡
         N≡ = wk<>-id-↑↑-tm Γ′ N Γ≡
 wk<>-id-↑↑-tm Γ′ (lam {A = A} {B = B} M) Γ≡ 
@@ -236,16 +236,16 @@ wk<>-id-↑↑-tm Γ′ (lam {A = A} {B = B} M) Γ≡
   where
     A≡ = wk<>-id-↑↑ Γ′ A Γ≡ 
     B≡ = wk<>-id-↑↑-sem (⟦ Γ′ , A ⟧tys) B 
-         (,semtys≡ refl [ ⟦⟧tys≡ refl Γ≡ ]p (⟦⟧T≡ (refl ++≡ Γ≡) A≡))
+         (,semtys≡ refl (⟦⟧tys≡ refl Γ≡) (⟦⟧T≡ (refl ++≡ Γ≡) A≡))
     M≡ = wk<>-id-↑↑-tm (Γ′ , A) M (,tys≡ refl Γ≡ A≡)
 
 wk-comm-↑↑w-tm Γ′ (var {A = A} x) Γ≡ 
   = var≡ (refl ++≡ Γ≡) A≡ (wk-comm-↑↑w-v Γ′ x Γ≡)
-  where A≡ = wk-comm-↑↑-sem _ A [ ⟦⟧tys≡ refl Γ≡ ]p
+  where A≡ = wk-comm-↑↑-sem _ A (⟦⟧tys≡ refl Γ≡)
 wk-comm-↑↑w-tm Γ′ (app {A = A} {B = B} M N) Γ≡ 
   = app≡ (refl ++≡ Γ≡) A≡ B≡ M≡ N≡
-  where A≡ = wk-comm-↑↑-sem _ A [ ⟦⟧tys≡ refl Γ≡ ]p
-        B≡ = wk-comm-↑↑-sem _ B (,semtys≡ refl [ ⟦⟧tys≡ refl Γ≡ ]p A≡)
+  where A≡ = wk-comm-↑↑-sem _ A (⟦⟧tys≡ refl Γ≡)
+        B≡ = wk-comm-↑↑-sem _ B (,semtys≡ refl (⟦⟧tys≡ refl Γ≡) A≡)
         M≡ = wk-comm-↑↑w-tm Γ′ M Γ≡
         N≡ = wk-comm-↑↑w-tm Γ′ N Γ≡
 wk-comm-↑↑w-tm Γ′ (lam {A = A} {B = B} M) Γ≡ 
@@ -253,15 +253,15 @@ wk-comm-↑↑w-tm Γ′ (lam {A = A} {B = B} M) Γ≡
   where
     A≡ = wk-comm-↑↑w Γ′ A Γ≡ 
     B≡ = wk-comm-↑↑-sem (⟦ Γ′ , A ⟧tys) B 
-         (,semtys≡ refl [ ⟦⟧tys≡ refl Γ≡ ]p (⟦⟧T≡ (refl ++≡ Γ≡) A≡))
+         (,semtys≡ refl (⟦⟧tys≡ refl Γ≡) (⟦⟧T≡ (refl ++≡ Γ≡) A≡))
     M≡ = wk-comm-↑↑w-tm (Γ′ , A) M (,tys≡ refl Γ≡ A≡)
 
 wk-comm-↑↑s-tm Γ′ (var {A = A} x) Γ≡ = wk-comm-↑↑s-v Γ′ x Γ≡
-  where A≡ = wk-comm-↑↑-sem _ A [ ⟦⟧tys≡ refl Γ≡ ]p
+  where A≡ = wk-comm-↑↑-sem _ A (⟦⟧tys≡ refl Γ≡)
 wk-comm-↑↑s-tm Γ′ (app {A = A} {B = B} M N) Γ≡ 
   = app≡ (refl ++≡ Γ≡) A≡ B≡ M≡ N≡
-  where A≡ = wk-comm-↑↑-sem _ A [ ⟦⟧tys≡ refl Γ≡ ]p
-        B≡ = wk-comm-↑↑-sem _ B (,semtys≡ refl [ ⟦⟧tys≡ refl Γ≡ ]p A≡)
+  where A≡ = wk-comm-↑↑-sem _ A (⟦⟧tys≡ refl Γ≡)
+        B≡ = wk-comm-↑↑-sem _ B (,semtys≡ refl (⟦⟧tys≡ refl Γ≡) A≡)
         M≡ = wk-comm-↑↑s-tm Γ′ M Γ≡
         N≡ = wk-comm-↑↑s-tm Γ′ N Γ≡
 wk-comm-↑↑s-tm Γ′ (lam {A = A} {B = B} M) Γ≡ 
@@ -269,15 +269,15 @@ wk-comm-↑↑s-tm Γ′ (lam {A = A} {B = B} M) Γ≡
   where
     A≡ = wk-comm-↑↑s Γ′ A Γ≡ 
     B≡ = wk-comm-↑↑-sem (⟦ Γ′ , A ⟧tys) B 
-         (,semtys≡ refl [ ⟦⟧tys≡ refl Γ≡ ]p (⟦⟧T≡ (refl ++≡ Γ≡) A≡))
+         (,semtys≡ refl (⟦⟧tys≡ refl Γ≡) (⟦⟧T≡ (refl ++≡ Γ≡) A≡))
     M≡ = wk-comm-↑↑s-tm (Γ′ , A) M (,tys≡ refl Γ≡ A≡)
 
 <>-comm-↑↑w-tm Γ′ (var {A = A} x) Γ≡ = <>-comm-↑↑w-v Γ′ x Γ≡
-  where A≡ = <>-comm-↑↑-sem _ A [ ⟦⟧tys≡ refl Γ≡ ]p
+  where A≡ = <>-comm-↑↑-sem _ A (⟦⟧tys≡ refl Γ≡)
 <>-comm-↑↑w-tm Γ′ (app {A = A} {B = B} M N) Γ≡ 
   = app≡ (refl ++≡ Γ≡) A≡ B≡ M≡ N≡
-  where A≡ = <>-comm-↑↑-sem _ A [ ⟦⟧tys≡ refl Γ≡ ]p
-        B≡ = <>-comm-↑↑-sem _ B (,semtys≡ refl [ ⟦⟧tys≡ refl Γ≡ ]p A≡)
+  where A≡ = <>-comm-↑↑-sem _ A (⟦⟧tys≡ refl Γ≡)
+        B≡ = <>-comm-↑↑-sem _ B (,semtys≡ refl (⟦⟧tys≡ refl Γ≡) A≡)
         M≡ = <>-comm-↑↑w-tm Γ′ M Γ≡
         N≡ = <>-comm-↑↑w-tm Γ′ N Γ≡
 <>-comm-↑↑w-tm Γ′ (lam {A = A} {B = B} M) Γ≡ 
@@ -285,15 +285,15 @@ wk-comm-↑↑s-tm Γ′ (lam {A = A} {B = B} M) Γ≡
   where
     A≡ = <>-comm-↑↑w Γ′ A Γ≡ 
     B≡ = <>-comm-↑↑-sem (⟦ Γ′ , A ⟧tys) B 
-         (,semtys≡ refl [ ⟦⟧tys≡ refl Γ≡ ]p (⟦⟧T≡ (refl ++≡ Γ≡) A≡))
+         (,semtys≡ refl (⟦⟧tys≡ refl Γ≡) (⟦⟧T≡ (refl ++≡ Γ≡) A≡))
     M≡ = <>-comm-↑↑w-tm (Γ′ , A) M (,tys≡ refl Γ≡ A≡)
 
 <>-comm-↑↑s-tm Γ′ (var {A = A} x) Γ≡ = <>-comm-↑↑s-v Γ′ x Γ≡
-  where A≡ = <>-comm-↑↑-sem _ A [ ⟦⟧tys≡ refl Γ≡ ]p
+  where A≡ = <>-comm-↑↑-sem _ A (⟦⟧tys≡ refl Γ≡)
 <>-comm-↑↑s-tm Γ′ (app {A = A} {B = B} M N) Γ≡ 
   = app≡ (refl ++≡ Γ≡) A≡ B≡ M≡ N≡
-  where A≡ = <>-comm-↑↑-sem _ A [ ⟦⟧tys≡ refl Γ≡ ]p
-        B≡ = <>-comm-↑↑-sem _ B (,semtys≡ refl [ ⟦⟧tys≡ refl Γ≡ ]p A≡)
+  where A≡ = <>-comm-↑↑-sem _ A (⟦⟧tys≡ refl Γ≡)
+        B≡ = <>-comm-↑↑-sem _ B (,semtys≡ refl (⟦⟧tys≡ refl Γ≡) A≡)
         M≡ = <>-comm-↑↑s-tm Γ′ M Γ≡
         N≡ = <>-comm-↑↑s-tm Γ′ N Γ≡
 <>-comm-↑↑s-tm Γ′ (lam {A = A} {B = B} M) Γ≡ 
@@ -301,7 +301,7 @@ wk-comm-↑↑s-tm Γ′ (lam {A = A} {B = B} M) Γ≡
   where
     A≡ = <>-comm-↑↑s Γ′ A Γ≡ 
     B≡ = <>-comm-↑↑-sem (⟦ Γ′ , A ⟧tys) B 
-         (,semtys≡ refl [ ⟦⟧tys≡ refl Γ≡ ]p (⟦⟧T≡ (refl ++≡ Γ≡) A≡))
+         (,semtys≡ refl (⟦⟧tys≡ refl Γ≡) (⟦⟧T≡ (refl ++≡ Γ≡) A≡))
     M≡ = <>-comm-↑↑s-tm (Γ′ , A) M (,tys≡ refl Γ≡ A≡)
 
 -- -- -- Lemmas over variable substitutions - the actually interesting bit!
@@ -318,7 +318,7 @@ wk<>-id-↑↑-v (Γ′ , A) (vs {B = B} x) Γ≡
            (wk<>-id-↑↑-v Γ′ x Γ≡′)
   where Γ≡′ = ,proj≡₁ Γ≡
         A≡ = wk<>-id-↑↑ Γ′ A Γ≡′
-        B≡ = wk<>-id-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡′ ]p
+        B≡ = wk<>-id-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡′)
   
 wk-comm-↑↑w-v ε x refl = refl
 wk-comm-↑↑w-v (Γ′ , A) vz Γ≡ = vz≡ (refl ++≡ Γ≡′) A≡
@@ -328,7 +328,7 @@ wk-comm-↑↑w-v (Γ′ , A) (vs {B = B} x) Γ≡
   = vs≡ (refl ++≡  Γ≡′) A≡ B≡ (wk-comm-↑↑w-v Γ′ x Γ≡′)
   where Γ≡′ = ,proj≡₁ Γ≡
         A≡ = wk-comm-↑↑w Γ′ A Γ≡′
-        B≡ = wk-comm-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡′ ]p
+        B≡ = wk-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡′)
 
 wk-comm-↑↑s-v ε x refl = refl
 wk-comm-↑↑s-v (Γ′ , A) vz Γ≡
@@ -341,7 +341,7 @@ wk-comm-↑↑s-v (Γ′ , A) (vs {B = B} x) Γ≡
   = trans xi≡ refl x≡ (sym swap)
   where Γ≡′ = ,proj≡₁ Γ≡
         A≡ = wk-comm-↑↑s Γ′ A Γ≡′
-        B≡ = wk-comm-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡′ ]p
+        B≡ = wk-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡′)
         x≡ = []wtm≡ (refl ++≡ Γ≡′) (refl ++≡ Γ≡) B≡ (wk≡ (refl ++≡ Γ≡′) A≡) 
                     (wk-comm-↑↑s-v Γ′ x Γ≡′)
         swap = wk-comm-↑↑w-tm ε (x [ _ ↑↑s Γ′ ]sv) refl
@@ -361,7 +361,7 @@ wk-comm-↑↑s-v (Γ′ , A) (vs {B = B} x) Γ≡
   = trans refl xi≡ swap x≡
   where Γ≡′ = ,proj≡₁ Γ≡
         A≡  = <>-comm-↑↑w Γ′ A Γ≡′
-        B≡ = <>-comm-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡′ ]p
+        B≡ = <>-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡′)
         swap = wk-comm-↑↑w-tm ε (x [ < _ > ↑↑s Γ′ ]sv) refl 
         x≡ = []wtm≡ (refl ++≡ Γ≡′) (refl ++≡ Γ≡) B≡ (wk≡  (refl ++≡ Γ≡′) A≡)      
                     (<>-comm-↑↑w-v Γ′ x Γ≡′)
@@ -381,7 +381,7 @@ wk-comm-↑↑s-v (Γ′ , A) (vs {B = B} x) Γ≡
   = trans refl xi≡ lhs-swap (trans xi≡ refl x≡ (sym rhs-swap))
   where Γ≡′ = ,proj≡₁ Γ≡
         A≡  = <>-comm-↑↑s Γ′ A Γ≡′
-        B≡ = <>-comm-↑↑-sem ⟦ Γ′ ⟧tys B [ ⟦⟧tys≡ refl Γ≡′ ]p
+        B≡ = <>-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡′)
         lhs-swap = wk-comm-↑↑s-tm ε (x [ < _ > ↑↑s Γ′ ]sv) refl 
         rhs-swap =  wk-comm-↑↑s-tm ε (x [ _ ↑↑s Γ′ ]sv) refl
         x≡ = []wtm≡ (refl ++≡ Γ≡′) (refl ++≡ Γ≡) B≡ (wk≡ (refl ++≡ Γ≡′) A≡) 
