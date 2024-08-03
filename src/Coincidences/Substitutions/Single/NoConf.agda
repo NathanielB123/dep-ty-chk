@@ -2,7 +2,11 @@
 
 open import Coincidences.Utils
 open import Coincidences.Syntax
-open import Coincidences.Sub 
+open import Coincidences.Tys 
+open import Coincidences.SemTys 
+open import Coincidences.Substitutions.Single.Congruences
+open import Coincidences.Substitutions.Single.Weak
+open import Coincidences.Substitutions.Single.Sub
 
 -- Agda complains that these rewrite rules aren't confluent. I'm not totally
 -- convinced by Agda's reasoning as the case it comes up with for '⟦[]⟧wtys≡'
@@ -13,10 +17,9 @@ open import Coincidences.Sub
 -- '⟦↑↑w⟧≡' and '⟦↑↑s⟧≡' are rewrite rules, but Agda can only see that '⟦↑↑w⟧≡' 
 -- and '⟦↑↑s⟧≡' are valid rewrites once '⟦[]⟧wtys≡' and '⟦[]⟧stys≡' in place.
 --
--- With all that being said, this rewrite rule specifically appears to cause
--- some really messed up behaviour like different results after applying
--- identity function.
-module Coincidences.SubNoConf where
+-- (Note we also have the same build/shift issues as mention in 'SemTys' but I 
+-- am much less concerned by this)
+module Coincidences.Substitutions.Single.NoConf where
 
 ⟦[]⟧wtys≡ : ∀ Γ′ (δ : Wk Δ Γ) 
           → ⟦ Γ′ [ δ ]wtys ⟧tys ≡ ⟦ Γ′ ⟧tys [ ⟦ δ ⟧w ]semtys

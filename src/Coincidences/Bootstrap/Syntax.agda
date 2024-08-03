@@ -1,33 +1,16 @@
 {-# OPTIONS --rewriting --prop --show-irrelevant #-}
---local-confluence-check
-
 
 open import Coincidences.Utils
-open import Coincidences.Sub
-open import Coincidences.Equations
+open import Coincidences.Substitutions.Single.Weak
+open import Coincidences.Substitutions.Parallel.Common
+open import Coincidences.Substitutions.Parallel.Sub 
+  (λ A M → M [ wk ]wtm) (λ A M → refl)
 
--- With our lemmas about substitutions, we can now define terms indexed by
--- syntactic types, something which was impossible to get directly! I'm sure
--- using this technique has limitations, but this feels huge - intrinsically
--- typed syntax without quotients!
-module Coincidences.Bootstrap where
+module Coincidences.Bootstrap.Syntax where
 
 open import Coincidences.Syntax 
   renaming (Var to SemiVar; Tm to SemiTm; Tm≡ to SemiTm≡; Var≡ to SemiVar≡) 
   public
-
-wk-comm-↑w : ∀ {Γ Δ A} B {δ : Wk Δ Γ} 
-           → B [ wk {A = A} ]w [ δ ↑ A ]w ≡ B [ δ ]w [ wk ]w
-wk-comm-↑w A = wk-comm-↑↑w ε A refl
-
-
-wk<>-id-↑ : ∀ {N} → B [ wk {A = A} ]w [ < N > ]s ≡ B
-wk<>-id-↑ = wk<>-id-↑↑ ε _ refl
-
--- Proving this shouldn't be tricky, just need to do it...
-postulate wkvz-id-↑ : B [ wk {A = A} ↑ A ]w [ < var vz > ]s ≡ B
-
-{-# REWRITE wk-comm-↑w wk<>-id-↑ wkvz-id-↑ #-}
 
 module TypeOf where
   type-of-v : ∀ {A} → SemiVar Γ A → Ty Γ
@@ -48,19 +31,13 @@ data Tm : ∀ Γ → Ty Γ → Set
 data Var where
   vz : Var (Γ , A) (A [ wk ]w)
   vs : Var Γ B → Var (Γ , A) (B [ wk ]w)
-  -- We could relax how strict we are with how types should coincide to
-  -- semantic equality here. I am actually not sure if this is necessary.
- 
-  -- vz : ∀ {Awk} → ⟦ A ⟧T ∘ semwk ⟦ A ⟧T ≡ ⟦ Awk ⟧T → Var (Γ , A) Awk
-  -- vs : ∀ {Bwk} → Var Γ B → ⟦ B ⟧T ∘ semwk ⟦ A ⟧T ≡ ⟦ Bwk ⟧T 
-  --              → Var (Γ , A) Bwk
 
 data Tm where
    var : Var Γ A → Tm Γ A
    app : ∀ {Γ A} {B : Ty (Γ , A)} {ΠAB} → Tm Γ ΠAB 
        → (N : Tm Γ A) 
        → ⟦ ΠAB ⟧T ≡ Πsem ⟦ A ⟧T ⟦ B ⟧T
-       → Tm Γ (B [ < ↓tm N > ]s)
+       → Tm Γ (B [ < ↓tm N > ])
    lam : Tm (Γ , A) B → Tm Γ (Π' A B)
 
 private module Congruences where

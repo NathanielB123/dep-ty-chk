@@ -2,13 +2,17 @@
 
 open import Coincidences.Utils
 open import Coincidences.Syntax
-open import Coincidences.Sub
-open import Coincidences.SubNoConf
+open import Coincidences.Tys
+open import Coincidences.SemTys
+open import Coincidences.Substitutions.Single.Congruences
+open import Coincidences.Substitutions.Single.Weak
+open import Coincidences.Substitutions.Single.Sub
+open import Coincidences.Substitutions.Single.NoConf
 
 -- This file is basically the same proof over and over again
 -- Sadly, we can't easily abstract over the substitution lemma without Agda 
 -- complaining about termination
-module Coincidences.Equations where
+module Coincidences.Substitutions.Single.Equations where
 
 -- Lemmas we shall prove:
 -- M [ wk     ] [ < N >  ] ≡ M                        (wk-<>-id)
@@ -337,17 +341,14 @@ wk-comm-↑↑s-v (Γ′ , A) vz Γ≡
   where Γ≡′ = ,proj≡₁ Γ≡
         A≡ = wk-comm-↑↑s Γ′ A Γ≡′
         Asem≡ = ⟦⟧T≡ (refl ++≡ (,proj≡₁ Γ≡)) A≡
-wk-comm-↑↑s-v (Γ′ , A) (vs {B = B} x) Γ≡ 
-  = trans xi≡ refl x≡ (sym swap)
+wk-comm-↑↑s-v {δ = δ} (Γ′ , A) (vs {B = B} x) Γ≡ 
+  = _∙P_ {q = refl} x≡ (sym swap)
   where Γ≡′ = ,proj≡₁ Γ≡
         A≡ = wk-comm-↑↑s Γ′ A Γ≡′
         B≡ = wk-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡′)
         x≡ = []wtm≡ (refl ++≡ Γ≡′) (refl ++≡ Γ≡) B≡ (wk≡ (refl ++≡ Γ≡′) A≡) 
                     (wk-comm-↑↑s-v Γ′ x Γ≡′)
-        swap = wk-comm-↑↑w-tm ε (x [ _ ↑↑s Γ′ ]sv) refl
-        xi≡ = Tm≡ (refl ++≡ Γ≡)
-                  ([]sem≡ ⟦ refl ++≡ Γ≡ ⟧c≡ ⟦ refl ++≡ Γ≡′ ⟧c≡ B≡
-                  (⟦⟧w≡ (refl ++≡ Γ≡) (refl ++≡ Γ≡′) (wk≡ (refl ++≡ Γ≡′) A≡)))
+        swap = wk-comm-↑↑w-tm {δ = wk ↑↑w _} ε (x [ δ ↑↑s Γ′ ]sv) refl
 
 <>-comm-↑↑w-v ε vz refl = refl
 <>-comm-↑↑w-v ε (vs x) refl = refl
@@ -357,17 +358,14 @@ wk-comm-↑↑s-v (Γ′ , A) (vs {B = B} x) Γ≡
   where Γ≡′ = ,proj≡₁ Γ≡
         A≡ = <>-comm-↑↑w Γ′ A Γ≡′
         Asem≡ = ⟦⟧T≡ (refl ++≡ (,proj≡₁ Γ≡)) A≡
-<>-comm-↑↑w-v (Γ′ , A) (vs {B = B} x) Γ≡
-  = trans refl xi≡ swap x≡
+<>-comm-↑↑w-v {δ = δ} (Γ′ , A) (vs {B = B} x) Γ≡
+  = _∙P_ {p = refl} swap x≡
   where Γ≡′ = ,proj≡₁ Γ≡
         A≡  = <>-comm-↑↑w Γ′ A Γ≡′
         B≡ = <>-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡′)
-        swap = wk-comm-↑↑w-tm ε (x [ < _ > ↑↑s Γ′ ]sv) refl 
+        swap = wk-comm-↑↑w-tm {δ = δ ↑↑w _} ε (x [ < _ > ↑↑s Γ′ ]sv) refl 
         x≡ = []wtm≡ (refl ++≡ Γ≡′) (refl ++≡ Γ≡) B≡ (wk≡  (refl ++≡ Γ≡′) A≡)      
                     (<>-comm-↑↑w-v Γ′ x Γ≡′)
-        xi≡ = Tm≡ (refl ++≡ Γ≡)
-                  ([]sem≡ ⟦ refl ++≡ Γ≡ ⟧c≡ ⟦ refl ++≡ Γ≡′ ⟧c≡ B≡
-                  (⟦⟧w≡ (refl ++≡ Γ≡) (refl ++≡ Γ≡′) (wk≡ (refl ++≡ Γ≡′) A≡)))
 
 <>-comm-↑↑s-v ε vz refl = refl
 <>-comm-↑↑s-v ε (vs x) refl = sym (wk<>-id-↑↑-tm ε _ refl)
@@ -377,15 +375,12 @@ wk-comm-↑↑s-v (Γ′ , A) (vs {B = B} x) Γ≡
   where Γ≡′ = ,proj≡₁ Γ≡
         A≡ = <>-comm-↑↑s Γ′ A Γ≡′
         Asem≡ = ⟦⟧T≡ (refl ++≡ (,proj≡₁ Γ≡)) A≡
-<>-comm-↑↑s-v (Γ′ , A) (vs {B = B} x) Γ≡
-  = trans refl xi≡ lhs-swap (trans xi≡ refl x≡ (sym rhs-swap))
+<>-comm-↑↑s-v {δ = δ} (Γ′ , A) {N = N} (vs {B = B} x) Γ≡
+  = _∙P_ {q = refl} (_∙P_ {p = refl} lhs-swap x≡) (sym rhs-swap)
   where Γ≡′ = ,proj≡₁ Γ≡
         A≡  = <>-comm-↑↑s Γ′ A Γ≡′
         B≡ = <>-comm-↑↑-sem ⟦ Γ′ ⟧tys B (⟦⟧tys≡ refl Γ≡′)
-        lhs-swap = wk-comm-↑↑s-tm ε (x [ < _ > ↑↑s Γ′ ]sv) refl 
-        rhs-swap =  wk-comm-↑↑s-tm ε (x [ _ ↑↑s Γ′ ]sv) refl
+        lhs-swap = wk-comm-↑↑s-tm {δ = δ ↑↑s _} ε (x [ < _ > ↑↑s Γ′ ]sv) refl 
+        rhs-swap = wk-comm-↑↑s-tm {δ = < N [ δ ]stm > ↑↑s _} ε (x [ _ ↑↑s Γ′ ]sv) refl
         x≡ = []wtm≡ (refl ++≡ Γ≡′) (refl ++≡ Γ≡) B≡ (wk≡ (refl ++≡ Γ≡′) A≡) 
                     (<>-comm-↑↑s-v Γ′ x Γ≡′) 
-        xi≡ = Tm≡ (refl ++≡ Γ≡)
-                  ([]sem≡ ⟦ refl ++≡ Γ≡ ⟧c≡ ⟦ refl ++≡ Γ≡′ ⟧c≡ B≡
-                  (⟦⟧w≡ (refl ++≡ Γ≡) (refl ++≡ Γ≡′) (wk≡ (refl ++≡ Γ≡′) A≡)))

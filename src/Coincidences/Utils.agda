@@ -12,6 +12,7 @@ open import Data.Empty using (⊥; ⊥-elim) public
 infix 3 _≡[_]≡_
 infix 4 _≡_
 infixr 9 _∙_
+infixr 8 _∙P_
 
 data _≡_ {a} {A : Set a} (x : A) : A → Prop a where
   refl : x ≡ x
@@ -108,15 +109,19 @@ to-≡ refl = refl
 _≡[_]≡_ : ∀ {a} {A B : Set a} → A → A ≡ B → B → Prop a
 _≡[_]≡_ x p y with refl ← to-id p = x ≡ y
 
-symm : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → x ≡[ p ]≡ y → y ≡[ sym p ]≡ x
-symm refl refl = refl
+symm : ∀ {a} {A B : Set a} {p : A ≡ B} {x y} → x ≡[ p ]≡ y → y ≡[ sym p ]≡ x
+symm {p = refl} refl = refl
 
-trans : ∀ {a} {A B C : Set a} (p : A ≡ B) (q : B ≡ C) {x y z} 
+_∙P_ : ∀ {a} {A B C : Set a} {p : A ≡ B} {q : B ≡ C} {x y z} 
      → x ≡[ p ]≡ y → y ≡[ q ]≡ z → x ≡[ p ∙ q ]≡ z
-trans refl refl refl refl = refl
+_∙P_ {p = refl} {q = refl} refl refl = refl
 
 to-coe≡ : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → x ≡[ p ]≡ y → coe p x ≡ y
 to-coe≡ refl eq = eq
+
+to-coe≡⁻¹ : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → x ≡[ p ]≡ y 
+          → coe (sym p) y ≡ x
+to-coe≡⁻¹ refl = sym
 
 from-coe≡ : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → coe p x ≡ y → x ≡[ p ]≡ y
 from-coe≡ refl eq = eq

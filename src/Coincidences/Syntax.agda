@@ -1,5 +1,4 @@
-{-# OPTIONS --prop --show-irrelevant --rewriting --local-confluence-check 
-            --no-require-unique-meta-solutions #-}
+{-# OPTIONS --prop --show-irrelevant --rewriting --local-confluence-check #-}
 
 open import Coincidences.Utils
 
@@ -84,7 +83,7 @@ data Var : ∀ Γ → SemTy ⟦ Γ ⟧c → Set where
   vs : ∀ {Γ A B} → Var Γ B → Var (Γ , A) (B ∘ semwk ⟦ A ⟧T)
 
 ⟦_⟧v : ∀ {Γ A} → Var Γ A → SemVal ⟦ Γ ⟧c A
-⟦ vz ⟧v (ρ , M) = M
+⟦ vz ⟧v = semvz
 ⟦ vs x ⟧v (ρ , M) = ⟦ x ⟧v ρ
 
 data Tm where
@@ -96,9 +95,12 @@ appsem : ∀ {Γ A B} → SemVal Γ (Πsem A B) → (N : SemVal Γ A)
        → SemVal Γ (B ∘ sem< N >)
 appsem M N ρ = (M ρ) (N ρ)
 
-⟦ var x   ⟧tm     = ⟦ x ⟧v
-⟦ app M N ⟧tm     = appsem ⟦ M ⟧tm ⟦ N ⟧tm
-⟦ lam M   ⟧tm ρ N = ⟦ M ⟧tm (ρ , N)
+lamsem : ∀ {Γ A B} → SemVal (Γ ,s A) B → SemVal Γ (Πsem A B)
+lamsem M ρ N = M (ρ , N)
+
+⟦ var x   ⟧tm = ⟦ x ⟧v
+⟦ app M N ⟧tm = appsem ⟦ M ⟧tm ⟦ N ⟧tm
+⟦ lam M   ⟧tm = lamsem ⟦ M ⟧tm
 
 private module Congruences where
   Ty≡ = cong Ty
@@ -197,5 +199,18 @@ private module Congruences where
           (x≡ : x₁ ≡[ Var≡ Γ≡ B≡ ]≡ x₂)
       → vs x₁ ≡[ Var≡ (Γ≡ ,≡ A≡) (semwk≡ ⟦ Γ≡ ⟧c≡ (⟦⟧T≡ Γ≡ A≡) B≡) ]≡ vs x₂
   vs≡ refl refl refl refl = refl
+
+  appsem≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ M₁ M₂ N₁ N₂} (Γ≡ : Γ₁ ≡ Γ₂)
+              (A≡ : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂) (B≡ : B₁ ≡[ SemTy≡ (Γ≡ ,s≡ A≡) ]≡ B₂)
+          → M₁ ≡[ SemVal≡ Γ≡ (Πsem≡ Γ≡ A≡ B≡) ]≡ M₂
+          → (N≡ : N₁ ≡[ SemVal≡ Γ≡ A≡ ]≡ N₂)
+          → appsem M₁ N₁ ≡[ SemVal≡ Γ≡ (sem<>≡ Γ≡ A≡ N≡ B≡) ]≡ appsem M₂ N₂
+  appsem≡ refl refl refl refl refl = refl
+
+  lamsem≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂ M₁ M₂} (Γ≡ : Γ₁ ≡ Γ₂)
+              (A≡ : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂) (B≡ : B₁ ≡[ SemTy≡ (Γ≡ ,s≡ A≡) ]≡ B₂)
+          → M₁ ≡[ SemVal≡ (Γ≡ ,s≡ A≡) B≡ ]≡ M₂
+          → lamsem M₁ ≡[ SemVal≡ Γ≡ (Πsem≡ Γ≡ A≡ B≡) ]≡ lamsem M₂
+  lamsem≡ refl refl refl refl = refl
 
 open Congruences public

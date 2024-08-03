@@ -2,9 +2,16 @@
 
 open import Coincidences.Utils
 open import Coincidences.Syntax
-open import Coincidences.Sub
+open import Coincidences.Tys
+open import Coincidences.SemTys
+open import Coincidences.Substitutions.Single.Congruences
+open import Coincidences.Substitutions.Single.Weak
+open import Coincidences.Substitutions.Single.Sub
 
-module Coincidences.MSub where
+-- Lists of substitutions
+-- 'Tms' is less intuitive but otherwise is a pretty-much objectively better
+-- representation
+module Coincidences.Substitutions.Multiple.Common where
 
 infixl 100 _[_] _[_]tm _[_]v _[_]tys 
 
@@ -116,7 +123,7 @@ A [ δ ]sem = A ∘ ⟦ δ ⟧ms
 -- UPDATE: These sorts of issues only seem to crop up when there is at least
 -- rule which fails `--local-confluence-check` so I assume it is to do with
 -- confluence: there are multiple possible reductions, and Agda unfortunately
--- doesn't take th one we would like it to
+-- doesn't take the one we would like it to
 
 agda-is-broke : ∀ {N B} (M : Tm (Γ , (A [ ⟨ < N > ⟩s ])) B) (δ : MSub Δ Γ)
               → lam M [ δ ]tm ≡ lam (M [ δ ↑m _ ]tm)
@@ -153,3 +160,17 @@ _↑↑_ : ∀ (δ : MSub Δ Γ) Γ′ → MSub (Δ ++ Γ′ [ δ ]tys) (Γ ++ �
 variable
   δ : MSub Δ Γ
   σ : MSub θ Δ
+
+
+-- semwk* : ∀ {Γ} (Γ′ : SemTys Γ) → SemSub (Γ ++s Γ′) Γ
+-- semwk* ε = id
+-- semwk* (Γ′ , A) = semwk* Γ′ ∘ semwk A
+
+-- wk* : (Γ′ : Tys Γ) → MSub (Γ ++ Γ′) Γ
+-- wk* ε = idₛ
+-- wk* (Γ′ , A) = wk* Γ′ ◂w wk
+
+-- extend : (ρ : MSub Δ Γ) → SemiTm Δ (⟦ A ⟧T ∘ ⟦ ρ ⟧ms) → MSub Δ (Γ , A)
+-- extend ρ M = (ρ ↑m _) ◂s < M >
+--  A
+--   where Γ≡ = build≡ Γ
