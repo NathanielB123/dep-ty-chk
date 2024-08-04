@@ -8,8 +8,8 @@ module Coincidences.Substitutions.Common where
 
 []-helper : ∀ {Γ Δ A A[]} (B : SemTy (Γ ,s A)) (δ : SemSub Δ Γ) 
                (p : A[] ≡ A ∘ δ) 
-          → subst (SemTy ∘ (_ ,s_)) (sym p) (B ∘ (δ ↑s _))
-          ≡ (λ (ρ , x) → B (δ ρ , subst (λ AB → El (AB ρ)) p x))
+          → (λ (ρ , x) → B (δ ρ , subst (λ AB → El (AB ρ)) p x))
+          ≡ subst (SemTy ∘ (_ ,s_)) (sym p) (B ∘ (δ ↑s _))
 []-helper B δ refl = refl
 
 []v-helper : ∀ {Γ A B} (p : A ≡ B)
@@ -27,6 +27,6 @@ module Coincidences.Substitutions.Common where
 
 
 ↑-helper : ∀ {Γ Δ} A (δ : SemSub Δ Γ) A[] (A≡ : A[] ≡ _) 
-    → (λ (ρ , M) → δ ρ , subst (λ AB → El (AB ρ)) A≡ M)
-      ≡ subst (λ A′ → SemSub (Δ ,s A′) (Γ ,s A)) (sym A≡) (δ ↑s A)
+    → subst (λ A′ → SemSub (Δ ,s A′) (Γ ,s A)) (sym A≡) (δ ↑s A)
+    ≡ (λ (ρ , M) → δ ρ , subst (λ AB → El (AB ρ)) A≡ M)
 ↑-helper A δ A[] refl = refl

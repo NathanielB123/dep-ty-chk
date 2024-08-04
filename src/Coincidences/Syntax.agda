@@ -167,7 +167,7 @@ private module Congruences where
   semwk≡ : ∀ {Γ₁ Γ₂ A₁ A₂ B₁ B₂} (Γ≡ : Γ₁ ≡ Γ₂) 
              (A≡ : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂) (B≡ : B₁ ≡[ SemTy≡ Γ≡ ]≡ B₂) 
          → B₁ ∘ semwk A₁ ≡[ SemTy≡ (Γ≡ ,s≡ A≡) ]≡ B₂ ∘ semwk A₂ 
-  semwk≡ refl refl  refl = refl
+  semwk≡ refl refl refl = refl
 
   sem<>≡ : ∀ {Γ₁ Γ₂ A₁ A₂ M₁ M₂ B₁ B₂} (Γ≡ : Γ₁ ≡ Γ₂) 
              (A≡ : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂)
@@ -212,5 +212,10 @@ private module Congruences where
           → M₁ ≡[ SemVal≡ (Γ≡ ,s≡ A≡) B≡ ]≡ M₂
           → lamsem M₁ ≡[ SemVal≡ Γ≡ (Πsem≡ Γ≡ A≡ B≡) ]≡ lamsem M₂
   lamsem≡ refl refl refl refl = refl
+
+  
+  semvz≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂)  
+         → semvz ≡[ SemVal≡ (Γ≡ ,s≡ A≡) (semwk≡ Γ≡ A≡ A≡) ]≡ semvz
+  semvz≡ refl refl = refl
 
 open Congruences public

@@ -35,7 +35,7 @@ This repo is currently split into two distinct developments, which investigate t
 #### [Coincidences/](./src/Coincidences/)
 - Heavily inspired by [Outrageous but Meaningful Coincidences](https://dl.acm.org/doi/abs/10.1145/1863495.1863497)
 - Similar limitations as described in that paper (equality is constrained in power to that of the meta-theory - i.e. no formalising OTT), but I'm still very excited about this approach; the core syntax is just 100 lines!
-- I am making liberal use of rewrite rules. These are not essential to the technique, but if we can piggy-back of Agda's propositional equality, we might as well take full advantage!
+- I am making liberal use of rewrite rules. These are not essential to the technique, but if we can piggy-back of Agda's built-in equality, we might as well take full advantage!
 
 ### To Do:
 - Terminating normalisation (NbE)
