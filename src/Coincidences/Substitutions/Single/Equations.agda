@@ -308,8 +308,7 @@ wk-comm-↑↑s-tm Γ′ (lam {A = A} {B = B} M) Γ≡
          (,semtys≡ refl (⟦⟧tys≡ refl Γ≡) (⟦⟧T≡ (refl ++≡ Γ≡) A≡))
     M≡ = <>-comm-↑↑s-tm (Γ′ , A) M (,tys≡ refl Γ≡ A≡)
 
--- -- -- Lemmas over variable substitutions - the actually interesting bit!
--- -- -- Commented out because they make the file take too long to typecheck lol
+-- Lemmas over variable substitutions - the actually interesting bit!
 wk<>-id-↑↑-v ε x refl = refl
 wk<>-id-↑↑-v (Γ′ , A) vz Γ≡ 
   = var≡ (refl ++≡ Γ≡) (semwk≡ ⟦ refl ++≡ Γ≡′ ⟧c≡ Asem≡ Asem≡) 

@@ -5,6 +5,7 @@ open import Coincidences.Utils
 open import Coincidences.Syntax
 open import Coincidences.Tys
 
+-- Renamings + parallel substitutions
 module Coincidences.Substitutions.Parallel.RenSub where
 
 open import Coincidences.Substitutions.Parallel.Common public
@@ -72,7 +73,8 @@ ren-to-sub≡ : ∀ (δ : Vars Δ Γ) → ⟦ ren-to-sub δ ⟧tms ≡ ⟦ δ �
 
 ren-to-sub ε = Tms.ε
 ren-to-sub (_,_ {A = A} δ x) 
-  = Tms._,_ (ren-to-sub δ) (var (subst (Var _ ∘ (⟦ A ⟧T ∘_)) (sym (ren-to-sub≡ δ)) x))
+  = Tms._,_ (ren-to-sub δ) 
+            (var (subst (Var _ ∘ (⟦ A ⟧T ∘_)) (sym (ren-to-sub≡ δ)) x))
 
 ren-to-sub≡ ε = refl
 ren-to-sub≡ (_,_ {A = A} δ x) = sym (dcong₂ _,sub_ (sym δ≡) rm-subst)

@@ -61,9 +61,9 @@ _↑os≡_ : ∀ (δ : Objects Δ Γ) A
     ≡[ cong₂ SemSub (cong (_ ,s_ ) (A [ δ ]≡)) refl 
     ]≡ ⟦ δ ⟧os ↑s ⟦ A ⟧T
 δ ↑os≡ A
-  = from-coe≡⁻¹ _ (↑[]-helper ⟦ δ ⟧os A≡ 
-  ∙ dcong₂ _,sub_ (sym wkδ≡) (coes-cancel 
-  ∙ (cong (subst (SemVal ⟦ _ , (A [ δ ]) ⟧c) prf)) (sym vzo≡) ∙ rm-subst))
+  = from-coe≡⁻¹ _ (dcong₂⁻¹ _,sub_ wkδ≡ (sym rm-subst 
+  ∙ cong (subst (SemVal ⟦ _ , (A [ δ ]) ⟧c) prf) vzo≡ ∙ coes-cancel)
+  ∙ sym (↑[]-helper ⟦ δ ⟧os A≡))
   where
     A≡ = A [ δ ]≡
     wkδ≡ = wkos≡ (A [ δ ]) δ
@@ -72,7 +72,7 @@ _↑os≡_ : ∀ (δ : Objects Δ Γ) A
            ∙
            cong (λ section x → ⟦ A ⟧T (section x)) (sym (wkos≡ (A [ δ ]) δ)))
     rm-subst = subst-application′ (O (_ , (A [ δ ]))) (λ _ → ⟦_⟧o) prf
-    coes-cancel = coe-coe semvz _ (cong (SemVal _ ∘ (_∘ semwk ⟦ A [ δ ] ⟧T)) A≡)
+    coes-cancel = sym (coe-coe semvz _ (cong (SemVal _ ∘ (_∘ semwk ⟦ A [ δ ] ⟧T)) A≡))
 
 ⊥' [ δ ] = ⊥'
 Π' A B [ δ ] = Π' (A [ δ ]) (B [ δ ↑os A ])
@@ -80,8 +80,8 @@ El' M [ δ ] = El' (M [ δ ]tm)
 
 ⊥' [ δ ]≡ = refl
 Π' A B [ δ ]≡ 
-  = dcong₂⁻¹ Πsem A≡ (B≡ ∙ cong (⟦ B ⟧T ∘_) (to-coer≡ _ (δ ↑os≡ A) 
-  ∙ ↑-helper ⟦ A ⟧T ⟦ δ ⟧os ⟦ A [ δ ] ⟧T A≡) 
+  = dcong₂⁻¹ Πsem A≡ (B≡ ∙ cong (⟦ B ⟧T ∘_) (to-coe≡⁻¹ _ (δ ↑os≡ A) 
+  ∙ sym (↑-helper ⟦ A ⟧T ⟦ δ ⟧os ⟦ A [ δ ] ⟧T A≡))
   ∙ []-helper ⟦ B ⟧T ⟦ δ ⟧os A≡)
   where A≡ = A [ δ ]≡
         B≡ = B [ δ ↑os A ]≡
@@ -98,8 +98,8 @@ app {B = B} M N [ δ ]tm
   = subst (λ N[] → Tm _ (B ∘ (⟦ δ ⟧os ,sub N[]))) (N [ δ ]tm≡) 
           (app (M [ δ ]tm) (N [ δ ]tm))
 lam {A = A} {B = B} M [ δ ]tm 
-  = subst (Tm _) (dcong₂⁻¹ Πsem A≡ (cong (B ∘_) (to-coer≡ _ (δ ↑os≡ A) 
-  ∙ ↑[]-helper _ A≡ ∙ cong (_ ,sub_) (semvz-helper A≡))
+  = subst (Tm _) (dcong₂⁻¹ Πsem A≡ (cong (B ∘_) (to-coe≡⁻¹ _ (δ ↑os≡ A) 
+  ∙ ↑[]-helper _ A≡ ∙ cong (_ ,sub_) (sym (semvz-helper A≡)))
   ∙ []-helper B ⟦ δ ⟧os A≡)) 
     (lam (M [ δ ↑os _ ]tm))
   where A≡ = A [ δ ]≡
@@ -113,13 +113,14 @@ app {B = B} M N [ δ ]tm≡ = sym rm-subst ∙ to-coe≡ _ MN≡
                                       (λ _ → ⟦_⟧tm) N≡
 lam {A = A} {B = B} M [ δ ]tm≡ 
   = sym rm-subst2 ∙ cong (subst (SemVal _) prf) (to-coe≡ refl lamM≡)
-  ∙ cong (subst (SemVal _) prf ∘ lamsem) (sym (dcong (⟦ M ⟧tm ∘_) ↑≡))
-  ∙ []lam≡-helper ⟦ δ ⟧os ⟦ M ⟧tm A≡ ↑≡ prf
+  ∙ cong (subst (SemVal _) prf ∘ lamsem) (dcong⁻¹ (⟦ M ⟧tm ∘_) ↑≡)
+  ∙ []lam≡-helper ⟦ δ ⟧os ⟦ M ⟧tm A≡ (sym ↑≡) prf
   where A≡ = A [ δ ]≡
         M≡ = M [ δ ↑os _ ]tm≡
         lamM≡ = lamsem≡ refl refl refl M≡
-        prf = dcong₂⁻¹ Πsem A≡ (cong (B ∘_) (to-coer≡ _ (δ ↑os≡ A) 
-            ∙ ↑[]-helper _ A≡ ∙ cong (_ ,sub_) (semvz-helper A≡))
+        prf = dcong₂⁻¹ Πsem A≡ (cong (B ∘_) (to-coe≡⁻¹ _ (δ ↑os≡ A) 
+            ∙ ↑[]-helper _ A≡ ∙ cong (_ ,sub_) (sym (semvz-helper A≡)))
             ∙ []-helper B ⟦ δ ⟧os A≡)
         rm-subst2 = subst-application′ (Tm _) (λ _ → ⟦_⟧tm) prf
         ↑≡ = to-coe≡⁻¹ _ (δ ↑os≡ A)
+ 

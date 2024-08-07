@@ -13,20 +13,21 @@ module Coincidences.Substitutions.Common where
 []-helper B δ refl = refl
 
 []v-helper : ∀ {Γ A B} (p : A ≡ B)
-           → subst (SemVal (Γ ,s A)) (cong (_∘ semwk _) p) semvz
-           ≡ (λ (ρ , x) → subst (λ AB → El (AB ρ)) p x)
+           → (λ (ρ , x) → subst (λ AB → El (AB ρ)) p x)
+           ≡ subst (SemVal (Γ ,s A)) (cong (_∘ semwk _) p) semvz
 []v-helper refl = refl
 
+-- This rule pretty clearly doesn't fit the pattern of the others. I should
+-- probably tweak it so it does at some point.
 []tm-helper : ∀ {Γ Δ} (δ : SemSub Δ Γ) {A[]} 
                 {A : SemTy Γ} {B : SemTy (Γ ,s A)} 
                 (M : SemVal _ B) (A≡ : A[] ≡ _) B≡
             → subst (SemVal Δ) (Πsem≡ refl A≡ B≡) (λ ρ x → (M ∘ (δ ↑s A)) 
                     (ρ , subst (λ A[] → El (A[] ρ)) A≡ x))
-            ≡ (λ ρ N → M (ρ , N)) ∘ δ
+            ≡ lamsem M ∘ δ
 []tm-helper _ _ refl refl = refl
 
-
 ↑-helper : ∀ {Γ Δ} A (δ : SemSub Δ Γ) A[] (A≡ : A[] ≡ _) 
-    → subst (λ A′ → SemSub (Δ ,s A′) (Γ ,s A)) (sym A≡) (δ ↑s A)
-    ≡ (λ (ρ , M) → δ ρ , subst (λ AB → El (AB ρ)) A≡ M)
+    → (λ (ρ , M) → δ ρ , subst (λ AB → El (AB ρ)) A≡ M)
+    ≡ subst (λ A′ → SemSub (Δ ,s A′) (Γ ,s A)) (sym A≡) (δ ↑s A)
 ↑-helper A δ A[] refl = refl

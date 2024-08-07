@@ -35,7 +35,7 @@ El' A [ δ ]w = El' (A [ δ ]wtm)
 
 ⊥' [ δ ]w≡ = refl
 Π' A B [ δ ]w≡ 
-  = sym (dcong₂ Πsem (sym A≡) ([]-helper ⟦ B ⟧T ⟦ δ ⟧w A≡ ∙ sym B≡))
+  = dcong₂⁻¹ Πsem A≡ (B≡ ∙ []-helper ⟦ B ⟧T ⟦ δ ⟧w A≡)
   where A≡ = A [ δ ]w≡
         B≡ = B [ δ ↑ _ ]w≡
 El' A [ δ ]w≡ = refl
@@ -53,12 +53,13 @@ vs x [ δ ↑ A ]wv = vs (x [ δ ]wv)
 
 x [ wk ]wv≡ = refl
 vz [ δ ↑ A ]wv≡ 
-  = sym lift ∙ []v-helper (A [ δ ]w≡)
+  = sym ([]v-helper A≡ ∙ lift)
   where 
+    A≡ = A [ δ ]w≡
     lift = subst-application′ (Var _)
                              {y = vz {A = A [ δ ]w}} 
                              (λ _ → ⟦_⟧v)
-                             (cong  (_∘ semwk _) (A [ δ ]w≡))
+                             (cong  (_∘ semwk _) A≡)
 vs x [ δ ↑ A ]wv≡ = cong (_∘ proj₁) (x [ δ ]wv≡)
 
 var x [ δ ]wtm = var (x [ δ ]wv)

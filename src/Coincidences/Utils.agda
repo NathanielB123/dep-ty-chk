@@ -82,6 +82,10 @@ dcong : ∀ {a b} {A : Set a} {B : A → Set b} (f : (x : A) → B x) {x y}
       → (p : x ≡ y) → subst B p (f x) ≡ f y
 dcong f refl = refl
 
+dcong⁻¹ : ∀ {a b} {A : Set a} {B : A → Set b} (f : (x : A) → B x) {x y}
+        → (p : x ≡ y) → f x ≡ subst B (sym p) (f y)
+dcong⁻¹ f refl = refl
+
 dcong₂ : ∀ {a b c} {A : Set a} {B : A → Set b} {C : Set c}
          (f : (x : A) → B x → C) {x₁ x₂ y₁ y₂}
        → (p : x₁ ≡ x₂) → subst B p y₁ ≡ y₂
@@ -133,20 +137,16 @@ _∙P_ {p = refl} {q = refl} refl refl = refl
 to-coe≡ : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → x ≡[ p ]≡ y → coe p x ≡ y
 to-coe≡ refl eq = eq
 
-to-coer≡ : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → x ≡[ p ]≡ y 
-         → x ≡ coe (sym p) y
-to-coer≡ refl eq = eq
-
 to-coe≡⁻¹ : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → x ≡[ p ]≡ y 
-          → coe (sym p) y ≡ x
-to-coe≡⁻¹ refl = sym
+         → x ≡ coe (sym p) y
+to-coe≡⁻¹ refl eq = eq
 
 from-coe≡ : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → coe p x ≡ y → x ≡[ p ]≡ y
 from-coe≡ refl eq = eq
 
-from-coe≡⁻¹ : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → coe (sym p) y ≡ x 
-            → x ≡[ p ]≡ y
-from-coe≡⁻¹ refl = sym
+from-coe≡⁻¹ : ∀ {a} {A B : Set a} (p : A ≡ B) {x y} → x ≡ coe (sym p) y 
+           → x ≡[ p ]≡ y 
+from-coe≡⁻¹ refl eq = eq
 
 -- Sometimes, Agda will refuse to evaluate some 'Prop' far enough (especially in
 -- the presence of rewrite rules) and spurious type errors get thrown. 

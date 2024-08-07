@@ -37,6 +37,6 @@ _,sub_ : ∀ {Γ Δ A} (δ : SemSub Δ Γ) → SemVal Δ (A ∘ δ)
 []lam≡-helper _ _ refl refl refl = refl
 
 semvz-helper : ∀ {Δ A₁ A₂} (A≡ : A₁ ≡ A₂) 
-             → subst (SemVal (Δ ,s A₁) ∘ (_∘ semwk A₁)) A≡ semvz
-             ≡ (λ (ρ , M) → subst (λ AB → El (AB ρ)) A≡ M)
+             → (λ (ρ , M) → subst (λ AB → El (AB ρ)) A≡ M)
+             ≡ subst (SemVal (Δ ,s A₁) ∘ (_∘ semwk A₁)) A≡ semvz
 semvz-helper refl = refl
