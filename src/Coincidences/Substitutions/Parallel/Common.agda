@@ -1,4 +1,6 @@
 {-# OPTIONS --prop --show-irrelevant --rewriting #-}
+-- lam[]-helper triggers some very weird-looking confluence errors...
+-- Weird because it isn't even a rewrite!
 --local-confluence-check
 
 open import Coincidences.Utils
@@ -9,9 +11,9 @@ module Coincidences.Substitutions.Parallel.Common where
 
 εsem = ⊤
 
-semwk* : ∀ Γ → SemSub ⟦ Γ ⟧c εsem
+semwk* : ∀ Γ′ → SemSub ⟦ Γ ++ Γ′ ⟧c ⟦ Γ ⟧c
 semwk* ε = id
-semwk* (Γ , A) = semwk* Γ ∘ semwk ⟦ A ⟧T
+semwk* (Γ′ , A) = semwk* Γ′ ∘ semwk ⟦ A ⟧T
 
 _,sub_ : ∀ {Γ Δ A} (δ : SemSub Δ Γ) → SemVal Δ (A ∘ δ) 
           → SemSub Δ (Γ ,s A) 

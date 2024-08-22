@@ -1,7 +1,7 @@
 {-# OPTIONS --rewriting --prop --show-irrelevant --local-confluence-check #-}
 
 open import Coincidences.Utils
-open import Coincidences.Substitutions.Parallel.RenSub
+open import Coincidences.Substitutions.Parallel.Simul
 
 module Coincidences.Bootstrap.Syntax where
 
@@ -11,8 +11,8 @@ open import Coincidences.Syntax
 
 module TypeOf where
   type-of-v : ∀ {A} → SemiVar Γ A → Ty Γ
-  type-of-v {Γ = _ , A} vz = A [ wk ]r
-  type-of-v (vs x) = type-of-v x [ wk ]r
+  type-of-v {Γ = _ , A} vz = A [ wk ]
+  type-of-v (vs x) = type-of-v x [ wk ]
 
   type-of-v≡ : ∀ {A} (x : SemiVar Γ A) → ⟦ type-of-v x ⟧T ≡ A
   type-of-v≡ vz = refl
@@ -26,8 +26,8 @@ data Tm : ∀ Γ → Ty Γ → Set
 ↓tm : Tm Γ A → SemiTm Γ ⟦ A ⟧T
 
 data Var where
-  vz : Var (Γ , A) (A [ wk ]r)
-  vs : Var Γ B → Var (Γ , A) (B [ wk ]r)
+  vz : Var (Γ , A) (A [ wk ])
+  vs : Var Γ B → Var (Γ , A) (B [ wk ])
 
 data Tm where
    var : Var Γ A → Tm Γ A
