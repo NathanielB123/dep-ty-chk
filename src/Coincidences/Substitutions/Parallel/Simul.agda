@@ -8,24 +8,28 @@ open import Coincidences.Tys
 open import Coincidences.Substitutions.Common
 open import Coincidences.Substitutions.Parallel.Common
 
-open import Data.Nat using (ℕ; suc; zero)
-
 module Coincidences.Substitutions.Parallel.Simul where
 
--- Thanks to Thorsten Altenkirch for coming up with this trick!
+infixl 100 _[_] _[_]tm _[_]v
+
+-- Thanks to Thorsten Altenkirch for coming up with this trick to make
+-- substitutions structurally recursive!
 -- https://agda.zulipchat.com/#narrow/stream/238741-general/topic/termination.20with.20order.20on.20the.20constructors/near/460052620
 data Sort : Set where
   V   : Sort
   T>V : (v : Sort) → v ≡ V → Sort
 
-pattern T = T>V _ _
+pattern T = T>V V _
+
+mkT : Sort
+mkT = T>V V refl
 
 Obj : Sort → ∀ Γ → SemTy ⟦ Γ ⟧c → Set
 Obj V = Var
 Obj T = Tm
 
 variable
-  s : Sort
+  s t : Sort
 
 ⟦_⟧o : ∀ {A} → Obj s Γ A → SemVal ⟦ Γ ⟧c A
 ⟦_⟧o {s = V} = ⟦_⟧v
@@ -61,7 +65,10 @@ vzo≡ : ∀ {Γ A} s → ⟦ vzo {Γ} {A} s ⟧o ≡ semvz
 vzo≡ V = refl
 vzo≡ T = refl
 
-{-# REWRITE obj→tm≡ vzo≡ #-}
+{-# REWRITE obj→tm≡ #-}
+-- Unfortunately, Agda 2.7.0 does not like 'vzo≡' as a rewrite rule. 
+-- Specifically, it cannot apply it in the '⟦ vzo {Γ} {Π' A B} s ⟧o'/
+-- '⟦ vzo {Γ} {El' M} s ⟧o' cases. I am unsure why
 
 wko : ∀ {Γ B} s A → Obj s Γ B → Obj s (Γ , A) (B ∘ semwk _)
 wko≡ : ∀ {Γ B} s A (M : Obj s Γ B) →  ⟦ wko s A M ⟧o ≡ ⟦ M ⟧o ∘ semwk _
@@ -103,7 +110,9 @@ wko*≡ (Γ′ , A) = wkos≡ A (wko* Γ′) ∙ cong (_∘ semwk ⟦ A ⟧T) (w
 
 id-os≡ ε = refl
 id-os≡ {s = s} (Γ , A) 
-  = dcong₂⁻¹ _,sub_ (wkos≡ A idΓ ∙ cong (_∘ semwk ⟦ A ⟧T) Γ≡) (sym rm-subst)
+  = dcong₂⁻¹ _,sub_ (wkos≡ A idΓ ∙ cong (_∘ semwk ⟦ A ⟧T) Γ≡) 
+                    ( sym rm-subst 
+                    ∙ cong (subst (SemVal _ ∘ (⟦ A ⟧T ∘_)) prf) (vzo≡ s))
   where idΓ = id-os Γ
         Γ≡ = id-os≡ Γ
         prf = cong (_∘ semwk ⟦ A ⟧T) (sym (id-os≡ _)) ∙ sym (wkos≡ A idΓ)
@@ -130,7 +139,9 @@ _↑os≡_ : ∀ (δ : Objs s Δ Γ) A
     ≡[ cong₂ SemSub (cong (_ ,s_ ) (A [ δ ]≡)) refl 
     ]≡ ⟦ δ ⟧os ↑s ⟦ A ⟧T
 _↑os≡_ {s = s} δ A
-  = from-coe≡⁻¹ _ (dcong₂⁻¹ _,sub_ wkδ≡ (sym rm-subst ∙ coes-cancel)
+  = from-coe≡⁻¹ _ (dcong₂⁻¹ _,sub_ wkδ≡ 
+                  ( sym rm-subst ∙ cong (subst (SemVal _) prf) (vzo≡ s) 
+                  ∙ coes-cancel)
   ∙ sym (↑[]-helper ⟦ δ ⟧os A≡))
   where
     A≡ = A [ δ ]≡
@@ -167,8 +178,7 @@ app {B = B} M N [ δ ]tm
 lam {A = A} {B = B} M [ δ ]tm 
   = subst (Tm _) (dcong₂⁻¹ Πsem A≡ (cong (B ∘_) (to-coe≡⁻¹ _ (δ ↑os≡ A) 
   ∙ ↑[]-helper _ A≡ ∙ cong (_ ,sub_) (sym (semvz-helper A≡)))
-  ∙ []-helper B ⟦ δ ⟧os A≡)) 
-    (lam (M [ δ ↑os _ ]tm))
+  ∙ []-helper B ⟦ δ ⟧os A≡)) (lam (M [ δ ↑os _ ]tm))
   where A≡ = A [ δ ]≡
 
 var x [ δ ]tm≡ = x [ δ ]v≡
@@ -195,10 +205,10 @@ wk-poly : ∀ s → Objs s (Γ , A) Γ
 wk-poly _ = wkos _ (id-os _)
 
 wko V A = vs
-wko {B = B} (T>V v _) A M 
+wko {B = B} T A M 
   = subst (Tm (_ , A) ∘ (B ∘_)) 
           (wkos≡ A (id-os _) ∙ cong (_∘ semwk _) (id-os≡ _)) 
-          (M [ wk-poly v ]tm)
+          (M [ wk-poly V ]tm)
 
 wko≡ V A x = refl
 wko≡ {B = B} T A M 

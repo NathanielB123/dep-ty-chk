@@ -74,6 +74,8 @@ cong f p with refl ← p = refl
 subst : ∀ {a b} {A : Set a} {x y} (P : A → Set b) → x ≡ y → P x → P y
 subst P p = coe (cong P p)
 
+{-# INLINE subst #-}
+
 coe-coe : ∀ {a} {A B C : Set a} x (p : B ≡ C) (q : A ≡ B)
         → coe p (coe q x) ≡ coe (q ∙ p) x
 coe-coe x refl refl = refl
