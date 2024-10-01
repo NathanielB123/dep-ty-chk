@@ -2,7 +2,7 @@
 
 **The Goal:** A simple, sound dependent type checker.
 - **Simple:** No type inference, naive typechecking algorithm (all types evaluated to normal form and compared syntactically).
-- **Sound:** The main point of interest of this development. I aim for the typechecker aims to produce programs in an intrinsically-typed syntax (so accepted programs are verified to be typeable).
+- **Sound:** The main point of interest of this development. I aim for the typechecker to produce programs in an intrinsically-typed syntax (so accepted programs are verified to be typeable).
 - **Dependent:** The object type theory contains pi-types and large elimination.
 
 ## Setup Info
@@ -16,13 +16,13 @@ Agda >=2.7.0 is a hard requirement for [Coincidences/](./src/Coincidences) to ty
 ### Challenges
 
 As it turns out, metatheory of type theory inside type theory is *quite hard*. Some high-level intuition on why:
-- Godel's second incompleteness theorem tells us a sound formal system cannot prove its own correctness, so formalising a system as powerful as Agda's is literally impossible.
+- Gödel's second incompleteness theorem tells us a sound formal system cannot prove its own correctness, so formalising a system as powerful as Agda's is literally impossible.
 - Intrinsically typed syntax (fusing syntax and typing rules into one inductive datatype) is a really powerful way of modelling type systems with TT-as-a-metatheory (and IMO is the only workable approach in Agda, given its limited automation/tactics capabilities). However, a direct consequence of this approach is that operations on syntax must (by definition) preserve types. In TTs with large elimination, terms can appear inside types, which leads to circularity (to prove type preservation of a syntax transformation, we rely on the definition of that syntax transformation, but to implement the transformation soundly, we must prove type preservation).
-- TTs of the intensional variety require a notion of definitional equality. In practice, this means a ton of non-trivial computation must occur at the type-level to check if types are equal. We can attempt to deal with this by trying to always keep types in normal form, but in practice, proving termination with this approach appears extremely challenging; note that substitutions on normal forms are obviously not structurally recursive. Therefore, we usually end up forced into define our own equivalence relation on terms (i.e. modulo beta/eta) and then are obligated to prove all our syntax operations respect this relation. This gets tiresome, fast.
+- TTs of the intensional variety require a notion of definitional equality. In practice, this means a ton of non-trivial computation must occur at the type-level to check if types are equal. We can attempt to deal with this by trying to always keep types in normal form, but in practice, proving termination with this approach appears extremely challenging; note that substitutions on normal forms are obviously not structurally recursive. Therefore, we usually end up forced into defining our own equivalence relation on terms (i.e. modulo beta/eta), extending this to types and then proving all our syntax operations respect this relation. This gets tiresome, fast.
 
 ### Organisation
 
-This repo is currently split into two distinct developments, which investigate two distinct approaches to formalising TT with intensionally typed terms. The former is further along but progress has slowed due to some extreme and mostly unavoidable clunkyness, while the latter is more experimental but is IMO very promising:
+This repo is currently split into two distinct developments, which investigate two different approaches to formalise TT with intensionally typed terms. The former is further along but progress has slowed due to some extreme and mostly unavoidable clunkyness, while the latter is more experimental but is IMO very promising:
 
 #### [Setoid/](./src/Setoid) 
 - Heavily inspired by [A Formalisation of a Dependently Typed Language as an Inductive-Recursive Family](https://www.cse.chalmers.se/~nad/publications/danielsson-types2006.pdf), [Type Theory in Type Theory using Quotient Inductive Types](https://akaposi.github.io/tt-in-tt.pdf) and this Andras Kovacs [gist](https://gist.github.com/AndrasKovacs/1417f92a411b53798c880fd0a6b44169)
