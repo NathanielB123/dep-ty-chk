@@ -213,9 +213,20 @@ private module Congruences where
           → lamsem M₁ ≡[ SemVal≡ Γ≡ (Πsem≡ Γ≡ A≡ B≡) ]≡ lamsem M₂
   lamsem≡ refl refl refl refl = refl
 
-  
   semvz≡ : ∀ {Γ₁ Γ₂ A₁ A₂} (Γ≡ : Γ₁ ≡ Γ₂) (A≡ : A₁ ≡[ SemTy≡ Γ≡ ]≡ A₂)  
          → semvz ≡[ SemVal≡ (Γ≡ ,s≡ A≡) (semwk≡ Γ≡ A≡ A≡) ]≡ semvz
   semvz≡ refl refl = refl
 
 open Congruences public
+
+module Extensional where
+  -- Nils Anders Danielsson discovered that (with propositional function 
+  -- extensionality), this approach to defining dependently-typed syntax
+  -- produces an extensional object theory.
+  -- Example from https://github.com/nad/dependently-typed-syntax/blob/master/README/DependentlyTyped/Extensional-type-theory.agda
+  postulate
+    funext : {A B : Set} {f g : A → B} → (∀ x → f x ≡ g x) → f ≡ g
+
+  -- This is enough for self application
+  cast₁ : Tm (Γ , ⊥') (Πsem (λ _ → ⊥') (λ _ → ⊥')) → Tm (Γ , ⊥') (λ _ → ⊥')
+  cast₁ t = subst (Tm _) (funext (λ where ())) t

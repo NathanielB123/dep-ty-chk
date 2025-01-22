@@ -10,7 +10,6 @@ open import Coincidences.Substitutions.Parallel.Simul
 module Coincidences.Substitutions.Parallel.Comp where
 
 
-
 private module Congruences where
 
   Objs≡ : ∀ {Δ₁ Δ₂ Γ₁ Γ₂} s → Δ₁ ≡ Δ₂ → Γ₁ ≡ Γ₂ → Objs s Δ₁ Γ₁ ≡ Objs s Δ₂ Γ₂
@@ -40,6 +39,12 @@ max (T>V v p) _ = T>V v p
 -- max-rightV≡ V = refl
 -- max-rightV≡ T = refl
 -- {-# REWRITE max-rightV≡ #-}
+
+max-ss≡ : ∀ s → max s s ≡ s
+max-ss≡ V = refl
+max-ss≡ T = refl
+{-# REWRITE max-ss≡ #-}
+
 
 _[_]o : ∀ {A} → Obj s Γ A → (δ : Objs t Δ Γ) → Obj (max s t) Δ (A ∘ ⟦ δ ⟧os) 
 _[_]o {s = V} = _[_]v
@@ -87,11 +92,42 @@ _[_]o≡ {s = T} = _[_]tm≡
 
 {-# REWRITE ↑sortos≡ #-}
 
+wk-vs≡ : ∀ {A} (x : Var Γ A) (δ : Vars Δ Γ) → x [ wkos B δ ]v ≡ vs (x [ δ ]v)
+wk-vs≡ vz (δ , y) = refl
+wk-vs≡ (vs x) (δ , y) = wk-vs≡ x δ
+
+{-# REWRITE wk-vs≡ #-}
+
+[id]v≡ : ∀ {A} (x : Var Γ A) → x [ id-os Γ ]v ≡ x
+[id]v≡ vz = refl
+[id]v≡ (vs x) = cong vs ([id]v≡ x)
+
+{-# REWRITE [id]v≡ #-}
+
+wko-wkos-v≡ : ∀ {A} (x : Var Γ A) (δ : Objs s Δ Γ) 
+            → wko s B (x [ δ ]v) ≡ x [ wkos B δ ]v
+wko-wkos-v≡ vz (δ , M) = refl
+wko-wkos-v≡ (vs x) (δ , M) = wko-wkos-v≡ x δ
+
+wko-wkos-tm≡ : ∀ {A} (M : Tm Γ A) (δ : Objs s Δ Γ) 
+             → wko mkT B (M [ δ ]tm) ≡ M [ wkos B δ ]tm
+wko-wkos-tm≡ (var x) δ = {!wko-wkos-v≡ x δ !}
+-- wko-wkos-tm≡ {s = V} (var x) δ = {!cong var (wko-wkos-v≡ x δ)!}
+-- wko-wkos-tm≡ {s = T} (var x) δ = {!wko-wkos-v≡ x δ!}
+wko-wkos-tm≡ (app M N) δ = {!   !}
+wko-wkos-tm≡ (lam M) δ = {!   !}
+
+-- {-# REWRITE wko-wkos-v≡ #-}
+-- wko-wkos≡ : ∀ {A} (M : Obj s Γ A) (δ : Objs t Δ Γ) 
+--           → wko (max s t) B (M [ δ ]o) ≡ M [ wkos B δ ]o
+-- wko-wkos≡ {s = V} M δ = {! M !}
+
+
 _∘os_ : Objs s Δ Γ → Objs t θ Δ → Objs (max s t) θ Γ 
 _∘os≡_ : ∀ (δ : Objs s Δ Γ) (σ : Objs t θ Δ) → ⟦ δ ∘os σ ⟧os ≡ ⟦ δ ⟧os ∘ ⟦ σ ⟧os
 
 ε ∘os ε = ε
-ε ∘os (σ , M) = ε ∘os σ
+_∘os_ {s = s} ε (σ , M) = _∘os_ {s = s} ε σ
 _∘os_ {s = s} {t = t} (_,_ {A = A} δ M) σ 
   = (δ ∘os σ) 
   , subst (Obj (max s t) _ ∘ (⟦ A ⟧T ∘_)) (sym (δ ∘os≡ σ)) (M [ σ ]o)
@@ -105,6 +141,19 @@ _∘os≡_ {s = s} {t = t} (_,_ {A = A} δ M) σ
                                       (λ _ → ⟦_⟧o) (sym δ≡)
 
 {-# REWRITE _∘os≡_ #-}
+
+wk∘-os : ∀ A (δ : Objs s Δ Γ) (σ : Objs t θ Δ)
+       → wkos A (δ ∘os σ) ≡ δ ∘os wkos A σ
+wk∘-os A ε ε = refl
+wk∘-os A ε (σ , M) = wk∘-os A ε σ
+wk∘-os A (δ , M) σ = dcong₂ _,_ (wk∘-os A δ σ) {!   !}
+
+
+∘id-os : ∀ (δ : Objs s Δ Γ) → δ ∘os id-os {s = s} Δ ≡ δ 
+∘id-os (ε {Γ = ε}) = refl
+∘id-os (ε {Γ = Δ , A}) = {! !} ∙ cong (wkos A) (∘id-os ε)
+∘id-os (δ , M) = {!   !}
+
 
 []-comp : ∀ A (δ : Objs s Δ Γ) (σ : Objs t θ Δ) → A [ δ ] [ σ ] ≡ A [ δ ∘os σ ]
 []tm-comp : ∀ {A} (M : Tm Γ A) (δ : Objs s Δ Γ) (σ : Objs t θ Δ) 
@@ -162,33 +211,42 @@ _∘os≡_ {s = s} {t = t} (_,_ {A = A} δ M) σ
                                (cong (Tm _ ∘ (_∘ ⟦ σ ⟧os)) prfδ) _
         rm-subst = subst-application′ (Tm _) (λ _ → _[ σ ]tm) prfδ
 
--- (wkos (A [ δ ]) δ ∘os (wkos (A [ δ ] [ σ ]) σ , vz)) , vz
--- = (wkos (A [ δ ]) δ ∘os (σ ↑os A [ δ ])) , vz
-
--- wkos (A [ δ ∘os σ ]) (δ ∘os σ) , vz
--- = (δ ∘os σ) ↑os A
-
--- Focus
---   wkos (A [ δ ]) δ ∘os (σ ↑os A [ δ ])
--- ≡ wkos (A [ δ ∘os σ ]) (δ ∘os σ)
-
-
 []v-comp vz (δ , M) σ = refl
 []v-comp (vs x) (δ , M) σ = []v-comp x δ σ
+
+-- wkos (A [ δ ∘os σ ]) (δ ∘os σ)
+-- ≡ (wkos (A [ δ ]) δ ∘os (wkos (A [ δ ] [ σ ]) σ , vzo t))
+
+-- ≡ (wkos (A [ δ ]) δ ∘os (wkos (A [ δ ∘os σ ]) σ , vzo t))
+
+-- (wkos (A [ (δ ∘os σ) , (M [ σ ]o) ]) (δ ∘os σ) ,
+      --  wko (max s t) (A [ (δ ∘os σ) , (M [ σ ]o) ]) (M [ σ ]o))
+
+      
+-- ((wkos (A [ δ , M ]) δ ∘os (wkos (A [ δ , M ] [ σ ]) σ , vzo t)) ,
+--  (wko s (A [ δ , M ]) M [ wkos (A [ δ , M ] [ σ ]) σ , vzo t ]o))
+-- ≡ ((wkos (A [ δ , M ]) δ ∘os (wkos (A [ δ ∘os σ , M [ σ ] ]) σ , vzo t)) ,
+--  (wko s (A [ δ , M ]) M [ wkos (A [ δ ∘os σ , M [ σ ] ]) σ , vzo t ]o))
+
 
 wk∘os≡ : ∀ A (δ : Objs s Δ Γ) (σ : Objs t θ Δ) 
        → wkos (A [ δ ∘os σ ]) (δ ∘os σ) 
       ≡[ cong (λ δσ → Objs (max s t) (θ , δσ) Γ) (sym ([]-comp A δ σ)) 
       ]≡ wkos (A [ δ ]) δ ∘os (σ ↑os A [ δ ])
-wk∘os≡ A ε ε = {!!}
-wk∘os≡ A ε (σ , M) = _∙P_ (wk∘os≡ A ε σ) {!!}
-wk∘os≡ A (δ , M) σ = {!wk∘os≡ _ δ σ   !}
+wk∘os≡ A ε ε = {! !} -- ε≡ and done here
+wk∘os≡ {s = s} {t = t} A ε (σ , M) 
+  = wk∘os≡ A ε σ
+ ∙P (from-coe≡ (cong (λ A[] → Objs (max s t) (_ , A[]) ε) A≡) 
+    (dcong (λ A[] → _∘os_ {s = s} ε (wkos A[] σ)) A≡))
+  where A≡ = []-comp A ε σ ∙ sym ([]-comp A ε (σ , M))
+wk∘os≡ A (_,_ {A = B} δ M) σ = {!rec !}
+  -- where rec = wk∘os≡ (A [ δ , M ]) σ (id-os _)
 
 ↑∘os≡ {s = V} {t = V} A ε ε = {!   !}
 ↑∘os≡ {s = V} {t = V} A ε (σ , M) = {!↑∘os≡ A ε σ   !}
 ↑∘os≡ {s = V} {t = V} A (δ , M) σ = {!↑∘os≡ _ δ σ   !}
 -- ↑∘os≡ {s = V} {t = V} (Π' A B) δ σ = {!   !}
 -- ↑∘os≡ {s = V} {t = V} (El' M) δ σ = {!   !}
- 
+  
 -- ↑∘os≡ {s = V} {t = V} A ε σ = from-coe≡⁻¹ _ {!   !} 
--- ↑∘os≡ {s = V} {t = V} A (δ , M) σ = {!   !} 
+-- ↑∘os≡ {s = V} {t = V} A (δ , M) σ = {!   !}  

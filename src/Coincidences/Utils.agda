@@ -8,6 +8,7 @@ open import Function using (_∘_; case_of_; id)
 open import Data.Product using (Σ; _,_; proj₁; proj₂; _×_) public
 open import Data.Unit using (⊤; tt) public
 open import Data.Empty using (⊥; ⊥-elim) public
+open import Data.Bool using (Bool; true; false; if_then_else_) public
 
 infix 3 _≡[_]≡_
 infix 4 _≡_
@@ -30,8 +31,8 @@ sym refl = refl
 _∙_ : ∀ {a} {A : Set a} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
 refl ∙ refl = refl
 
--- cong : ∀ {a b} {A : Set a} {B : Set b} (f : A → B) {x y} → x ≡ y → f x ≡ f y
--- cong f refl = refl
+cong : ∀ {a b} {A : Set a} {B : Set b} (f : A → B) {x y} → x ≡ y → f x ≡ f y
+cong f refl = refl
 
 cong₂ : ∀ {a b c} {A : Set a} {B : Set b} {C : Set c} 
           (f : A → B → C) {x y u v} → x ≡ y → u ≡ v 
@@ -48,8 +49,9 @@ subst-prop P refl m = m
 -- Some tricks to allow us to large elimination with 'Prop'-valued '_≡_'.
 -- This should be sound (though implies K), because _≡_ is a subsingleton.
 
--- Note that we could alternatively postulate 'coe'/'_≡[_]≡' and appropriate
--- beta rules via 'REWRITE', but we would lose definitional injectivity
+-- Note that we could alternatively postulate '_≡[_]≡' and appropriate
+-- beta rules via 'REWRITE' (like with 'coe'), but we would lose definitional 
+-- injectivity.
 data Id {a} {A : Set a} (x : A) : A → Set a where
   refl : Id x x
 
@@ -68,13 +70,8 @@ postulate
 -- coe  : ∀ {ℓ} {A B : Set ℓ} → A ≡ B → A → B
 -- coe p with refl ← to-id p = id
 
-cong : ∀ {a b} {A : Set a} {B : Set b} (f : A → B) {x y} → x ≡ y → f x ≡ f y
-cong f p with refl ← p = refl
-
 subst : ∀ {a b} {A : Set a} {x y} (P : A → Set b) → x ≡ y → P x → P y
 subst P p = coe (cong P p)
-
-{-# INLINE subst #-}
 
 coe-coe : ∀ {a} {A B C : Set a} x (p : B ≡ C) (q : A ≡ B)
         → coe p (coe q x) ≡ coe (q ∙ p) x

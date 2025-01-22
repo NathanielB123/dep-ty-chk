@@ -67,7 +67,7 @@ vzo≡ T = refl
 
 {-# REWRITE obj→tm≡ #-}
 -- Unfortunately, Agda 2.7.0 does not like 'vzo≡' as a rewrite rule. 
--- Specifically, it cannot apply it in the '⟦ vzo {Γ} {Π' A B} s ⟧o'/
+-- Specifically, it cannot apply it in the '⟦ vzo {Γ} {Π' A B} s ⟧o' or
 -- '⟦ vzo {Γ} {El' M} s ⟧o' cases. I am unsure why
 
 wko : ∀ {Γ B} s A → Obj s Γ B → Obj s (Γ , A) (B ∘ semwk _)
@@ -226,5 +226,8 @@ wko≡ {B = B} T A M
 wk : Vars (Γ , A) Γ
 wk = wk-poly _
 
+<>-poly : ∀ s → Obj s Γ ⟦ A ⟧T → Objs s Γ (Γ , A)
+<>-poly s M = id-os _ , M
+
 <_> : Tm Γ ⟦ A ⟧T → Tms Γ (Γ , A)
-< M > = id-os _ , M
+<_> = <>-poly _
